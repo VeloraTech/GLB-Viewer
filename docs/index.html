@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLB Viewer</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>GLB Viewer</h1>
+  <p>A 1-folder offline GLB viewer. Right-click any GLB, Open With, GLB Viewer. No install, no internet, no Blender.</p>
+</header>
+
+<section id="download">
+  <h2>Download</h2>
+  <p id="os-detected">Detecting your OS...</p>
+  <button id="dl-btn" class="big">Download for Windows</button>
+  <div id="dl-other" class="hidden">
+    <label>Or choose another OS:</label>
+    <select id="dl-os">
+      <option value="windows">Windows</option>
+      <option value="mac">Mac</option>
+      <option value="linux">Linux</option>
+    </select>
+    <button id="dl-custom" class="big">Download</button>
+  </div>
+  <p class="note">Buttons link to GitHub Releases (placeholder URLs for now). Pages hosts the site; Releases host the exe/MSI files.</p>
+</section>
+
+<section id="demo">
+  <h2>Try the viewer</h2>
+  <p>Test the viewer right here without installing anything. Drag and drop a GLB file below.</p>
+  <iframe src="../viewer.html" title="GLB Viewer demo" loading="lazy"></iframe>
+  <p class="note">Drag and drop a .glb file into the demo above to view it.</p>
+</section>
+
+<section id="privacy">
+  <h2>Privacy</h2>
+  <p>We track downloads, not your models.</p>
+  <p>Anonymous, privacy-friendly analytics placeholder (Plausible / Umami). Tracks only OS, download button clicked, and demo viewer used. Never tracks file names, file sizes, or models.</p>
+  <p>We need access so you can right-click a file to open it. Your files never leave your computer. We never upload.</p>
+</section>
+
+<script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+# Build artifacts
+launcher.exe
+launcher.pdb
+model.glb
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+IMG-20261109-WA9508.jpg
+read.md.txt

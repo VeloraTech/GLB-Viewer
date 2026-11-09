@@ -1,0 +1,21 @@
+Windows Registry Editor Version 5.00
+
+; GLB Viewer - Open With registration
+; Run this file (double-click) to add "GLB Viewer" to the right-click Open With menu for .glb files.
+; Update the paths below to match where you extracted this folder.
+
+[HKEY_CLASSES_ROOT\GLBViewer\shell\open\command]
+@="\"C:\\Users\\DAVID UZOMAH\\Desktop\\GLB Viewer\\launcher.exe\" \"%1\""
+
+[HKEY_CLASSES_ROOT\GLBViewer\shell\open\command\DropTarget]
+"CLSID"="{DC1C5A9C-E88A-4DDE-A5A1-60F82A20AEF7}"
+
+[HKEY_CLASSES_ROOT\.glb]
+@="GLBViewer"
+
+[HKEY_CLASSES_ROOT\.glb\OpenWithProgIds]
+"GLBViewer"=""
+
+[HKEY_CLASSES_ROOT\.glb\ShellEx]
+[HKEY_CLASSES_ROOT\.glb\ShellEx\{BB2E617C-0920-11d1-9A0B-00C04FC2D6C1}]
+@="{DC1C5A9C-E88A-4DDE-A5A1-60F82A20AEF7}"

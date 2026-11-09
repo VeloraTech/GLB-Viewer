@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GLB Viewer</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; width: 100%; overflow: hidden; background: #111; color: #eee; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  #canvas { width: 100vw; height: 100vh; display: block; }
+
+  /* Overlay UI */
+  #ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; display: flex; flex-direction: column; }
+  #toolbar { position: absolute; top: 12px; left: 12px; display: flex; gap: 8px; pointer-events: auto; z-index: 20; }
+  #toolbar button { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.35); color: #eee; padding: 8px 14px; border-radius: 6px; font-size: 13px; cursor: pointer; backdrop-filter: blur(4px); }
+  #toolbar button:hover { background: rgba(255,255,255,0.25); }
+  #toolbar button.active { background: rgba(0,150,255,0.35); border-color: rgba(0,150,255,0.6); }
+
+  /* Loading overlay */
+  #loading { position: absolute; inset: 0; background: #111; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; z-index: 30; transition: opacity 0.3s; }
+  #loading.hidden { opacity: 0; pointer-events: none; }
+  #loading .spinner { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.15); border-top-color: #0af; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { font-size: 16px; margin-bottom: 8px; }
+  #progress { width: 260px; height: 6px; background: rgba(255,255,255,0.12); border-radius: 3px; overflow: hidden; }
+  #progress-bar { width: 0%; height: 100%; background: #0af; }
+
+  /* Error overlay */
+  #error { position: absolute; inset: 0; background: #111; display: none; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; z-index: 30; text-align: center; padding: 24px; }
+  #error h2 { color: #ff6b6b; margin-bottom: 8px; font-size: 18px; }
+  #error p { color: #aaa; margin-bottom: 16px; max-width: 420px; line-height: 1.5; }
+  #error button { background: #0af; border: none; color: #fff; padding: 10px 20px; border-radius: 6px; font-size: 14px; cursor: pointer; }
+  #error button:hover { background: #33b5ff; }
+
+  /* Info chip bottom-left */
+  #info { position: absolute; bottom: 12px; left: 12px; pointer-events: auto; z-index: 20; display: flex; flex-direction: column; gap: 4px; }
+  .chip { background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.25); color: #ddd; padding: 6px 10px; border-radius: 4px; font-size: 12px; backdrop-filter: blur(4px); white-space: nowrap; }
+
+  /* Storage bar bottom-right */
+  #storage { position: absolute; bottom: 12px; right: 12px; pointer-events: auto; z-index: 20; display: flex; align-items: center; gap: 8px; }
+  #storage .chip { cursor: default; }
+  #clear-storage { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.3); color: #eee; padding: 4px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+  #clear-storage:hover { background: rgba(255,255,255,0.22); }
+
+  /* File picker hidden input */
+  #file-input { display: none; }
+
+  /* Light theme override */
+  body.light { background: #f5f5f5; color: #222; }
+  body.light #loading { background: #f5f5f5; }
+  body.light #error { background: #f5f5f5; }
+  body.light .chip { background: rgba(255,255,255,0.75); border-color: rgba(0,0,0,0.15); color: #333; }
+  body.light #toolbar button { background: rgba(0,0,0,0.1); border-color: rgba(0,0,0,0.2); color: #222; }
+  body.light #toolbar button:hover { background: rgba(0,0,0,0.18); }
+  body.light #progress { background: rgba(0,0,0,0.1); }
+</style>
+</head>
+<body>
+
+<div id="canvas"></div>
+
+<div id="ui">
+  <div id="toolbar">
+    <button id="bg-toggle" title="Toggle dark/light background">Dark</button>
+    <button id="screenshot" title="Screenshot">Screenshot</button>
+    <button id="file-picker-btn" title="Open file">Open GLB</button>
+    <input type="file" id="file-input" accept=".glb,.gltf">
+  </div>
+  <div id="loading">
+    <div class="spinner"></div>
+    <p id="loading-text">Loading ring.glb...</p>
+    <div id="progress"><div id="progress-bar"></div></div>
+  </div>
+  <div id="error">
+    <h2 id="error-title">This file could not be loaded.</h2>
+    <p id="error-msg">It may be corrupt or not a valid GLB.</p>
+    <button id="try-sample">Try sample ring.glb</button>
+  </div>
+</div>
+
+<div id="info">
+  <div class="chip" id="info-chip">—</div>
+</div>
+
+<div id="storage">
+  <div class="chip" id="storage-chip">Storage used: 0 MB</div>
+  <button id="clear-storage" title="Clear saved model">Clear saved model</button>
+</div>
+
+<input type="file" id="file-input" accept=".glb,.gltf">
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./three/build/three.module.js",
+    "three/addons/": "./three/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// ---------- Tiny vanilla in-memory UI state store ----------
+const state = {
+  fileName: null,
+  fileSize: 0,
+  triangles: 0,
+  vertices: 0,
+  meshes: 0,
+  background: 'dark', // 'dark' | 'light'
+  lastModelUrl: null,
+};
+
+// ---------- IndexedDB persistence ----------
+const DB_NAME = 'glb-viewer';
+const DB_VERSION = 1;
+const STORE_NAME = 'models';
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveLastModel(url, blob, size) {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    await store.put({ id: 'last', url, blob, size, savedAt: Date.now() });
+    await new Promise((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); });
+    db.close();
+    updateStorageChip();
+  } catch (e) {
+    console.warn('IndexedDB save failed:', e);
+  }
+}
+
+async function loadLastModel() {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const rec = await new Promise((res, rej) => {
+      const r = store.get('last');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    tx.oncomplete = () => db.close();
+    return rec;
+  } catch (e) {
+    console.warn('IndexedDB load failed:', e);
+    return null;
+  }
+}
+
+async function clearSavedModel() {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    await store.delete('last');
+    await new Promise((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); });
+    db.close();
+    state.lastModelUrl = null;
+    updateStorageChip();
+  } catch (e) {
+    console.warn('IndexedDB clear failed:', e);
+  }
+}
+
+async function updateStorageChip() {
+  try {
+    const db = await openDB();
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    const rec = await new Promise((res, rej) => {
+      const r = store.get('last');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    tx.oncomplete = () => db.close();
+    const mb = rec && rec.size ? (rec.size / (1024 * 1024)).toFixed(2) : '0';
+    document.getElementById('storage-chip').textContent = `Storage used: ${mb} MB`;
+  } catch (e) {
+    document.getElementById('storage-chip').textContent = 'Storage used: 0 MB';
+  }
+}
+
+// ---------- Debounced auto-save ----------
+let saveTimeout = null;
+function scheduleSave(url, blob, size) {
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    saveLastModel(url, blob, size);
+    saveTimeout = null;
+  }, 1000);
+}
+
+// ---------- Three.js scene setup ----------
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+canvas.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
+scene.environment = new RoomEnvironment();
+
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 1, 3);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.rotateSpeed = 0.8;
+controls.zoomSpeed = 1.0;
+controls.panSpeed = 0.8;
+
+// Lighting: AmbientLight + DirectionalLight + RoomEnvironment
+const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+scene.add(ambient);
+const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+dirLight.position.set(5, 10, 7);
+dirLight.castShadow = true;
+scene.add(dirLight);
+
+// ---------- Model loading ----------
+let currentModel = null;
+let mixer = null;
+
+function countStats(object) {
+  let triangles = 0;
+  let vertices = 0;
+  let meshes = 0;
+  object.traverse((child) => {
+    if (child.isMesh) {
+      meshes++;
+      const geo = child.geometry;
+      const index = geo.index;
+      const pos = geo.attributes.position;
+      if (index) {
+        triangles += index.count / 3;
+        vertices += pos.count;
+      } else {
+        triangles += pos.count / 3;
+        vertices += pos.count;
+      }
+    }
+  });
+  return { triangles: Math.round(triangles), vertices: Math.round(vertices), meshes };
+}
+
+function formatBytes(bytes) {
+  if (!bytes && bytes !== 0) return '—';
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function updateInfoChip() {
+  const chip = document.getElementById('info-chip');
+  const parts = [];
+  if (state.fileSize) parts.push(formatBytes(state.fileSize));
+  if (state.triangles) parts.push(state.triangles.toLocaleString() + ' triangles');
+  if (state.vertices) parts.push(state.vertices.toLocaleString() + ' vertices');
+  if (state.meshes) parts.push(state.meshes + ' meshes');
+  chip.textContent = parts.length ? parts.join(', ') : '—';
+}
+
+function showLoading(show, text) {
+  const el = document.getElementById('loading');
+  if (show) {
+    el.classList.remove('hidden');
+    if (text) document.getElementById('loading-text').textContent = text;
+    document.getElementById('progress-bar').style.width = '0%';
+  } else {
+    el.classList.add('hidden');
+  }
+}
+
+function updateProgress(percent) {
+  document.getElementById('progress-bar').style.width = percent + '%';
+}
+
+function showError(msg) {
+  document.getElementById('error-title').textContent = 'This file could not be loaded.';
+  document.getElementById('error-msg').textContent = msg || 'It may be corrupt or not a valid GLB.';
+  document.getElementById('error').style.display = 'flex';
+}
+
+function hideError() {
+  document.getElementById('error').style.display = 'none';
+}
+
+function setBackground(mode) {
+  state.background = mode;
+  document.body.classList.toggle('light', mode === 'light');
+  scene.background = new THREE.Color(mode === 'light' ? 0xf5f5f5 : 0x111111);
+  document.getElementById('bg-toggle').textContent = mode === 'light' ? 'Light' : 'Dark';
+}
+
+function loadModelFromUrl(url, fileName, fileSize, blob) {
+  hideError();
+  showLoading(true, `Loading ${fileName}...`);
+  state.fileName = fileName;
+  state.fileSize = fileSize;
+
+  const loader = new GLTFLoader();
+  loader.load(
+    url,
+    (gltf) => {
+      if (currentModel) {
+        scene.remove(currentModel);
+        currentModel.traverse((c) => {
+          if (c.isMesh) {
+            c.geometry.dispose();
+            c.material.dispose();
+          }
+        });
+      }
+      currentModel = gltf.scene;
+      scene.add(currentModel);
+
+      mixer = new THREE.AnimationMixer(currentModel);
+      gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+
+      const stats = countStats(currentModel);
+      state.triangles = stats.triangles;
+      state.vertices = stats.vertices;
+      state.meshes = stats.meshes;
+      updateInfoChip();
+
+      fitCamera(currentModel);
+      showLoading(false);
+
+      // Debounced auto-save to IndexedDB
+      if (blob) {
+        scheduleSave(url, blob, fileSize);
+      }
+      state.lastModelUrl = url;
+    },
+    (xhr) => {
+      if (xhr.lengthComputable) {
+        const pct = Math.round((xhr.loaded / xhr.total) * 100);
+        updateProgress(pct);
+        document.getElementById('loading-text').textContent = `Loading ${fileName}... ${pct}%`;
+      }
+    },
+    (err) => {
+      console.error(err);
+      showError('It may be corrupt or not a valid GLB.');
+      showLoading(false);
+    }
+  );
+}
+
+function loadModelFromFile(file) {
+  const url = URL.createObjectURL(file);
+  loadModelFromUrl(url, file.name, file.size, file);
+}
+
+function fitCamera(object) {
+  const box = new THREE.Box3().setFromObject(object);
+  const center = box.getCenter(new THREE.Vector3());
+  const size = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z);
+  const fov = camera.fov * (Math.PI / 180);
+  const cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2)));
+  camera.position.set(center.x, center.y, center.z + cameraZ * 1.5);
+  controls.target.copy(center);
+  controls.update();
+  const near = maxDim / 100;
+  const far = maxDim * 100;
+  camera.near = Math.max(near, 0.01);
+  camera.far = far;
+  camera.updateProjectionMatrix();
+}
+
+// ---------- Drag and drop ----------
+window.addEventListener('dragover', (e) => { e.preventDefault(); });
+window.addEventListener('drop', (e) => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file && (file.name.endsWith('.glb') || file.name.endsWith('.gltf') || file.type.includes('model'))) {
+    loadModelFromFile(file);
+  }
+});
+
+// ---------- File picker ----------
+document.getElementById('file-picker-btn').addEventListener('click', () => {
+  document.getElementById('file-input').value = '';
+  document.getElementById('file-input').click();
+});
+document.getElementById('file-input').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) loadModelFromFile(file);
+});
+
+// ---------- Background toggle ----------
+document.getElementById('bg-toggle').addEventListener('click', () => {
+  setBackground(state.background === 'dark' ? 'light' : 'dark');
+});
+
+// ---------- Screenshot ----------
+document.getElementById('screenshot').addEventListener('click', () => {
+  renderer.render(scene, camera);
+  const link = document.createElement('a');
+  link.download = `glb-viewer-screenshot-${Date.now()}.png`;
+  link.href = renderer.domElement.toDataURL('image/png');
+  link.click();
+});
+
+// ---------- Clear saved model ----------
+document.getElementById('clear-storage').addEventListener('click', async () => {
+  await clearSavedModel();
+  document.getElementById('storage-chip').textContent = 'Storage used: 0 MB';
+});
+
+// ---------- Try sample ----------
+document.getElementById('try-sample').addEventListener('click', () => {
+  loadModelFromFile(new File([''], 'ring.glb', { type: 'model/gltf-binary' }));
+  // Fallback: try loading sample.glb if present
+  fetch('./sample/ring.glb')
+    .then((r) => r.blob())
+    .then((blob) => {
+      const f = new File([blob], 'ring.glb', { type: 'model/gltf-binary' });
+      loadModelFromFile(f);
+    })
+    .catch(() => {});
+});
+
+// ---------- Render loop ----------
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = clock.getDelta();
+  if (mixer) mixer.update(dt);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+
+// ---------- Resize ----------
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ---------- Initialize: reload last model ----------
+(async () => {
+  await updateStorageChip();
+  const rec = await loadLastModel();
+  if (rec && rec.blob) {
+    const f = new File([rec.blob], rec.url.split('/').pop() || 'model.glb', { type: 'model/gltf-binary' });
+    loadModelFromFile(f);
+  } else {
+    // Try sample ring.glb if present
+    try {
+      const r = await fetch('./sample/ring.glb');
+      if (r.ok) {
+        const blob = await r.blob();
+        const f = new File([blob], 'ring.glb', { type: 'model/gltf-binary' });
+        loadModelFromFile(f);
+      }
+    } catch (e) {
+      // no sample available
+    }
+  }
+})();
+</script>
+
+</body>
+</html>
