@@ -1,10 +1,14 @@
 # Platform Support
 
-| Platform | V1 Status |
-|----------|-----------|
-| Windows  | Ready |
-| Mac      | Planned (V3) |
-| Linux    | Planned (V3) |
+## Browser support (viewer.html)
+
+`viewer.html` is a vanilla HTML/CSS/JS app that runs in any modern Chrome/Edge browser. It works on Windows, Mac, and Linux with no launcher required — just open `viewer.html` in Chrome and drag and drop a GLB file.
+
+| Platform | Browser (viewer.html) | Desktop launcher (Open With) |
+|----------|----------------------|------------------------------|
+| Windows  | Supported (V1)       | Ready (V1)                   |
+| Mac      | Supported (V1)       | Planned (V3)                 |
+| Linux    | Supported (V1)       | Planned (V3)                 |
 
 ## Notes
 
