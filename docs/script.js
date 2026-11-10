@@ -14,27 +14,25 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     windows: 'Download for Windows',
     mac: 'Download for Mac',
     linux: 'Download for Linux',
-    android: 'Open GLB Viewer',
+    android: 'View desktop downloads',
+    ios: 'View desktop downloads',
   };
 
-  // Detect OS using navigator.userAgentData or userAgent fallback
+  // Check mobile user-agent tokens before platform hints: Android browsers may
+  // expose a Linux-like platform value through userAgentData.
   function detectOS() {
-    const uaData = navigator.userAgentData;
-    if (uaData && uaData.platform) {
-      const p = uaData.platform.toLowerCase();
-      if (p.includes('android')) return 'android';
-      if (p.includes('windows')) return 'windows';
-      if (p.includes('mac')) return 'mac';
-      if (p.includes('linux')) return 'linux';
-    }
-    const uaLower = navigator.userAgent.toLowerCase();
-    // Android user agents also contain "Linux"; detect Android first.
-    if (uaLower.includes('android')) return 'android';
-    if (uaLower.includes('windows')) return 'windows';
-    if (uaLower.includes('mac')) return 'mac';
-    if (uaLower.includes('linux')) return 'linux';
-    if (uaLower.includes('iphone') || uaLower.includes('ipad')) return 'mac';
-    return 'windows';
+    const ua = navigator.userAgent || '';
+    const uaLower = ua.toLowerCase();
+
+    if (/android/i.test(ua)) return 'android';
+    if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+    if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return 'ios';
+
+    const platform = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
+    if (platform.includes('windows') || uaLower.includes('windows')) return 'windows';
+    if (platform.includes('mac') || uaLower.includes('macintosh')) return 'mac';
+    if (platform.includes('linux') || uaLower.includes('linux')) return 'linux';
+    return 'unknown';
   }
 
   function applyOS(osKey) {
@@ -42,21 +40,27 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const heroBtn = document.querySelector('.hero-actions .btn-primary');
     const osLabel = document.getElementById('os-detected');
     const dlOsSelect = document.getElementById('dl-os');
-
-    const isAndroid = osKey === 'android';
-    const label = labelMap[osKey] || 'Download';
-    const url = isAndroid ? '#demo' : (releases[osKey] || releases.windows);
+    const isMobile = osKey === 'android' || osKey === 'ios';
+    const isSupported = Object.prototype.hasOwnProperty.call(releases, osKey);
+    const label = labelMap[osKey] || 'Choose a desktop download';
+    const url = isSupported ? releases[osKey] : '#download';
 
     if (navCta) {
-      navCta.textContent = label;
-      navCta.href = url;
+      navCta.textContent = isMobile ? 'View desktop downloads' : label;
+      navCta.href = isMobile ? '#download' : url;
     }
     if (heroBtn) {
-      heroBtn.textContent = isAndroid ? 'Open GLB Viewer' : label;
-      heroBtn.href = url;
+      heroBtn.textContent = isMobile ? 'View desktop downloads' : label;
+      heroBtn.href = isMobile ? '#download' : url;
     }
-    if (osLabel) osLabel.textContent = 'Detected OS: ' + osKey.charAt(0).toUpperCase() + osKey.slice(1);
-    if (dlOsSelect) dlOsSelect.value = osKey;
+    if (osLabel) {
+      osLabel.textContent = isMobile
+        ? 'No installation package is currently available for ' + (osKey === 'ios' ? 'iOS' : 'Android') + '. You can still choose a Windows, macOS, or Linux download below.'
+        : (osKey === 'unknown'
+          ? 'Could not identify your operating system. Choose a desktop download below.'
+          : 'Detected OS: ' + osKey.charAt(0).toUpperCase() + osKey.slice(1));
+    }
+    if (dlOsSelect && isSupported) dlOsSelect.value = osKey;
   }
 
   const detected = detectOS();
