@@ -3,9 +3,104 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GLB Viewer | A clearer way to view 3D</title>
-  <meta name="description" content="A lightweight, private GLB viewer for opening and exploring 3D models without heavyweight software." />
+  <title>Free GLB Viewer for Windows &amp; Browser | Open 3D Models</title>
+  <meta name="description" content="Open and inspect GLB 3D models without launching a heavyweight 3D suite. Rotate, zoom and pan in a focused viewer. Local-first, open source and MIT licensed." />
+  <meta name="keywords" content="GLB viewer, free GLB viewer, online GLB viewer, 3D model viewer, open GLB file, view GLB online, GLB file opener, Windows GLB viewer, glTF viewer, lightweight 3D viewer, Three.js viewer, local 3D model viewer, inspect 3D models, Blender alternative for viewing" />
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+  <meta name="theme-color" content="#f5f4f0" />
+  <link rel="canonical" href="https://veloratech.github.io/GLB-Viewer/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="GLB Viewer" />
+  <meta property="og:title" content="GLB Viewer — Open 3D Models Without the Heavyweight Workflow" />
+  <meta property="og:description" content="Need a quick look at a 3D model? Open a GLB, rotate, zoom and inspect it in a focused viewer. Your model stays on your device." />
+  <meta property="og:url" content="https://veloratech.github.io/GLB-Viewer/" />
+  <meta property="og:image" content="https://veloratech.github.io/GLB-Viewer/social-preview.png" />
+  <meta property="og:image:alt" content="GLB Viewer interface showing a 3D model being inspected" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="GLB Viewer — A simpler way to inspect 3D models" />
+  <meta name="twitter:description" content="Open a GLB model without launching a heavyweight 3D suite. Rotate, zoom and inspect with a focused, local-first viewer." />
+  <meta name="twitter:image" content="https://veloratech.github.io/GLB-Viewer/social-preview.png" />
   <link rel="stylesheet" href="style.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://veloratech.github.io/GLB-Viewer/#website",
+        "url": "https://veloratech.github.io/GLB-Viewer/",
+        "name": "GLB Viewer",
+        "description": "A focused, open-source viewer for opening and inspecting GLB 3D models.",
+        "inLanguage": "en"
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://veloratech.github.io/GLB-Viewer/#application",
+        "name": "GLB Viewer",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Windows, macOS, Linux (browser viewer); native Open With integration currently available on Windows",
+        "browserRequirements": "A modern Chrome or Edge browser with WebGL support",
+        "softwareVersion": "1.0.0",
+        "license": "https://github.com/VeloraTech/GLB-Viewer/blob/main/LICENSE",
+        "codeRepository": "https://github.com/VeloraTech/GLB-Viewer",
+        "url": "https://veloratech.github.io/GLB-Viewer/",
+        "description": "Open and inspect GLB 3D models with rotate, zoom and pan controls. The Windows desktop workflow opens local files in Chrome; the browser demo renders selected files in the current tab without uploading the model.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "isAccessibleForFree": true
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://veloratech.github.io/GLB-Viewer/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is GLB Viewer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "GLB Viewer is a focused, open-source tool for opening and inspecting GLB 3D models without launching a full 3D production application."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I open a GLB file on Windows?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The Windows desktop workflow can register GLB Viewer in the Windows Open With menu. The launcher opens the selected model in Chrome using a local viewer session."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does GLB Viewer upload my 3D model?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The desktop workflow reads the file on your computer. The browser demo renders a file selected in the current browser tab and does not provide a model-upload endpoint. The website itself still loads web resources."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use GLB Viewer on macOS or Linux?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The standalone viewer page can be opened in a modern Chrome or Edge browser on macOS and Linux. Native Open With launchers for those platforms are not currently available."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is GLB Viewer a Blender replacement?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. GLB Viewer focuses on quick model viewing and inspection. It is not intended to replace Blender or a full 3D creation workflow."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237e8c89' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 12c0 4.714-3.786 8.5-8.5 8.5S5 16.714 5 12 8.786 3.5 13.5 3.5 22 7.286 22 12Z'/%3E%3Cpath d='M12 12L12 3'/%3E%3Cpath d='M12 12L3 12'/%3E%3Cpath d='M12 12L21 12'/%3E%3Cpath d='M12 12L12 21'/%3E%3C/svg%3E" />
 </head>
 <body>
@@ -44,7 +139,7 @@
       <div class="hero-content">
         <span class="hero-eyebrow"><span class="status-dot"></span> A focused tool for 3D files</span>
         <h1 id="hero-title">Your 3D work deserves a <em>clearer view.</em></h1>
-        <p>Open GLB models in seconds. Explore every angle, keep your files on your device, and leave heavyweight software out of the way.</p>
+        <p>Need to check a 3D model without launching a heavyweight 3D suite? Open it in GLB Viewer. Rotate, zoom, and inspect your model in a focused viewer—without sending the file to us.</p>
         <div class="hero-actions">
           <a href="#download" class="btn btn-primary">Get GLB Viewer <span aria-hidden="true">↗</span></a>
           <a href="#demo" class="btn btn-text">Explore the live viewer <span aria-hidden="true">↓</span></a>
@@ -57,7 +152,7 @@
       <div class="section-header">
         <span class="kicker">01 / GET STARTED</span>
         <h2>Small footprint.<br><em>Room to explore.</em></h2>
-        <p>A lightweight desktop viewer that opens your models directly in Chrome. Choose your platform to get started.</p>
+        <p>Start with the Windows desktop Open With workflow, or use the browser viewer to try a model. Platform options and setup details are explained below.</p>
       </div>
       <div class="download-panel">
         <p id="os-detected" class="os-detected">Detecting your operating system...</p>
@@ -79,7 +174,7 @@
       <div class="section-header">
         <span class="kicker">02 / IN THE BROWSER</span>
         <h2>Bring a model.<br><em>Find its detail.</em></h2>
-        <p>Drop in a GLB file or choose one from your device. The model is rendered locally in this tab. Nothing is uploaded.</p>
+        <p>Have a GLB or glTF file to check? Drop it here or choose it from your device. Explore the model right in this tab; the selected file is rendered locally, not uploaded to GLB Viewer.</p>
       </div>
       <div class="demo-card" data-reveal>
         <div class="demo-viewport" id="demo-viewport"></div>
