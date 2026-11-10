@@ -4,75 +4,132 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Privacy — GLB Viewer</title>
-  <meta name="description" content="GLB Viewer privacy policy. Your files never leave your computer. We never upload." />
+  <meta name="description" content="Understand how GLB Viewer handles your 3D files, browser activity, analytics and local permissions." />
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 12c0 4.714-3.786 8.5-8.5 8.5S5 16.714 5 12 8.786 3.5 13.5 3.5 22 7.286 22 12Z'/%3E%3Cpath d='M12 12L12 3'/%3E%3Cpath d='M12 12L3 12'/%3E%3Cpath d='M12 12L21 12'/%3E%3Cpath d='M12 12L12 21'/%3E%3C/svg%3E" />
 </head>
-<body>
+<body class="privacy-page">
   <a href="#main" class="skip-link">Skip to main content</a>
-
   <header class="nav-wrap">
-    <nav>
-      <a href="index.html" class="nav-brand" aria-label="GLB Viewer home">
-        <span class="nav-mark">GV</span>
-        <span>GLB Viewer</span>
-      </a>
-      <div class="nav-links">
+    <nav class="privacy-nav" aria-label="Main navigation">
+      <a href="index.html" class="nav-brand"><span class="nav-mark"><span></span></span><span>GLB Viewer</span></a>
+      <div class="privacy-nav-links">
         <a href="index.html#features">Features</a>
+        <a href="index.html#demo">Live viewer</a>
         <a href="index.html#roadmap">Roadmap</a>
-        <a href="index.html#community">Community</a>
         <a href="privacy.html" aria-current="page">Privacy</a>
       </div>
-      <a href="index.html#download" class="nav-cta">Download for Windows</a>
-      <button class="mobile-menu-btn" aria-label="Toggle menu">&#9776;</button>
+      <a href="https://github.com/VeloraTech/GLB-Viewer/releases/latest" class="nav-cta">View release <span aria-hidden="true">↗</span></a>
     </nav>
   </header>
 
-  <main id="main" style="max-width: 720px; margin: 0 auto; padding: 80px 24px 60px;">
-    <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 16px; color: var(--text-primary);">Privacy</h1>
-    <p style="color: var(--text-secondary); font-size: 1.05rem; margin-bottom: 40px;">Your files never leave your computer. We never upload.</p>
-
-    <section style="margin-bottom: 40px;">
-      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 12px; color: var(--text-primary);">1. Your models stay on your computer</h2>
-      <p style="color: var(--text-secondary); line-height: 1.7;">GLB Viewer is a local, offline application. When you open a GLB file, it is loaded entirely in your browser on your machine. Nothing is uploaded to any server. No model data, no file names, no file sizes, and no thumbnails ever leave your computer.</p>
+  <main id="main" class="privacy-main">
+    <section class="privacy-hero">
+      <span class="kicker">GLB VIEWER / PRIVACY</span>
+      <h1>Your models are yours.<br><em>Your files stay local.</em></h1>
+      <p class="privacy-lede">GLB Viewer is built to open and inspect 3D files without asking you to send those files to us. This page explains what happens on your device, what the website loads, and where the boundaries are.</p>
+      <div class="privacy-meta"><span>Plain-language privacy notice</span><span>Last updated: 10 November 2026</span></div>
     </section>
 
-    <section style="margin-bottom: 40px;">
-      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 12px; color: var(--text-primary);">2. What we track (and what we don't)</h2>
-      <p style="color: var(--text-secondary); line-height: 1.7;">We use a privacy-friendly analytics placeholder (Plausible or Umami) on the website landing page only. It tracks:</p>
-      <ul style="color: var(--text-secondary); line-height: 1.7; margin-left: 20px; margin-top: 12px;">
-        <li>Operating system (for download button relevance)</li>
-        <li>Download button clicked (which OS you chose)</li>
-        <li>Demo viewer used (whether you opened the in-browser demo)</li>
-      </ul>
-      <p style="color: var(--text-secondary); line-height: 1.7; margin-top: 12px;">We do <strong>not</strong> track file names, file sizes, models, or any personal data. <strong>We track downloads, not your models.</strong></p>
+    <section class="privacy-callout" aria-label="Privacy principle">
+      <span class="privacy-callout-mark" aria-hidden="true">01</span>
+      <div><h2>Your model is not our data.</h2><p>Opening a model in the desktop viewer or choosing a file in the browser demo does not upload that model to GLB Viewer. Rendering and inspection happen locally in your browser or on your computer.</p></div>
     </section>
 
-    <section style="margin-bottom: 40px;">
-      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 12px; color: var(--text-primary);">3. File association permission</h2>
-      <p style="color: var(--text-secondary); line-height: 1.7;">Registering GLB Viewer as the "Open With" handler for .glb files requires write access to the Windows registry. We need this access so you can right-click a file and open it with GLB Viewer. Your files never leave your computer. We never upload.</p>
-    </section>
+    <div class="privacy-layout">
+      <aside class="privacy-aside">
+        <span class="kicker">ON THIS PAGE</span>
+        <a href="#files">Your 3D files</a>
+        <a href="#website">The website and demo</a>
+        <a href="#analytics">Analytics</a>
+        <a href="#permissions">Permissions and installation</a>
+        <a href="#third-parties">External services</a>
+        <a href="#retention">Storage and retention</a>
+        <a href="#choices">Your choices</a>
+        <a href="#contact">Questions and updates</a>
+      </aside>
 
-    <section style="margin-bottom: 40px;">
-      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 12px; color: var(--text-primary);">4. No accounts, no personal data</h2>
-      <p style="color: var(--text-secondary); line-height: 1.7;">GLB Viewer does not require an account. We do not collect email addresses, names, or any personally identifiable information.</p>
-    </section>
+      <article class="privacy-content">
+        <section id="files">
+          <span class="privacy-number">01 / YOUR FILES</span>
+          <h2>What happens when you open a 3D model?</h2>
+          <p>The desktop viewer is designed to work locally. When you open a <code>.glb</code> file through the Windows Open With workflow, the launcher serves the viewer on your own machine and the model is read by that local viewer. The model is not sent to a GLB Viewer server as part of that workflow.</p>
+          <p>The browser demo follows the same local-file principle. When you select or drop a <code>.glb</code> or <code>.gltf</code> file, the page creates a temporary browser object URL and passes it to the 3D loader. The model is rendered in the current browser tab; the page does not contain an upload endpoint for your model.</p>
+          <ul>
+            <li>We do not ask you to create an account to view a model.</li>
+            <li>The demo does not transmit the model file, its contents, or a thumbnail to our application backend.</li>
+            <li>The browser object URL is temporary and is revoked after loading or when an error occurs.</li>
+            <li>Closing the tab ends that page session; the demo does not provide cloud model storage.</li>
+          </ul>
+          <p><strong>Important distinction:</strong> local rendering does not mean the entire website is offline. The landing page and browser demo load web resources, described below. The standalone desktop viewer is the offline-oriented part of the product.</p>
+        </section>
 
-    <section style="margin-bottom: 40px;">
-      <h2 style="font-size: 1.35rem; font-weight: 800; margin-bottom: 12px; color: var(--text-primary);">5. Questions</h2>
-      <p style="color: var(--text-secondary); line-height: 1.7;">If you have questions about this privacy notice, open an issue on GitHub.</p>
-      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 12px;">&copy; 2024 GLB Viewer. Open source, MIT licensed.</p>
-    </section>
+        <section id="website">
+          <span class="privacy-number">02 / WEBSITE AND DEMO</span>
+          <h2>The website still makes web requests.</h2>
+          <p>To display the landing page and its interactive preview, your browser requests the website files and the Three.js rendering modules from the jsDelivr content delivery network. The hero preview is generated locally in the page. These requests are for website code and interface resources, not for uploading your selected model.</p>
+          <p>Your browser and the services that deliver the website may process standard connection information, such as an IP address, browser details, requested resource and request time, as part of serving web content. Those services operate under their own policies and infrastructure.</p>
+          <p>If you choose a file for the in-browser demo, the file is read by the page in your browser. It is not included in the normal website resource requests.</p>
+        </section>
+
+        <section id="analytics">
+          <span class="privacy-number">03 / ANALYTICS</span>
+          <h2>What the current site measures.</h2>
+          <p>The landing page currently includes the Plausible Analytics script, configured with the site domain <code>glb-viewer.pages.dev</code>. The site also contains a small event-tracking placeholder that currently writes event labels to the browser console; it does not send those custom events to an analytics endpoint.</p>
+          <p>Because the configured Plausible domain may not match the address from which you are visiting the site, analytics may not record visits to every deployment. We do not use the current custom event placeholder to collect model names, model contents, file sizes, thumbnails or file paths.</p>
+          <p>For details about how Plausible handles analytics data, read <a href="https://plausible.io/data-policy" target="_blank" rel="noopener">Plausible's data policy</a>. The provider's policy applies to its own processing.</p>
+        </section>
+
+        <section id="permissions">
+          <span class="privacy-number">04 / PERMISSIONS</span>
+          <h2>What installation changes on your computer.</h2>
+          <p>On Windows, registering GLB Viewer as an Open With option requires adding a file association to the Windows Registry. This allows Windows to offer GLB Viewer when you right-click a <code>.glb</code> file. The registry change is local to your computer and is not a permission to access or upload your model library.</p>
+          <p>The viewer needs access to the file you explicitly open so it can display it. It does not need an account, an online storage account, or a server-side copy of your model.</p>
+        </section>
+
+        <section id="third-parties">
+          <span class="privacy-number">05 / EXTERNAL SERVICES</span>
+          <h2>Services outside the viewer.</h2>
+          <p>The website links to GitHub for source code, releases, issues and community discussions. The landing page also loads Three.js modules from jsDelivr and includes the Plausible script described above. When your browser contacts these providers, their own privacy terms and technical logs apply.</p>
+          <p>GLB Viewer does not control the independent data practices of GitHub, jsDelivr, Plausible, your browser, your operating system or your network provider. Review their policies if you want details about their processing.</p>
+        </section>
+
+        <section id="retention">
+          <span class="privacy-number">06 / STORAGE AND RETENTION</span>
+          <h2>No GLB Viewer cloud library.</h2>
+          <p>The product does not currently provide user accounts, cloud sync, remote model storage or a server-side model history. The browser demo keeps the selected file available to the current page session for rendering; it does not create a persistent cloud copy.</p>
+          <p>Any local copies or files you choose to keep remain under your control. Browser cache, downloaded release files and operating-system records are managed by your browser or operating system, not by a GLB Viewer account.</p>
+        </section>
+
+        <section id="choices">
+          <span class="privacy-number">07 / YOUR CHOICES</span>
+          <h2>You decide what to open.</h2>
+          <ul>
+            <li>You can use the standalone viewer without visiting the website after you have the required files on your computer.</li>
+            <li>You can avoid the browser demo and use the desktop viewer instead.</li>
+            <li>You can choose not to load the landing page if you do not want its third-party website resources requested.</li>
+            <li>You can inspect the source code and raise a concern through the public repository.</li>
+          </ul>
+          <p>Do not open a file on a device or in a browser you do not trust. Keep your operating system and browser up to date, as you would with any software that reads local files.</p>
+        </section>
+
+        <section id="contact">
+          <span class="privacy-number">08 / QUESTIONS AND UPDATES</span>
+          <h2>Privacy should be inspectable.</h2>
+          <p>If something in this notice is unclear, or you believe the application behaves differently from what is described, please open a GitHub issue. Include the page or feature involved, but do not attach private model files or other sensitive material.</p>
+          <p>This notice may change as the product and its website services change. The revision date above identifies the latest version published with this site. Material changes should be reflected here rather than hidden in a generic promise.</p>
+          <div class="privacy-actions">
+            <a class="btn btn-primary" href="https://github.com/VeloraTech/GLB-Viewer/issues" target="_blank" rel="noopener">Ask a privacy question <span aria-hidden="true">↗</span></a>
+            <a class="btn btn-text" href="https://github.com/VeloraTech/GLB-Viewer" target="_blank" rel="noopener">Inspect the source code <span aria-hidden="true">↗</span></a>
+          </div>
+        </section>
+      </article>
+    </div>
   </main>
 
-  <footer style="border-top: 1px solid var(--border); background: var(--bg-surface); padding: 48px 24px 32px;">
-    <div class="footer-bottom" style="max-width: 720px; margin: 0 auto; padding-top: 32px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; align-items: center; text-align: center; font-size: 0.85rem; color: var(--text-muted);">
-      <div class="footer-links" style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">
-        <a href="index.html">Back to homepage</a>
-        <a href="https://github.com/VeloraTech/GLB-Viewer/issues" target="_blank" rel="noopener">Open an issue</a>
-      </div>
-      <p>&copy; 2024 GLB Viewer. Open source, MIT licensed.</p>
-    </div>
+  <footer class="privacy-footer">
+    <a href="index.html">GLB Viewer</a>
+    <span>Open source · MIT License</span>
+    <div><a href="https://github.com/VeloraTech/GLB-Viewer/releases" target="_blank" rel="noopener">Releases</a><a href="https://github.com/VeloraTech/GLB-Viewer" target="_blank" rel="noopener">GitHub</a></div>
   </footer>
 </body>
 </html>
