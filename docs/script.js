@@ -39,6 +39,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const navCta = document.querySelector('.nav-cta');
     const heroBtn = document.querySelector('.hero-actions .btn-primary');
     const osLabel = document.getElementById('os-detected');
+    const downloadBtn = document.getElementById('dl-btn');
     const dlOsSelect = document.getElementById('dl-os');
     const isMobile = osKey === 'android' || osKey === 'ios';
     const isSupported = Object.prototype.hasOwnProperty.call(releases, osKey);
@@ -52,6 +53,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (heroBtn) {
       heroBtn.textContent = isMobile ? 'View desktop downloads' : label;
       heroBtn.href = isMobile ? '#download' : url;
+    }
+    if (downloadBtn) {
+      downloadBtn.textContent = isMobile ? 'Choose a desktop platform' : label;
+      downloadBtn.href = isMobile ? '#dl-other' : url;
+      downloadBtn.insertAdjacentHTML('beforeend', ' <span aria-hidden="true">↗</span>');
     }
     if (osLabel) {
       osLabel.textContent = isMobile
@@ -120,7 +126,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         demoViewport.classList.remove('drag-over');
         const file = e.dataTransfer.files[0];
         if (file && (file.name.endsWith('.glb') || file.name.endsWith('.gltf') || file.type.includes('model'))) {
-          track('demo_drop', { file: file.name });
+          track('demo_drop', { extension: file.name.split('.').pop().toLowerCase() });
           loadDemoModel(file);
         }
       }, false);
@@ -141,7 +147,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
             return;
           }
 
-          track('demo_pick', { file: file.name });
+          track('demo_pick', { extension });
           loadDemoModel(file);
 
           // Clear after starting the load so the same file can be selected again.
@@ -246,4 +252,63 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         showDemoError('Failed to load this model. Use a valid GLB file and try again.');
       });
     }
+
+  // Compact mobile navigation with keyboard and touch support.
+  const menuButton = document.querySelector('.mobile-menu-btn');
+  const primaryNavigation = document.getElementById('primary-navigation');
+  if (menuButton && primaryNavigation) {
+    const closeMenu = () => {
+      menuButton.setAttribute('aria-expanded', 'false');
+      menuButton.setAttribute('aria-label', 'Open navigation');
+      primaryNavigation.classList.remove('is-open');
+    };
+
+    menuButton.addEventListener('click', () => {
+      const isOpen = menuButton.getAttribute('aria-expanded') === 'true';
+      menuButton.setAttribute('aria-expanded', String(!isOpen));
+      menuButton.setAttribute('aria-label', isOpen ? 'Open navigation' : 'Close navigation');
+      primaryNavigation.classList.toggle('is-open', !isOpen);
+    });
+
+    primaryNavigation.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', closeMenu);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeMenu();
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!primaryNavigation.contains(event.target) && !menuButton.contains(event.target)) closeMenu();
+    });
+  }
+
+  // Reveal content as it enters the viewport. Keep all content visible when
+  // IntersectionObserver is unavailable or reduced motion is requested.
+  const navWrap = document.querySelector('.nav-wrap');
+  const revealItems = document.querySelectorAll('[data-reveal]');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (navWrap) {
+    const updateNav = () => navWrap.classList.toggle('is-scrolled', window.scrollY > 12);
+    updateNav();
+    window.addEventListener('scroll', updateNav, { passive: true });
+  }
+
+  if (!reduceMotion && 'IntersectionObserver' in window) {
+    document.documentElement.classList.add('js-motion');
+    const revealObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -7% 0px' });
+
+    revealItems.forEach((item, index) => {
+      item.style.setProperty('--reveal-delay', (index % 4) * 75 + 'ms');
+      revealObserver.observe(item);
+    });
+  }
+
   })();
