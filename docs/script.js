@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 (function () {
   // The current v1.0.0 release has no attached installer assets.
   // Link to the real release page rather than inventing download filenames.
-  const releasePage = 'https://github.com/VeloraTech/GLB-Viewer/releases/latest';
+  const releasePage = 'https://github.com/VeloraTech/GLB-Viewer/releases/download/v1.0.2/GLB-Viewer-Setup-v1.0.2.exe';
   const platformGuide = 'https://github.com/VeloraTech/GLB-Viewer/blob/main/PLATFORM_SUPPORT.md';
   const releases = {
     windows: releasePage,
