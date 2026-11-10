@@ -496,3 +496,44 @@ footer { border-top: 1px solid var(--line); background: rgba(255,255,255,.22); p
   .privacy-actions .btn-primary { width: 100%; }
   .privacy-footer { flex-direction: column; align-items: flex-start; }
 }
+
+/* Privacy navigation: use the same accessible mobile menu behaviour as the home page. */
+@media (max-width: 760px) {
+  .privacy-nav { position: relative; }
+  .privacy-nav .mobile-menu-btn {
+    flex: 0 0 40px; width: 40px; height: 40px; display: flex;
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 5px; border: 1px solid var(--line); border-radius: 50%;
+    background: rgba(255,255,255,.45); cursor: pointer;
+  }
+  .privacy-nav .mobile-menu-btn span {
+    width: 14px; height: 1px; background: var(--ink);
+    transition: transform 250ms ease;
+  }
+  .privacy-nav .mobile-menu-btn[aria-expanded="true"] span:first-child {
+    transform: translateY(3px) rotate(45deg);
+  }
+  .privacy-nav .mobile-menu-btn[aria-expanded="true"] span:last-child {
+    transform: translateY(-3px) rotate(-45deg);
+  }
+  .privacy-nav .privacy-nav-links {
+    position: absolute; z-index: 30; top: calc(100% + 1px); left: 0; right: 0;
+    order: initial; display: flex; flex-direction: column; align-items: stretch;
+    justify-content: flex-start; gap: 0; width: 100%; padding: 8px 24px 18px;
+    border: 1px solid var(--line); border-top: 0; border-radius: 0 0 18px 18px;
+    background: rgba(248,247,243,.98); backdrop-filter: blur(18px);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: translateY(-8px);
+    transition: opacity 220ms ease, transform 220ms ease, visibility 220ms;
+  }
+  .privacy-nav .privacy-nav-links.is-open {
+    opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0);
+  }
+  .privacy-nav .privacy-nav-links a {
+    padding: 13px 0; border-bottom: 1px solid var(--line); font-size: .82rem;
+  }
+  .privacy-nav .privacy-nav-links a:last-child { border-bottom: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .privacy-nav .privacy-nav-links, .privacy-nav .mobile-menu-btn span { transition: none; }
+}
