@@ -6,6 +6,15 @@
   <title>Privacy — GLB Viewer</title>
   <meta name="description" content="Understand how GLB Viewer handles your 3D files, browser activity, analytics and local permissions." />
   <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+      }
+    }
+  </script>
+
 </head>
 <body class="privacy-page">
   <a href="#main" class="skip-link">Skip to main content</a>
@@ -22,6 +31,8 @@
       <button class="mobile-menu-btn" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false"><span></span><span></span></button>
     </nav>
   </header>
+
+  <div class="page-model-layer" id="hero-3d" aria-hidden="true"></div>
 
   <main id="main" class="privacy-main">
     <section class="privacy-hero">
@@ -134,26 +145,137 @@
   </footer>
   <script>
     (() => {
-      const button = document.querySelector('.mobile-menu-btn');
-      const navigation = document.getElementById('primary-navigation');
+      const button = document.querySelector('.privacy-nav .mobile-menu-btn');
+      const navigation = document.querySelector('.privacy-nav #primary-navigation');
       if (!button || !navigation) return;
-      const closeMenu = () => {
-        button.setAttribute('aria-expanded', 'false');
-        button.setAttribute('aria-label', 'Open navigation');
-        navigation.classList.remove('is-open');
+      const setOpen = open => {
+        button.setAttribute('aria-expanded', String(open));
+        button.setAttribute('aria-label', open ? 'Close navigation' : 'Open navigation');
+        navigation.classList.toggle('is-open', open);
       };
-      button.addEventListener('click', () => {
-        const opening = button.getAttribute('aria-expanded') !== 'true';
-        button.setAttribute('aria-expanded', String(opening));
-        button.setAttribute('aria-label', opening ? 'Close navigation' : 'Open navigation');
-        navigation.classList.toggle('is-open', opening);
+      button.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setOpen(button.getAttribute('aria-expanded') !== 'true');
       });
-      navigation.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
-      document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenu(); });
+      navigation.addEventListener('click', event => {
+        if (event.target.closest('a')) setOpen(false);
+      });
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') setOpen(false);
+      });
       document.addEventListener('click', event => {
-        if (!navigation.contains(event.target) && !button.contains(event.target)) closeMenu();
+        if (!navigation.contains(event.target) && !button.contains(event.target)) setOpen(false);
       });
     })();
   </script>
-</body>
+
+<script type="module">
+    import * as THREE from 'three';
+    
+
+    const container = document.getElementById('hero-3d');
+
+    let scene;
+    let camera;
+    let renderer;
+    let model;
+    let targetScrollRotation = 0;
+    let scrollX = 0;
+    let lastFrameTime = 0;
+    let autoRotation = 0;
+
+    const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+    function getPageScrollProgress() {
+      const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+      return clamp(window.scrollY / scrollable, 0, 1);
+    }
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = null;
+
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / Math.max(container.clientHeight, 1), 0.1, 100);
+      camera.position.set(0, 0, 4);
+
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        powerPreference: 'high-performance'
+      });
+      renderer.setClearColor(0x000000, 0);
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      renderer.toneMapping = THREE.ReinhardToneMapping;
+      container.appendChild(renderer.domElement);
+
+      const ambient = new THREE.AmbientLight(0xffffff, 0.65);
+      scene.add(ambient);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
+      keyLight.position.set(3, 5, 4);
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0x8ba8ff, 0.7);
+      fillLight.position.set(-4, 1, -3);
+      scene.add(fillLight);
+
+      // Build the hero's sample ring locally. This avoids a fragile third-party
+      // binary request, so the decorative preview is available even offline.
+      const ringGeometry = new THREE.TorusGeometry(0.92, 0.29, 48, 160);
+      const ringMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xd7d8d1,
+        metalness: 0.42,
+        roughness: 0.22,
+        iridescence: 0.92,
+        iridescenceIOR: 1.32,
+        iridescenceThicknessRange: [120, 620],
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.14
+      });
+      model = new THREE.Mesh(ringGeometry, ringMaterial);
+      model.rotation.set(0.38, 0.18, -0.22);
+      model.position.x = -5.5;
+      scene.add(model);
+
+      window.addEventListener('resize', onResize, { passive: true });
+      window.addEventListener('scroll', updateScrollTarget, { passive: true });
+      updateScrollTarget();
+      animate();
+    }
+
+    function updateScrollTarget() {
+      const progress = getPageScrollProgress();
+      // Move the ring from right to left as the visitor scrolls through the hero.
+      scrollX = Math.sin(progress * Math.PI * 2.15) * 1.65;
+      // A full, smooth turn is tied to the same scroll progress.
+      targetScrollRotation = progress * Math.PI * 2.4;
+    }
+
+    function onResize() {
+      if (!camera || !renderer) return;
+      camera.aspect = container.clientWidth / Math.max(container.clientHeight, 1);
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+
+    function animate(timestamp = 0) {
+      requestAnimationFrame(animate);
+
+      const delta = lastFrameTime ? Math.min((timestamp - lastFrameTime) / 1000, 0.05) : 0;
+      lastFrameTime = timestamp;
+
+      if (model) {
+        // Keep a gentle idle spin, while scroll adds the larger motion.
+        autoRotation += delta * 0.16;
+        model.rotation.y = autoRotation + targetScrollRotation;
+        model.position.x += (scrollX - model.position.x) * 0.045;
+      }
+
+      if (renderer && scene && camera) renderer.render(scene, camera);
+    }
+
+    init();
+  </script></body>
 </html>

@@ -141,10 +141,7 @@ nav {
   position: relative; min-height: min(790px, calc(100svh - 78px)); min-height: clamp(650px, 84svh, 850px);
   display: flex; align-items: center; overflow: hidden; isolation: isolate;
   padding: 100px max(32px, calc((100vw - var(--content)) / 2)) 92px;
-  background:
-    radial-gradient(ellipse at 73% 42%, rgba(219, 226, 218, .86), transparent 34%),
-    radial-gradient(ellipse at 83% 65%, rgba(221, 207, 222, .42), transparent 32%),
-    linear-gradient(145deg, #f5f4f0 0%, #eeede8 100%);
+  background: transparent;
 }
 .hero-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .hero-bg::before {
@@ -574,3 +571,44 @@ body > main, body > footer, body > .privacy-main, body > .privacy-footer {
 }
 @media (max-width: 760px) { .page-model-layer { opacity: .25; } }
 @media (prefers-reduced-motion: reduce) { .page-model-layer { opacity: .16; } }
+
+
+/* The hero should not paint over the fixed, page-wide model. */
+.hero { background: transparent !important; }
+.hero-bg { display: none !important; }
+
+/* Reliable privacy navigation: links are hidden until the toggle is opened. */
+@media (max-width: 760px) {
+  .privacy-nav { position: relative; }
+  .privacy-nav .mobile-menu-btn {
+    display: flex !important; flex: 0 0 40px; width: 40px; height: 40px;
+    align-items: center; justify-content: center; flex-direction: column;
+    gap: 5px; position: relative; z-index: 40; cursor: pointer;
+  }
+  .privacy-nav .privacy-nav-links {
+    display: flex !important; position: absolute !important;
+    top: calc(100% + 1px); left: 0; right: 0; z-index: 35;
+    flex-direction: column; align-items: stretch; justify-content: flex-start;
+    width: 100%; margin: 0; padding: 8px 24px 18px;
+    background: rgba(248,247,243,.98); border: 1px solid var(--line);
+    border-top: 0; border-radius: 0 0 18px 18px;
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transform: translateY(-8px);
+    transition: opacity 220ms ease, transform 220ms ease, visibility 220ms;
+  }
+  .privacy-nav .privacy-nav-links.is-open {
+    opacity: 1; visibility: visible; pointer-events: auto;
+    transform: translateY(0);
+  }
+  .privacy-nav .privacy-nav-links a {
+    display: block; padding: 13px 0; border-bottom: 1px solid var(--line);
+  }
+  .privacy-nav .privacy-nav-links a:last-child { border-bottom: 0; }
+}
+@media (min-width: 761px) {
+  .privacy-nav .mobile-menu-btn { display: none !important; }
+  .privacy-nav .privacy-nav-links {
+    position: static; opacity: 1; visibility: visible; pointer-events: auto;
+    transform: none; border: 0; background: transparent;
+  }
+}
