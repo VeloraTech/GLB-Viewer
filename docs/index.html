@@ -223,7 +223,7 @@
     let camera;
     let renderer;
     let model;
-    let scrollRotation = 0;
+    let targetScrollRotation = 0;
     let scrollX = 0;
     let lastFrameTime = 0;
     let autoRotation = 0;
@@ -270,6 +270,7 @@
       loader.load(modelUrl, (gltf) => {
         model = gltf.scene;
         scene.add(model);
+        updateScrollTarget();
 
         const bounds = new THREE.Box3().setFromObject(model);
         const center = bounds.getCenter(new THREE.Vector3());
@@ -296,12 +297,11 @@
     }
 
     function updateScrollTarget() {
-      if (!model) return;
       const progress = getHeroScrollProgress();
       // Move the ring from right to left as the visitor scrolls through the hero.
       scrollX = (progress - 0.5) * 3.2;
       // A full, smooth turn is tied to the same scroll progress.
-      model.userData.targetScrollRotation = (1 - progress) * Math.PI * 2;
+      targetScrollRotation = (1 - progress) * Math.PI * 2;
     }
 
     function onResize() {
@@ -320,8 +320,7 @@
       if (model) {
         // Keep a gentle idle spin, while scroll adds the larger motion.
         autoRotation += delta * 0.16;
-        const targetRotation = model.userData.targetScrollRotation || 0;
-        model.rotation.y = autoRotation + targetRotation;
+        model.rotation.y = autoRotation + targetScrollRotation;
         model.position.x += (scrollX - model.position.x) * 0.045;
       }
 
