@@ -654,3 +654,46 @@ footer {
 }
 
 .skip-link:focus { top: 0; }
+
+
+/* Mobile-friendly file picker: keep the native input label-associated and
+   visually hidden rather than display:none so touch browsers can activate it. */
+.demo-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+  border: 0;
+}
+
+.demo-file-picker {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.demo-file-input:focus-visible + .demo-file-picker,
+.demo-file-picker:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .demo-card {
+    padding: 16px;
+  }
+
+  .demo-file-picker {
+    width: 100%;
+    min-height: 48px;
+  }
+
+  #demo-upload-btn {
+    width: 100%;
+    min-height: 48px;
+  }
+}
