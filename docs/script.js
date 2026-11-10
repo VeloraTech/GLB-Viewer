@@ -85,7 +85,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     // Demo section: drag and drop GLB support
     const demoViewport = document.getElementById('demo-viewport');
     if (demoViewport) {
-      // Prevent default drag behaviors (avoid about:blank#blocked navigation)
+      // Prevent default drag behaviors on document (avoid about:blank#blocked navigation)
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
+        document.addEventListener(eventName, (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }, false);
+      });
+
+      // Prevent default drag behaviors on viewport
       ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
         demoViewport.addEventListener(eventName, (e) => {
           e.preventDefault();
