@@ -3,7 +3,7 @@
    The model is the artwork. Interface elements stay quiet and precise. */
 
 :root {
-  color-scheme: light;
+  color-scheme: only light;
   --paper: #f2f1ed;
   --paper-bright: #fbfaf7;
   --ink: #202321;
@@ -403,9 +403,11 @@ footer { border-top: 1px solid var(--line); background: rgba(255,255,255,.22); p
   .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 480px) {
-  .nav-brand { font-size: .9rem; }
-  .nav-mark { width: 27px; height: 27px; }
-  .nav-cta { font-size: .68rem; }
+  nav { width: calc(100% - 32px); gap: 8px; }
+  .nav-brand { min-width: 0; gap: 7px; font-size: .86rem; }
+  .nav-mark { flex: 0 0 27px; width: 27px; height: 27px; }
+  .nav-cta { min-width: 0; padding: 8px 10px; font-size: .64rem; gap: 6px; }
+  .mobile-menu-btn { flex: 0 0 38px; width: 38px; height: 38px; }
   .hero { padding: 86px 22px 82px; }
   .hero h1 { font-size: clamp(3rem, 13.5vw, 4rem); }
   .hero-actions { align-items: flex-start; flex-direction: column; gap: 10px; }
