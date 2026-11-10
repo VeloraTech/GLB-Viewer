@@ -239,7 +239,7 @@
 
     function init() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0f1115);
+      scene.background = null;
 
       camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
       camera.position.set(0, 0, 4);
@@ -249,6 +249,7 @@
         alpha: true,
         powerPreference: 'high-performance'
       });
+      renderer.setClearColor(0x000000, 0);
       renderer.setSize(container.clientWidth, container.clientHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       renderer.toneMapping = THREE.ReinhardToneMapping;
@@ -270,6 +271,23 @@
 
       loader.load(modelUrl, (gltf) => {
         model = gltf.scene;
+        model.traverse((node) => {
+          if (!node.isMesh || !node.material) return;
+          const originalMaterials = Array.isArray(node.material) ? node.material : [node.material];
+          const iridescentMaterials = originalMaterials.map((original) => {
+            const material = new THREE.MeshPhysicalMaterial();
+            material.copy(original);
+            material.iridescence = 0.82;
+            material.iridescenceIOR = 1.28;
+            material.iridescenceThicknessRange = [120, 560];
+            material.clearcoat = 0.7;
+            material.clearcoatRoughness = 0.18;
+            material.metalness = Math.max(material.metalness || 0, 0.28);
+            material.roughness = Math.min(material.roughness || 0.32, 0.3);
+            return material;
+          });
+          node.material = Array.isArray(node.material) ? iridescentMaterials : iridescentMaterials[0];
+        });
         scene.add(model);
         updateScrollTarget();
 
