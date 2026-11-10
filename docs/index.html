@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GLB Viewer — Offline, private, right-click fast</title>
-  <meta name="description" content="A 1-folder offline GLB viewer. Right-click any GLB, Open With, GLB Viewer. No install, no internet, no Blender." />
+  <title>GLB Viewer | A clearer way to view 3D</title>
+  <meta name="description" content="A lightweight, private GLB viewer for opening and exploring 3D models without heavyweight software." />
   <link rel="stylesheet" href="style.css" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233b82f6' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 12c0 4.714-3.786 8.5-8.5 8.5S5 16.714 5 12 8.786 3.5 13.5 3.5 22 7.286 22 12Z'/%3E%3Cpath d='M12 12L12 3'/%3E%3Cpath d='M12 12L3 12'/%3E%3Cpath d='M12 12L21 12'/%3E%3Cpath d='M12 12L12 21'/%3E%3C/svg%3E" />
 </head>
@@ -14,23 +14,23 @@
   <header class="nav-wrap">
     <nav>
       <a href="#" class="nav-brand" aria-label="GLB Viewer home">
-        <span class="nav-mark">GV</span>
+        <span class="nav-mark" aria-hidden="true"><span></span></span>
         <span>GLB Viewer</span>
       </a>
-      <div class="nav-links">
-        <a href="#features">Features</a>
+      <div class="nav-links" id="primary-navigation">
+        <a href="#features">The essentials</a>
+        <a href="#demo">Live viewer</a>
         <a href="#roadmap">Roadmap</a>
-        <a href="#community">Community</a>
         <a href="privacy.html">Privacy</a>
       </div>
-      <a href="#download" class="nav-cta">Download for Windows</a>
-      <button class="mobile-menu-btn" aria-label="Toggle menu">&#9776;</button>
+      <a href="#download" class="nav-cta">Get the viewer <span aria-hidden="true">↗</span></a>
+      <button class="mobile-menu-btn" type="button" aria-label="Open navigation" aria-controls="primary-navigation" aria-expanded="false"><span></span><span></span></button>
     </nav>
   </header>
 
   <main id="main">
-    <section class="hero" id="hero">
-      <div class="hero-bg"></div>
+    <section class="hero" id="hero" aria-labelledby="hero-title">
+      <div class="hero-bg" aria-hidden="true"><span class="hero-orbit hero-orbit-one"></span><span class="hero-orbit hero-orbit-two"></span></div>
       <div class="hero-3d" id="hero-3d"></div>
       <div class="hero-loading" id="hero-loading">
         <div class="hero-spinner"></div>
@@ -41,66 +41,66 @@
         <p>The 3D demo could not be displayed. You can still download and use the viewer locally.</p>
       </div>
       <div class="hero-content">
-        <span class="hero-eyebrow">Offline &bull; Private &bull; No install</span>
-        <h1>View GLB files in seconds.</h1>
-        <p>Right-click any GLB file, Open With GLB Viewer, and it opens in Chrome. Your models never leave your computer.</p>
+        <span class="hero-eyebrow"><span class="status-dot"></span> A focused tool for 3D files</span>
+        <h1 id="hero-title">Your 3D work deserves a <em>clearer view.</em></h1>
+        <p>Open GLB models in seconds. Explore every angle, keep your files on your device, and leave heavyweight software out of the way.</p>
         <div class="hero-actions">
-          <a href="#download" class="btn btn-primary">Download for Windows</a>
-          <a href="#demo" class="btn btn-secondary">Try the demo</a>
+          <a href="#download" class="btn btn-primary">Get GLB Viewer <span aria-hidden="true">↗</span></a>
+          <a href="#demo" class="btn btn-text">Explore the live viewer <span aria-hidden="true">↓</span></a>
         </div>
-      </div>
+      <div class="hero-footnote"><span>01 / VIEW WITHOUT THE WEIGHT</span><span>LOCAL FIRST / OPEN SOURCE</span></div>
     </section>
 
-    <section class="section" id="download">
+    <section class="section download-section" id="download" data-reveal>
       <div class="section-header">
-        <span class="kicker">Download</span>
-        <h2>Get GLB Viewer</h2>
-        <p>Buttons link to GitHub Releases. Pages hosts the site; Releases host the exe / MSI files.</p>
+        <span class="kicker">01 / GET STARTED</span>
+        <h2>Small footprint.<br><em>Room to explore.</em></h2>
+        <p>A lightweight desktop viewer that opens your models directly in Chrome. Choose your platform to get started.</p>
       </div>
-      <div class="demo-card" style="max-width: 560px; margin: 0 auto;">
-        <p id="os-detected" style="color: var(--text-secondary); margin-bottom: 16px; font-size: 0.95rem;">Detecting your OS…</p>
-        <a href="#" id="dl-btn" class="btn btn-primary" style="width: 100%; justify-content: center;">Download for Windows</a>
-        <div id="dl-other" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
-          <label style="display: block; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 8px;">Or choose another OS:</label>
-          <select id="dl-os" style="width: 100%; padding: 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-surface-lift); color: var(--text-primary); margin-bottom: 12px;">
+      <div class="download-panel">
+        <p id="os-detected" class="os-detected">Detecting your operating system...</p>
+        <a href="#" id="dl-btn" class="btn btn-primary download-main">Download for Windows <span aria-hidden="true">↗</span></a>
+        <div id="dl-other" class="download-other">
+          <label for="dl-os">Choose another platform</label>
+          <select id="dl-os">
             <option value="windows">Windows</option>
             <option value="mac">Mac</option>
             <option value="linux">Linux</option>
           </select>
-          <button id="dl-custom" class="btn btn-secondary" style="width: 100%;">Download</button>
+          <button id="dl-custom" class="btn btn-secondary">Continue <span aria-hidden="true">↗</span></button>
         </div>
-        <p class="note" style="margin-top: 16px; font-size: 0.85rem;">Placeholder Release URLs for now. Replace with real GitHub Releases links before publishing.</p>
+        <p class="download-note">Your models stay on your device. Desktop packages are distributed through GitHub Releases.</p>
       </div>
     </section>
 
-    <section class="section" id="demo">
+    <section class="section demo-section" id="demo" data-reveal>
       <div class="section-header">
-        <span class="kicker">Try it now</span>
-        <h2>Test the viewer in your browser</h2>
-        <p>Drag and drop a GLB file below, or click to pick one. No upload — everything runs locally in this tab.</p>
+        <span class="kicker">02 / IN THE BROWSER</span>
+        <h2>Bring a model.<br><em>Find its detail.</em></h2>
+        <p>Drop in a GLB file or choose one from your device. The model is rendered locally in this tab. Nothing is uploaded.</p>
       </div>
-      <div class="demo-card">
+      <div class="demo-card" data-reveal>
         <div class="demo-viewport" id="demo-viewport"></div>
-        <div class="demo-hint">Drag &amp; drop a GLB here &bull; Scroll to zoom &bull; Drag to rotate &bull; Right-drag to pan</div>
-        <label for="demo-file-input" class="btn btn-secondary demo-file-picker" style="margin-top: 12px;">Choose GLB file</label>
+        <div class="demo-controls"><p class="demo-hint">Drag to rotate <span></span> Scroll or pinch to zoom <span></span> Right-drag to pan</p>
+          <label for="demo-file-input" class="btn btn-secondary demo-file-picker">Choose a 3D file <span aria-hidden="true">↗</span></label></div>
         <input type="file" id="demo-file-input" class="demo-file-input" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" />
       </div>
     </section>
 
-    <section class="section" id="features">
+    <section class="section features-section" id="features" data-reveal>
       <div class="section-header">
-        <span class="kicker">Why GLB Viewer</span>
-        <h2>Built for speed and privacy</h2>
-        <p>One folder. No Blender. No internet. Your files stay on your computer.</p>
+        <span class="kicker">03 / THE ESSENTIALS</span>
+        <h2>Everything you need.<br><em>Nothing in the way.</em></h2>
+        <p>A simple viewing experience, designed around the model instead of the software.</p>
       </div>
       <div class="why-grid">
-        <div class="why-card">
+        <div class="why-card" data-reveal>
           <h3>Right-click to open</h3>
           <p>Register GLB Viewer once, then right-click any GLB file and choose Open With &gt; GLB Viewer.</p>
         </div>
         <div class="why-card">
           <h3>No internet required</h3>
-          <p>Everything runs offline. Three.js and all assets live in the repo — no CDN, no unpkg, no network calls.</p>
+          <p>Everything runs offline. Three.js and all assets live in the repo. no CDN, no unpkg, no network calls.</p>
         </div>
         <div class="why-card">
           <h3>Your files never leave your PC</h3>
@@ -113,15 +113,15 @@
       </div>
     </section>
 
-    <section class="section" id="roadmap">
+    <section class="section roadmap-section" id="roadmap" data-reveal>
       <div class="section-header">
-        <span class="kicker">What's next</span>
-        <h2>Roadmap preview</h2>
-        <p>V1 is shipping now. Future phases add lighting controls, transforms, Mac/Linux launchers, and PWA install.</p>
+        <span class="kicker">04 / IN PROGRESS</span>
+        <h2>Built to grow<br><em>with your workflow.</em></h2>
+        <p>The first release focuses on viewing. The roadmap stays intentional, with useful tools added when they are ready.</p>
       </div>
       <div class="roadmap-preview">
         <div class="roadmap-phases">
-          <div class="phase">
+          <div class="phase" data-reveal>
             <span class="kicker">V1</span>
             <h4>View &amp; Interact</h4>
             <p>Scroll, zoom, pan, rotate. Loading state, error messages, screenshot, file info.</p>
@@ -151,13 +151,14 @@
       </div>
     </section>
 
-    <section class="section" id="community">
+    <section class="section community-section" id="community" data-reveal>
       <div class="community-card">
-        <h3>Help wanted</h3>
-        <p>This is an open-source project in development. Small PRs welcome — no permission needed.</p>
+        <span class="kicker">05 / OPEN SOURCE</span>
+        <h3>Good tools are<br><em>better in the open.</em></h3>
+        <p>GLB Viewer is built in public. Explore the code, report an issue, or help shape what comes next.</p>
         <div class="community-actions">
-          <a href="https://github.com/VeloraTech/GLB-Viewer/issues" class="btn btn-primary" target="_blank" rel="noopener">Open an issue</a>
-          <a href="https://github.com/VeloraTech/GLB-Viewer/pulls" class="btn btn-secondary" target="_blank" rel="noopener">Submit a PR</a>
+          <a href="https://github.com/VeloraTech/GLB-Viewer" class="btn btn-primary" target="_blank" rel="noopener">Explore the repository <span aria-hidden="true">↗</span></a>
+          <a href="https://github.com/VeloraTech/GLB-Viewer/issues" class="btn btn-text" target="_blank" rel="noopener">Share feedback <span aria-hidden="true">↗</span></a>
         </div>
       </div>
     </section>
@@ -194,7 +195,7 @@
         <a href="https://github.com/VeloraTech/GLB-Viewer" target="_blank" rel="noopener">GitHub</a>
         <a href="https://github.com/VeloraTech/GLB-Viewer/releases" target="_blank" rel="noopener">Releases</a>
       </div>
-      <p>&copy; 2024 GLB Viewer. Open source, MIT licensed.</p>
+      <p>&copy; 2026 GLB Viewer. Open source, MIT licensed.</p>
     </div>
   </footer>
 
