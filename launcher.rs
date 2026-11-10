@@ -1,158 +1,82 @@
 use std::env;
 use std::fs;
 use std::io::{self, Read, Write};
-use std::net::TcpListener;
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::net::{TcpListener, TcpStream};
+use std::path::{Component, Path, PathBuf};
+use std::process::Command;
 use std::thread;
+use std::time::Duration;
 
 fn main() -> io::Result<()> {
-    let args: Vec<String> = env::args().collect();
-
-    if args.len() < 2 {
-        eprintln!("Usage: launcher.exe <path-to-glb-file>");
-        std::process::exit(1);
+    let model = env::args_os().nth(1).map(PathBuf::from)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Pass a .glb file to open."))?;
+    if !model.is_file() {
+        return Err(io::Error::new(io::ErrorKind::NotFound, "The selected model file does not exist."));
     }
-
-    let glb_path = PathBuf::from(&args[1]);
-    if !glb_path.exists() {
-        eprintln!("File not found: {}", glb_path.display());
-        std::process::exit(1);
-    }
-
-    // Determine the directory this exe lives in (repo root).
-    let exe_dir = env::current_exe()?
-        .parent()
-        .unwrap_or(Path::new("."))
-        .to_path_buf();
-
-    // Copy the GLB file to model.glb next to the exe.
-    let model_glb = exe_dir.join("model.glb");
-    fs::copy(&glb_path, &model_glb)?;
-    println!("Copied {} -> {}", glb_path.display(), model_glb.display());
-
-    // Start a local HTTP server on localhost:8000 serving the repo folder.
-    let listener = TcpListener::bind("127.0.0.1:8000")?;
-    println!("Server listening on http://127.0.0.1:8000");
-
-    let server_dir = exe_dir.clone();
+    let root = env::current_exe()?.parent().unwrap_or(Path::new(".")).to_path_buf();
+    let listener = TcpListener::bind(("127.0.0.1", 0))?;
+    let port = listener.local_addr()?.port();
+    println!("Server listening on http://127.0.0.1:{port}");
+    let model = fs::canonicalize(model)?;
     thread::spawn(move || {
-        // Minimal single-threaded HTTP server.
-        for stream in listener.incoming() {
-            match stream {
-                Ok(mut stream) => {
-                    let _ = handle_request(&mut stream, &server_dir);
-                }
-                Err(e) => eprintln!("connection error: {}", e),
-            }
+        for stream in listener.incoming().flatten() {
+            let root = root.clone();
+            let model = model.clone();
+            thread::spawn(move || { let _ = handle_request(stream, &root, &model); });
         }
     });
-
-    // Give the server a moment to start, then open Chrome.
-    thread::sleep(std::time::Duration::from_millis(500));
-    open_chrome();
-
-    // Keep the main thread alive so the server keeps running.
-    loop {
-        thread::sleep(std::time::Duration::from_secs(1));
+    thread::sleep(Duration::from_millis(150));
+    if env::var_os("GLB_VIEWER_TEST").is_none() {
+        let url = format!("http://127.0.0.1:{port}/viewer.html?open=1");
+        if let Err(error) = Command::new("cmd").args(["/C", "start", "", &url]).status() {
+            eprintln!("Could not open the default browser: {error}");
+        }
     }
+    loop { thread::sleep(Duration::from_secs(60)); }
 }
 
-fn handle_request(stream: &mut std::net::TcpStream, root: &Path) -> io::Result<()> {
-    let mut buf = [0u8; 1024];
+fn handle_request(mut stream: TcpStream, root: &Path, model: &Path) -> io::Result<()> {
+    let mut buf = [0u8; 8192];
     let n = stream.read(&mut buf)?;
-    if n == 0 {
-        return Ok(());
-    }
+    if n == 0 { return Ok(()); }
     let request = String::from_utf8_lossy(&buf[..n]);
-
-    // Parse the request line: GET /path HTTP/1.1
-    let path = request
-        .lines()
-        .next()
-        .unwrap_or("")
-        .split_whitespace()
-        .nth(1)
-        .unwrap_or("/");
-
-    let url_path = if path == "/" || path.is_empty() {
-        "/viewer.html"
+    let path = request.lines().next().unwrap_or("").split_whitespace().nth(1).unwrap_or("/");
+    let path = path.split('?').next().unwrap_or("/");
+    let (status, content_type, body) = if path == "/__model" {
+        match fs::read(model) {
+            Ok(bytes) => ("200 OK", "model/gltf-binary", bytes),
+            Err(_) => ("404 Not Found", "text/plain", b"Model file unavailable".to_vec()),
+        }
     } else {
-        path
-    };
-
-    let file_path = root.join(url_path.trim_start_matches('/'));
-
-    let (status, content_type, body) = match fs::read(&file_path) {
-        Ok(bytes) => {
-            let content_type = mime_type(&file_path);
-            ("HTTP/1.1 200 OK", content_type, bytes)
-        }
-        Err(_) => {
-            let body = b"404 Not Found";
-            ("HTTP/1.1 404 Not Found", "text/plain", body.to_vec())
+        let relative = path.trim_start_matches('/');
+        let safe = Path::new(relative).components().all(|c| matches!(c, Component::Normal(_)));
+        let target = if path == "/" { root.join("viewer.html") } else { root.join(relative) };
+        if !safe && path != "/" {
+            ("403 Forbidden", "text/plain", b"Forbidden".to_vec())
+        } else {
+            match fs::read(&target) {
+                Ok(bytes) => ("200 OK", mime_type(&target), bytes),
+                Err(_) => ("404 Not Found", "text/plain", b"Not Found".to_vec()),
+            }
         }
     };
-
-    let response = format!(
-        "{}\r\nContent-Type: {}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-        status,
-        content_type,
-        body.len()
-    );
-    stream.write_all(response.as_bytes())?;
+    let headers = format!("HTTP/1.1 {status}\r\nContent-Type: {content_type}\r\nContent-Length: {}\r\nCache-Control: no-store\r\nX-Content-Type-Options: nosniff\r\nConnection: close\r\n\r\n", body.len());
+    stream.write_all(headers.as_bytes())?;
     stream.write_all(&body)?;
-    stream.flush()?;
-    Ok(())
+    stream.flush()
 }
 
 fn mime_type(path: &Path) -> &'static str {
     match path.extension().and_then(|e| e.to_str()) {
-        Some("html") => "text/html",
+        Some("html") => "text/html; charset=utf-8",
         Some("js") => "application/javascript",
         Some("css") => "text/css",
         Some("glb") => "model/gltf-binary",
         Some("gltf") => "model/gltf+json",
         Some("png") => "image/png",
         Some("jpg") | Some("jpeg") => "image/jpeg",
-        Some("gif") => "image/gif",
-        Some("ico") => "image/x-icon",
         Some("svg") => "image/svg+xml",
         Some("json") => "application/json",
-        Some("wasm") => "application/wasm",
         _ => "application/octet-stream",
-    }
-}
-
-fn open_chrome() {
-    // Try to locate Google Chrome on Windows.
-    let chrome_paths = [
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
-    ];
-
-    let chrome = chrome_paths
-        .iter()
-        .find(|p| Path::new(p).exists())
-        .map(|s| s.to_string());
-
-    match chrome {
-        Some(path) => {
-            let _ = Command::new(&path)
-                .arg("http://127.0.0.1:8000/viewer.html")
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .spawn();
-        }
-        None => {
-            // Fallback: use `start` to open the default browser.
-            let _ = Command::new("cmd")
-                .arg("/C")
-                .arg("start")
-                .arg("http://127.0.0.1:8000/viewer.html")
-                .stdout(Stdio::null())
-                .stderr(Stdio::null())
-                .spawn();
-        }
     }
 }

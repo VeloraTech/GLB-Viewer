@@ -469,6 +469,22 @@ window.addEventListener('resize', () => {
 // ---------- Initialize: reload last model ----------
 (async () => {
   await updateStorageChip();
+  // The Windows launcher serves the explicitly selected local file at /__model.
+  // Browser-only sessions continue to use the last saved model or bundled sample.
+  if (new URLSearchParams(window.location.search).has('open')) {
+    try {
+      const response = await fetch('./__model', { cache: 'no-store' });
+      if (!response.ok) throw new Error('Could not read the selected model file.');
+      const blob = await response.blob();
+      const file = new File([blob], 'model.glb', { type: 'model/gltf-binary' });
+      loadModelFromFile(file);
+      return;
+    } catch (error) {
+      showError(error.message || 'Could not open the selected model.');
+      showLoading(false);
+      return;
+    }
+  }
   const rec = await loadLastModel();
   if (rec && rec.blob) {
     const f = new File([rec.blob], rec.url.split('/').pop() || 'model.glb', { type: 'model/gltf-binary' });
