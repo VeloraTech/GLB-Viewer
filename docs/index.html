@@ -69,7 +69,7 @@
           </select>
           <button id="dl-custom" class="btn btn-secondary">Continue <span aria-hidden="true">↗</span></button>
         </div>
-        <p class="download-note">Your models stay on your device. Desktop packages are distributed through GitHub Releases.</p>
+        <p class="download-note">Your models stay on your device. Desktop packages will be linked here as releases become available.</p>
       </div>
     </section>
 
@@ -98,15 +98,15 @@
           <h3>Right-click to open</h3>
           <p>Register GLB Viewer once, then right-click any GLB file and choose Open With &gt; GLB Viewer.</p>
         </div>
-        <div class="why-card">
-          <h3>No internet required</h3>
-          <p>Everything runs offline. Three.js and all assets live in the repo. no CDN, no unpkg, no network calls.</p>
+        <div class="why-card" data-reveal>
+          <h3>Desktop works offline</h3>
+          <p>The desktop viewer uses local Three.js assets. The browser demo loads its viewer engine and sample model from the web.</p>
         </div>
-        <div class="why-card">
+        <div class="why-card" data-reveal>
           <h3>Your files never leave your PC</h3>
           <p>No upload, no tracking of models, no cloud. We track downloads only, never your files.</p>
         </div>
-        <div class="why-card">
+        <div class="why-card" data-reveal>
           <h3>Lightweight</h3>
           <p>Vanilla HTML/CSS/JS. No React, no build step, no framework. Just open viewer.html and go.</p>
         </div>
@@ -126,22 +126,22 @@
             <h4>View &amp; Interact</h4>
             <p>Scroll, zoom, pan, rotate. Loading state, error messages, screenshot, file info.</p>
           </div>
-          <div class="phase">
+          <div class="phase" data-reveal>
             <span class="kicker">V2</span>
             <h4>Blender's 20%</h4>
             <p>Lighting, material color, metalness, roughness, TransformControls gizmo.</p>
           </div>
-          <div class="phase">
+          <div class="phase" data-reveal>
             <span class="kicker">V3</span>
             <h4>Mac &amp; Linux</h4>
             <p>Native launchers for macOS and Linux. viewer.html already works in Chrome.</p>
           </div>
-          <div class="phase">
+          <div class="phase" data-reveal>
             <span class="kicker">V4</span>
             <h4>Offline Install</h4>
             <p>PWA / Service Worker. Fully offline after first install, no server needed.</p>
           </div>
-          <div class="phase">
+          <div class="phase" data-reveal>
             <span class="kicker">V5</span>
             <h4>Smart + Website</h4>
             <p>Multi-model drag-drop, auto-save, OS-aware download website.</p>
