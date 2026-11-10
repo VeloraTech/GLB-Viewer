@@ -28,10 +28,11 @@
     </nav>
   </header>
 
+  <div class="page-model-layer" id="hero-3d" aria-hidden="true"></div>
+
   <main id="main">
     <section class="hero" id="hero" aria-labelledby="hero-title">
       <div class="hero-bg" aria-hidden="true"><span class="hero-orbit hero-orbit-one"></span><span class="hero-orbit hero-orbit-two"></span></div>
-      <div class="hero-3d" id="hero-3d"></div>
       <div class="hero-loading" id="hero-loading">
         <div class="hero-spinner"></div>
         <div>Loading sample model…</div>
@@ -232,17 +233,16 @@
 
     const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-    function getHeroScrollProgress() {
-      const heroTop = hero.getBoundingClientRect().top + window.scrollY;
-      const progress = 1 - (window.scrollY - heroTop) / Math.max(hero.offsetHeight, 1);
-      return clamp(progress, 0, 1);
+    function getPageScrollProgress() {
+      const scrollable = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+      return clamp(window.scrollY / scrollable, 0, 1);
     }
 
     function init() {
       scene = new THREE.Scene();
       scene.background = null;
 
-      camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+      camera = new THREE.PerspectiveCamera(45, container.clientWidth / Math.max(container.clientHeight, 1), 0.1, 100);
       camera.position.set(0, 0, 4);
 
       renderer = new THREE.WebGLRenderer({
@@ -282,6 +282,7 @@
       });
       model = new THREE.Mesh(ringGeometry, ringMaterial);
       model.rotation.set(0.38, 0.18, -0.22);
+      model.position.x = -5.5;
       scene.add(model);
       loading.classList.add('hidden');
 
@@ -292,11 +293,11 @@
     }
 
     function updateScrollTarget() {
-      const progress = getHeroScrollProgress();
+      const progress = getPageScrollProgress();
       // Move the ring from right to left as the visitor scrolls through the hero.
-      scrollX = (progress - 0.5) * 3.2;
+      scrollX = Math.sin(progress * Math.PI * 2.15) * 1.65;
       // A full, smooth turn is tied to the same scroll progress.
-      targetScrollRotation = (1 - progress) * Math.PI * 2;
+      targetScrollRotation = progress * Math.PI * 2.4;
     }
 
     function onResize() {
