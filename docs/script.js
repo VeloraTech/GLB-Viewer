@@ -14,6 +14,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     windows: 'Download for Windows',
     mac: 'Download for Mac',
     linux: 'Download for Linux',
+    android: 'Open GLB Viewer',
   };
 
   // Detect OS using navigator.userAgentData or userAgent fallback
@@ -21,16 +22,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const uaData = navigator.userAgentData;
     if (uaData && uaData.platform) {
       const p = uaData.platform.toLowerCase();
+      if (p.includes('android')) return 'android';
       if (p.includes('windows')) return 'windows';
       if (p.includes('mac')) return 'mac';
       if (p.includes('linux')) return 'linux';
-      if (p.includes('android')) return 'linux';
     }
     const uaLower = navigator.userAgent.toLowerCase();
+    // Android user agents also contain "Linux"; detect Android first.
+    if (uaLower.includes('android')) return 'android';
+    if (uaLower.includes('windows')) return 'windows';
     if (uaLower.includes('mac')) return 'mac';
     if (uaLower.includes('linux')) return 'linux';
-    if (uaLower.includes('windows')) return 'windows';
-    if (uaLower.includes('android')) return 'linux';
     if (uaLower.includes('iphone') || uaLower.includes('ipad')) return 'mac';
     return 'windows';
   }
@@ -41,15 +43,16 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const osLabel = document.getElementById('os-detected');
     const dlOsSelect = document.getElementById('dl-os');
 
+    const isAndroid = osKey === 'android';
     const label = labelMap[osKey] || 'Download';
-    const url = releases[osKey] || releases.windows;
+    const url = isAndroid ? '#demo' : (releases[osKey] || releases.windows);
 
     if (navCta) {
       navCta.textContent = label;
       navCta.href = url;
     }
     if (heroBtn) {
-      heroBtn.textContent = label;
+      heroBtn.textContent = isAndroid ? 'Open GLB Viewer' : label;
       heroBtn.href = url;
     }
     if (osLabel) osLabel.textContent = 'Detected OS: ' + osKey.charAt(0).toUpperCase() + osKey.slice(1);
@@ -119,18 +122,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       }, false);
 
       // Click to pick file via visible upload button
-      const uploadBtn = document.getElementById('demo-upload-btn');
       const fileInput = document.getElementById('demo-file-input');
-      if (uploadBtn && fileInput) {
-        uploadBtn.addEventListener('click', () => {
-          fileInput.click();
-        });
+      if (fileInput) {
+        // Use a real label/input activation instead of a scripted click. This is
+        // more reliable with Android browser file pickers and preserves user activation.
         fileInput.addEventListener('change', (e) => {
-          const file = e.target.files[0];
+          const file = e.target.files && e.target.files[0];
           if (file) {
             track('demo_pick', { file: file.name });
             loadDemoModel(file);
           }
+          // Let users pick the same file again and still trigger change.
+          fileInput.value = '';
         });
       }
     }
