@@ -206,8 +206,8 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "../three/build/three.module.js",
-        "three/addons/": "../three/examples/jsm/"
+        "three": "./three/build/three.module.js",
+        "three/addons/": "./three/examples/jsm/"
       }
     }
   </script>
@@ -254,7 +254,7 @@
       controls.autoRotateSpeed = 0.8;
 
       const loader = new GLTFLoader();
-      const modelPaths = ['../sample/ring.glb', './sample/ring.glb', '/sample/ring.glb'];
+      const modelPaths = ['./sample/ring.glb'];
       let tried = 0;
 
       function tryLoad(index) {
