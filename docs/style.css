@@ -356,6 +356,8 @@ footer { border-top: 1px solid var(--line); background: rgba(255,255,255,.22); p
     gap: 5px; border: 1px solid var(--line); border-radius: 50%; background: rgba(255,255,255,.45); cursor: pointer;
   }
   .mobile-menu-btn span { width: 14px; height: 1px; background: var(--ink); transition: transform 250ms ease; }
+  .mobile-menu-btn:hover { background: var(--paper-bright); border-color: var(--line-strong); }
+  .mobile-menu-btn:active { transform: scale(.96); }
   .mobile-menu-btn[aria-expanded="true"] span:first-child { transform: translateY(3px) rotate(45deg); }
   .mobile-menu-btn[aria-expanded="true"] span:last-child { transform: translateY(-3px) rotate(-45deg); }
   .nav-links {
