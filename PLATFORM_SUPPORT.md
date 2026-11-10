@@ -13,17 +13,16 @@ GLB Viewer has two ways to use it: the standalone desktop workflow and the brows
 
 ## Windows desktop workflow
 
-The Windows workflow lets you open a `.glb` file from File Explorer using **Open With → GLB Viewer**.
+Download `GLB-Viewer-Setup-1.0.1.exe` from the [latest release](https://github.com/VeloraTech/GLB-Viewer/releases/latest) and run it. The installer:
 
-The repository includes a Rust launcher and Windows registration scripts. The registration step adds a local file association so Windows can show GLB Viewer in the Open With menu. The launcher starts a local server on your computer and opens the viewer in Chrome.
+- Installs the launcher, viewer page, bundled Three.js runtime, and sample model.
+- Registers GLB Viewer as a Windows **Open With** option for `.glb` files.
+- Adds a Start menu shortcut.
+- Provides a normal Windows uninstaller.
 
-Before setup:
-1. Read the scripts in the repository.
-2. Understand that `register.reg` changes the Windows Registry to add the file association.
-3. Keep the launcher and its supporting files together as expected by the project.
-4. Use `uninstall.bat` if you later want to remove the registered association.
+When a model is opened, the launcher serves the selected file through a local server bound to the loopback interface and opens the viewer in the default browser. The model is not sent to a remote GLB Viewer server.
 
-This is a local setup workflow, not a signed installer wizard. Review the repository and use it only if you are comfortable with the changes.
+The installer currently targets 64-bit Windows. The application is not digitally signed, so Windows SmartScreen may show an unfamiliar-app warning. Only install software you trust; the installer source and packaging script are available in this repository.
 
 ## Browser viewer on macOS and Linux
 
