@@ -1,3 +1,7 @@
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
 (function () {
   // Placeholder Release URLs (replace with real GitHub Releases links)
   const releases = {
