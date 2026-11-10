@@ -239,9 +239,10 @@ nav {
 .download-other { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 12px; margin-top: 24px; padding-top: 22px; border-top: 1px solid var(--line); }
 .download-other label { grid-column: 1 / -1; color: var(--muted); font-size: .72rem; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
 .download-other select {
-  width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid var(--line-strong);
+  width: 100%; min-height: 48px; padding: 0 14px; border: 1px solid var(--line-strong); transition: border-color 220ms ease, box-shadow 220ms ease;
   border-radius: 999px; color: var(--ink); background: var(--paper-bright); outline-offset: 3px;
 }
+.download-other select:hover { border-color: var(--accent-dark); }
 .download-other .btn { min-height: 48px; }
 .download-note { margin: 20px 0 0; color: var(--muted); font-size: .73rem; line-height: 1.6; }
 
@@ -269,7 +270,7 @@ nav {
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
   clip: rect(0,0,0,0); white-space: nowrap; clip-path: inset(50%); border: 0;
 }
-.demo-file-picker:focus-visible { outline: 2px solid var(--accent-dark); outline-offset: 4px; }
+.demo-file-picker:focus-visible, #demo-file-input:focus-visible + .demo-controls .demo-file-picker { outline: 2px solid var(--accent-dark); outline-offset: 4px; }
 
 /* Feature story */
 .features-section { padding-top: 70px; }
