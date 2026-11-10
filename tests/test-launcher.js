@@ -13,15 +13,16 @@ const fail = (name, error) => { results.push(false); console.error('FAIL:', name
   if (fs.readFileSync(exe).subarray(0, 2).toString() !== 'MZ') { fail('valid Windows executable', 'Missing PE signature'); return summary(); }
   pass('launcher executable exists');
 
-  const child = spawn(exe, [sample], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const child = spawn(exe, [sample], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, GLB_VIEWER_TEST: '1' } });
   let output = '';
   child.stdout.on('data', chunk => { output += chunk.toString(); });
   child.stderr.on('data', chunk => { output += chunk.toString(); });
   const port = await new Promise(resolve => {
     const started = Date.now();
     const poll = () => {
-      const match = output.match(/127\\.0\\.0\\.1:(\\d+)/);
-      if (match) resolve(Number(match[1]));
+      const marker = 'Server listening on http://127.0.0.1:';
+      const position = output.indexOf(marker);
+      if (position !== -1) resolve(Number(output.slice(position + marker.length).split(/[\\r\\n]/)[0]));
       else if (Date.now() - started > 8000) resolve(null);
       else setTimeout(poll, 100);
     };
