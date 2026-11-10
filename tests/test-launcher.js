@@ -1,101 +1,57 @@
-// Node.js test for test 5: Rust launcher opens Chrome on localhost 8000.
-// Run: node tests/test-launcher.js
-
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 const http = require('http');
-
 const exe = path.join(__dirname, '..', 'launcher.exe');
 const sample = path.join(__dirname, '..', 'sample', 'ring.glb');
+const results = [];
+const pass = name => { results.push(true); console.log('PASS:', name); };
+const fail = (name, error) => { results.push(false); console.error('FAIL:', name, error); };
 
-let results = [];
-const pass = (name) => { results.push(`PASS: ${name}`); console.log(`PASS: ${name}`); };
-const fail = (name, err) => { results.push(`FAIL: ${name} — ${err}`); console.error(`FAIL: ${name}`, err); };
-
-// Test 5a: launcher.exe exists and is a valid PE executable
-try {
-  if (!fs.existsSync(exe)) {
-    fail('launcher.exe exists', `not found at ${exe}. Build it first: rustc launcher.rs -o launcher.exe`);
-  } else {
-    const buf = fs.readFileSync(exe);
-    const magic = buf.slice(0, 2).toString('latin1');
-    if (magic === 'MZ') {
-      pass('launcher.exe exists and is a valid Windows executable');
-    } else {
-      fail('launcher.exe exists and is a valid Windows executable', 'not a valid PE executable');
-    }
-  }
-} catch (e) {
-  fail('launcher.exe exists', e.message);
-}
-
-// Test 5b: launcher binds port 8000 and serves viewer.html
 (async () => {
-  if (!fs.existsSync(exe)) {
-    console.log('\nSkipping port test — launcher.exe not found.');
-    printSummary();
-    return;
-  }
+  if (!fs.existsSync(exe)) { fail('launcher executable exists', 'Build launcher.exe first'); return summary(); }
+  if (fs.readFileSync(exe).subarray(0, 2).toString() !== 'MZ') { fail('valid Windows executable', 'Missing PE signature'); return summary(); }
+  pass('launcher executable exists');
 
-  // Start launcher with the sample GLB file
-  const child = spawn(exe, [sample], {
-    stdio: ['ignore', 'pipe', 'pipe'],
-    detached: false,
-  });
-
-  let stdout = '';
-  child.stdout.on('data', (d) => { stdout += d.toString(); });
-  child.stderr.on('data', (d) => { stdout += d.toString(); });
-
-  // Wait for the server to start listening (up to 5 seconds)
-  const serverReady = await new Promise((resolve) => {
-    const start = Date.now();
-    const check = () => {
-      if (stdout.includes('Server listening on http://127.0.0.1:8000')) resolve(true);
-      else if (Date.now() - start > 5000) resolve(false);
-      else setTimeout(check, 100);
+  const child = spawn(exe, [sample], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let output = '';
+  child.stdout.on('data', chunk => { output += chunk.toString(); });
+  child.stderr.on('data', chunk => { output += chunk.toString(); });
+  const port = await new Promise(resolve => {
+    const started = Date.now();
+    const poll = () => {
+      const match = output.match(/127\\.0\\.0\\.1:(\\d+)/);
+      if (match) resolve(Number(match[1]));
+      else if (Date.now() - started > 8000) resolve(null);
+      else setTimeout(poll, 100);
     };
-    check();
+    poll();
   });
+  if (!port) { fail('local server starts', output || 'No startup message'); child.kill(); return summary(); }
+  pass('local server starts on an available port');
 
-  if (!serverReady) {
-    fail('launcher binds port 8000', 'server did not start within 5 seconds');
-    child.kill();
-    printSummary();
-    return;
-  }
-
-  // Try to fetch viewer.html from localhost:8000
-  const fetchOK = await new Promise((resolve) => {
-    http.get('http://127.0.0.1:8000/viewer.html', (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        resolve(res.statusCode === 200 && data.includes('<html'));
-      });
-    }).on('error', () => resolve(false));
+  const get = route => new Promise(resolve => {
+    http.get(`http://127.0.0.1:${port}${route}`, response => {
+      const chunks = [];
+      response.on('data', chunk => chunks.push(chunk));
+      response.on('end', () => resolve({ status: response.statusCode, body: Buffer.concat(chunks) }));
+    }).on('error', () => resolve({ status: 0, body: Buffer.alloc(0) }));
   });
-
-  if (fetchOK) {
-    pass('launcher serves viewer.html on localhost:8000');
-  } else {
-    fail('launcher serves viewer.html on localhost:8000', 'could not fetch viewer.html');
-  }
-
-  // Clean up: kill the launcher process
-  try { child.kill(); } catch (e) {}
-
-  printSummary();
+  const page = await get('/viewer.html?open=1');
+  if (page.status === 200 && page.body.toString().includes('GLB Viewer')) pass('serves viewer page');
+  else fail('serves viewer page', `HTTP ${page.status}`);
+  const model = await get('/__model');
+  if (model.status === 200 && model.body.length === fs.statSync(sample).size) pass('serves exact selected model bytes');
+  else fail('serves selected model', `HTTP ${model.status}, ${model.body.length} bytes`);
+  const traversal = await get('/../launcher.rs');
+  if (traversal.status === 403 || traversal.status === 404) pass('blocks parent-directory paths');
+  else fail('blocks parent-directory paths', `HTTP ${traversal.status}`);
+  child.kill();
+  summary();
 })();
 
-function printSummary() {
-  console.log('\n--- Test Summary ---');
-  results.forEach(r => console.log(r));
-  const failures = results.filter(r => r.startsWith('FAIL'));
-  console.log(`\n${results.length - failures.length}/${results.length} passed`);
-  if (failures.length > 0) {
-    console.error(`${failures.length} test(s) failed`);
-    process.exit(1);
-  }
+function summary() {
+  const passed = results.filter(Boolean).length;
+  console.log(`\\n${passed}/${results.length} checks passed`);
+  if (passed !== results.length) process.exitCode = 1;
 }
