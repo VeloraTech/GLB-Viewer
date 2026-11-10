@@ -70,7 +70,7 @@
           </select>
           <button id="dl-custom" class="btn btn-secondary">Continue <span aria-hidden="true">↗</span></button>
         </div>
-        <p class="download-note">Your models stay on your device. Desktop packages will be linked here as releases become available.</p>
+        <p class="download-note">Your models stay on your device. The latest release page currently has no attached installer files; check it for release notes and package availability.</p>
       </div>
     </section>
 
@@ -180,7 +180,7 @@
         <ul>
           <li><a href="https://github.com/VeloraTech/GLB-Viewer/issues" target="_blank" rel="noopener">Issues</a></li>
           <li><a href="https://github.com/VeloraTech/GLB-Viewer/pulls" target="_blank" rel="noopener">Pull requests</a></li>
-          <li><a href="https://github.com/VeloraTech/GLB-Viewer/discussions" target="_blank" rel="noopener">Discussions</a></li>
+          <li><a href="https://github.com/VeloraTech/GLB-Viewer/issues" target="_blank" rel="noopener">Community feedback</a></li>
         </ul>
       </div>
       <div class="footer-col">
@@ -214,7 +214,7 @@
 
   <script type="module">
     import * as THREE from 'three';
-    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    
 
     const hero = document.getElementById('hero');
     const container = document.getElementById('hero-3d');
@@ -267,56 +267,23 @@
       fillLight.position.set(-4, 1, -3);
       scene.add(fillLight);
 
-      const loader = new GLTFLoader();
-      const modelUrl = 'https://cdn.jsdelivr.net/gh/VeloraTech/GLB-Viewer@ec4f9146d56bf2e1d56704029071ba0f4bd055c2/sample/ring.glb';
-      const fallbackModelUrl = 'https://raw.githubusercontent.com/VeloraTech/GLB-Viewer/ec4f9146d56bf2e1d56704029071ba0f4bd055c2/sample/ring.glb';
-
-      const onModelLoaded = (gltf) => {
-        model = gltf.scene;
-        model.traverse((node) => {
-          if (!node.isMesh || !node.material) return;
-          const originalMaterials = Array.isArray(node.material) ? node.material : [node.material];
-          const iridescentMaterials = originalMaterials.map((original) => {
-            const material = new THREE.MeshPhysicalMaterial();
-            material.copy(original);
-            material.iridescence = 0.82;
-            material.iridescenceIOR = 1.28;
-            material.iridescenceThicknessRange = [120, 560];
-            material.clearcoat = 0.7;
-            material.clearcoatRoughness = 0.18;
-            material.metalness = Math.max(material.metalness || 0, 0.28);
-            material.roughness = Math.min(material.roughness || 0.32, 0.3);
-            return material;
-          });
-          node.material = Array.isArray(node.material) ? iridescentMaterials : iridescentMaterials[0];
-        });
-        scene.add(model);
-        updateScrollTarget();
-
-        const bounds = new THREE.Box3().setFromObject(model);
-        const center = bounds.getCenter(new THREE.Vector3());
-        const size = bounds.getSize(new THREE.Vector3());
-        const maxDimension = Math.max(size.x, size.y, size.z);
-
-        model.position.sub(center);
-        const fovRadians = camera.fov * Math.PI / 180;
-        const fitDistance = maxDimension / (2 * Math.tan(fovRadians / 2));
-        camera.position.set(0, 0, fitDistance * 2.15);
-        camera.lookAt(0, 0, 0);
-
-        loading.classList.add('hidden');
-      };
-
-      // Try jsDelivr first, then GitHub's raw host. Both URLs point to the
-      // same pinned repository commit, so the fallback cannot drift.
-      loader.load(modelUrl, onModelLoaded, undefined, (primaryError) => {
-        console.warn('Primary sample model host failed; trying fallback:', primaryError);
-        loader.load(fallbackModelUrl, onModelLoaded, undefined, (fallbackError) => {
-          console.error('Hero model failed on both hosts:', { primaryError, fallbackError });
-          loading.classList.add('hidden');
-          errorEl.style.display = 'flex';
-        });
+      // Build the hero's sample ring locally. This avoids a fragile third-party
+      // binary request, so the decorative preview is available even offline.
+      const ringGeometry = new THREE.TorusGeometry(0.92, 0.29, 48, 160);
+      const ringMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0xd7d8d1,
+        metalness: 0.42,
+        roughness: 0.22,
+        iridescence: 0.92,
+        iridescenceIOR: 1.32,
+        iridescenceThicknessRange: [120, 620],
+        clearcoat: 0.9,
+        clearcoatRoughness: 0.14
       });
+      model = new THREE.Mesh(ringGeometry, ringMaterial);
+      model.rotation.set(0.38, 0.18, -0.22);
+      scene.add(model);
+      loading.classList.add('hidden');
 
       window.addEventListener('resize', onResize, { passive: true });
       window.addEventListener('scroll', updateScrollTarget, { passive: true });

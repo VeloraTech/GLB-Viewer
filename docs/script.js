@@ -3,17 +3,20 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 (function () {
-  // Placeholder Release URLs (replace with real GitHub Releases links)
+  // The current v1.0.0 release has no attached installer assets.
+  // Link to the real release page rather than inventing download filenames.
+  const releasePage = 'https://github.com/VeloraTech/GLB-Viewer/releases/latest';
+  const platformGuide = 'https://github.com/VeloraTech/GLB-Viewer/blob/main/PLATFORM_SUPPORT.md';
   const releases = {
-    windows: 'https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/glb-viewer-windows.exe',
-    mac: 'https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/glb-viewer-mac.dmg',
-    linux: 'https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/glb-viewer-linux.AppImage',
+    windows: releasePage,
+    mac: platformGuide,
+    linux: platformGuide,
   };
 
   const labelMap = {
     windows: 'Download for Windows',
-    mac: 'Download for Mac',
-    linux: 'Download for Linux',
+    mac: 'View Mac browser support',
+    linux: 'View Linux browser support',
     android: 'View desktop downloads',
     ios: 'View desktop downloads',
   };
@@ -47,17 +50,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const url = isSupported ? releases[osKey] : '#download';
 
     if (navCta) {
-      navCta.textContent = isMobile ? 'View desktop downloads' : label;
+      navCta.textContent = isMobile ? 'View desktop options' : (osKey === 'windows' ? 'View Windows release' : label);
       navCta.href = isMobile ? '#download' : url;
     }
     if (heroBtn) {
-      heroBtn.textContent = isMobile ? 'View desktop downloads' : label;
+      heroBtn.textContent = isMobile ? 'View desktop downloads' : (osKey === 'windows' ? 'View Windows release' : label);
       heroBtn.href = isMobile ? '#download' : url;
     }
     if (downloadBtn) {
-      downloadBtn.textContent = isMobile ? 'Choose a desktop platform' : label;
+      downloadBtn.textContent = isMobile ? 'Choose a desktop platform' : (osKey === 'windows' ? 'View Windows release' : label);
       downloadBtn.href = isMobile ? '#dl-other' : url;
-      downloadBtn.insertAdjacentHTML('beforeend', ' <span aria-hidden="true">↗</span>');
+      if (!downloadBtn.querySelector('span')) downloadBtn.insertAdjacentHTML('beforeend', ' <span aria-hidden="true">↗</span>');
     }
     if (osLabel) {
       osLabel.textContent = isMobile
