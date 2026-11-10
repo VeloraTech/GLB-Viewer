@@ -26,9 +26,11 @@ fn main() -> io::Result<()> {
         }
     });
     thread::sleep(Duration::from_millis(150));
-    let url = format!("http://127.0.0.1:{port}/viewer.html?open=1");
-    if let Err(error) = Command::new("cmd").args(["/C", "start", "", &url]).status() {
-        eprintln!("Could not open the default browser: {error}");
+    if env::var_os("GLB_VIEWER_TEST").is_none() {
+        let url = format!("http://127.0.0.1:{port}/viewer.html?open=1");
+        if let Err(error) = Command::new("cmd").args(["/C", "start", "", &url]).status() {
+            eprintln!("Could not open the default browser: {error}");
+        }
     }
     loop { thread::sleep(Duration::from_secs(60)); }
 }
