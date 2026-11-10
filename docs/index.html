@@ -268,9 +268,10 @@
       scene.add(fillLight);
 
       const loader = new GLTFLoader();
-      const modelUrl = 'https://raw.githubusercontent.com/VeloraTech/GLB-Viewer/ec4f9146d56bf2e1d56704029071ba0f4bd055c2/sample/ring.glb';
+      const modelUrl = 'https://cdn.jsdelivr.net/gh/VeloraTech/GLB-Viewer@ec4f9146d56bf2e1d56704029071ba0f4bd055c2/sample/ring.glb';
+      const fallbackModelUrl = 'https://raw.githubusercontent.com/VeloraTech/GLB-Viewer/ec4f9146d56bf2e1d56704029071ba0f4bd055c2/sample/ring.glb';
 
-      loader.load(modelUrl, (gltf) => {
+      const onModelLoaded = (gltf) => {
         model = gltf.scene;
         model.traverse((node) => {
           if (!node.isMesh || !node.material) return;
@@ -304,10 +305,17 @@
         camera.lookAt(0, 0, 0);
 
         loading.classList.add('hidden');
-      }, undefined, (error) => {
-        console.error('Hero model failed to load:', error);
-        loading.classList.add('hidden');
-        errorEl.style.display = 'flex';
+      };
+
+      // Try jsDelivr first, then GitHub's raw host. Both URLs point to the
+      // same pinned repository commit, so the fallback cannot drift.
+      loader.load(modelUrl, onModelLoaded, undefined, (primaryError) => {
+        console.warn('Primary sample model host failed; trying fallback:', primaryError);
+        loader.load(fallbackModelUrl, onModelLoaded, undefined, (fallbackError) => {
+          console.error('Hero model failed on both hosts:', { primaryError, fallbackError });
+          loading.classList.add('hidden');
+          errorEl.style.display = 'flex';
+        });
       });
 
       window.addEventListener('resize', onResize, { passive: true });
