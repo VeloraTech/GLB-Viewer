@@ -14,27 +14,25 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     windows: 'Download for Windows',
     mac: 'Download for Mac',
     linux: 'Download for Linux',
-    android: 'Open GLB Viewer',
+    android: 'View desktop downloads',
+    ios: 'View desktop downloads',
   };
 
-  // Detect OS using navigator.userAgentData or userAgent fallback
+  // Check mobile user-agent tokens before platform hints: Android browsers may
+  // expose a Linux-like platform value through userAgentData.
   function detectOS() {
-    const uaData = navigator.userAgentData;
-    if (uaData && uaData.platform) {
-      const p = uaData.platform.toLowerCase();
-      if (p.includes('android')) return 'android';
-      if (p.includes('windows')) return 'windows';
-      if (p.includes('mac')) return 'mac';
-      if (p.includes('linux')) return 'linux';
-    }
-    const uaLower = navigator.userAgent.toLowerCase();
-    // Android user agents also contain "Linux"; detect Android first.
-    if (uaLower.includes('android')) return 'android';
-    if (uaLower.includes('windows')) return 'windows';
-    if (uaLower.includes('mac')) return 'mac';
-    if (uaLower.includes('linux')) return 'linux';
-    if (uaLower.includes('iphone') || uaLower.includes('ipad')) return 'mac';
-    return 'windows';
+    const ua = navigator.userAgent || '';
+    const uaLower = ua.toLowerCase();
+
+    if (/android/i.test(ua)) return 'android';
+    if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+    if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return 'ios';
+
+    const platform = (navigator.userAgentData?.platform || navigator.platform || '').toLowerCase();
+    if (platform.includes('windows') || uaLower.includes('windows')) return 'windows';
+    if (platform.includes('mac') || uaLower.includes('macintosh')) return 'mac';
+    if (platform.includes('linux') || uaLower.includes('linux')) return 'linux';
+    return 'unknown';
   }
 
   function applyOS(osKey) {
@@ -42,21 +40,27 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const heroBtn = document.querySelector('.hero-actions .btn-primary');
     const osLabel = document.getElementById('os-detected');
     const dlOsSelect = document.getElementById('dl-os');
-
-    const isAndroid = osKey === 'android';
-    const label = labelMap[osKey] || 'Download';
-    const url = isAndroid ? '#demo' : (releases[osKey] || releases.windows);
+    const isMobile = osKey === 'android' || osKey === 'ios';
+    const isSupported = Object.prototype.hasOwnProperty.call(releases, osKey);
+    const label = labelMap[osKey] || 'Choose a desktop download';
+    const url = isSupported ? releases[osKey] : '#download';
 
     if (navCta) {
-      navCta.textContent = label;
-      navCta.href = url;
+      navCta.textContent = isMobile ? 'View desktop downloads' : label;
+      navCta.href = isMobile ? '#download' : url;
     }
     if (heroBtn) {
-      heroBtn.textContent = isAndroid ? 'Open GLB Viewer' : label;
-      heroBtn.href = url;
+      heroBtn.textContent = isMobile ? 'View desktop downloads' : label;
+      heroBtn.href = isMobile ? '#download' : url;
     }
-    if (osLabel) osLabel.textContent = 'Detected OS: ' + osKey.charAt(0).toUpperCase() + osKey.slice(1);
-    if (dlOsSelect) dlOsSelect.value = osKey;
+    if (osLabel) {
+      osLabel.textContent = isMobile
+        ? 'No installation package is currently available for ' + (osKey === 'ios' ? 'iOS' : 'Android') + '. You can still choose a Windows, macOS, or Linux download below.'
+        : (osKey === 'unknown'
+          ? 'Could not identify your operating system. Choose a desktop download below.'
+          : 'Detected OS: ' + osKey.charAt(0).toUpperCase() + osKey.slice(1));
+    }
+    if (dlOsSelect && isSupported) dlOsSelect.value = osKey;
   }
 
   const detected = detectOS();
@@ -128,21 +132,49 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         // more reliable with Android browser file pickers and preserves user activation.
         fileInput.addEventListener('change', (e) => {
           const file = e.target.files && e.target.files[0];
-          if (file) {
-            track('demo_pick', { file: file.name });
-            loadDemoModel(file);
+          if (!file) return;
+
+          const extension = file.name.split('.').pop().toLowerCase();
+          if (extension !== 'glb' && extension !== 'gltf') {
+            showDemoError('Please choose a .glb or .gltf model file.');
+            fileInput.value = '';
+            return;
           }
-          // Let users pick the same file again and still trigger change.
+
+          track('demo_pick', { file: file.name });
+          loadDemoModel(file);
+
+          // Clear after starting the load so the same file can be selected again.
           fileInput.value = '';
         });
       }
     }
 
-    function loadDemoModel(file) {
-      const url = URL.createObjectURL(file);
+    function showDemoError(message) {
       const container = document.getElementById('demo-viewport');
+      if (container) {
+        container.innerHTML = '';
+        const notice = document.createElement('p');
+        notice.textContent = message;
+        notice.style.cssText = 'color:#ff6b6b;padding:20px;text-align:center;';
+        container.appendChild(notice);
+      }
+    }
 
-      // Clear existing
+    function loadDemoModel(file) {
+      const container = document.getElementById('demo-viewport');
+      if (!container) return;
+
+      let url;
+      try {
+        url = URL.createObjectURL(file);
+      } catch (error) {
+        console.error('Could not create a local URL for the selected model:', error);
+        showDemoError('Your browser could not open this file. Try a GLB file in a current version of Chrome.');
+        return;
+      }
+
+      // Clear existing content before rendering the selected model.
       while (container.firstChild) container.removeChild(container.firstChild);
 
       const scene = new THREE.Scene();
@@ -152,9 +184,18 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
       camera.position.set(0, 1.5, 4);
 
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      let renderer;
+      try {
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      } catch (error) {
+        URL.revokeObjectURL(url);
+        console.error('WebGL renderer initialization failed:', error);
+        showDemoError('3D rendering is unavailable in this browser. Check that hardware acceleration and WebGL are enabled.');
+        return;
+      }
+
       renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       container.appendChild(renderer.domElement);
 
       const ambient = new THREE.AmbientLight(0xffffff, 0.5);
@@ -170,6 +211,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
       const loader = new GLTFLoader();
       loader.load(url, (gltf) => {
+        URL.revokeObjectURL(url);
         const model = gltf.scene;
         scene.add(model);
 
@@ -199,8 +241,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
           renderer.setSize(container.clientWidth, container.clientHeight);
         });
       }, undefined, (err) => {
+        URL.revokeObjectURL(url);
         console.error('Demo model load failed:', err);
-        container.innerHTML = '<p style="color:#ff6b6b;padding:20px;text-align:center;">Failed to load model. Try another file.</p>';
+        showDemoError('Failed to load this model. Use a valid GLB file and try again.');
       });
     }
   })();

@@ -206,8 +206,8 @@
   <script type="importmap">
     {
       "imports": {
-        "three": "../three/build/three.module.js",
-        "three/addons/": "../three/examples/jsm/"
+        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
       }
     }
   </script>
@@ -254,7 +254,7 @@
       controls.autoRotateSpeed = 0.8;
 
       const loader = new GLTFLoader();
-      const modelPaths = ['../sample/ring.glb', './sample/ring.glb', '/sample/ring.glb'];
+      const modelPaths = ['https://raw.githubusercontent.com/VeloraTech/GLB-Viewer/ec4f9146d56bf2e1d56704029071ba0f4bd055c2/sample/ring.glb'];
       let tried = 0;
 
       function tryLoad(index) {

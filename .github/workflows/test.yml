@@ -1,0 +1,32 @@
+name: GLB Viewer Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  windows-launcher:
+    runs-on: windows-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build Windows launcher
+        run: rustc launcher.rs -o launcher.exe
+
+      - name: Test launcher HTTP server
+        run: node tests/test-launcher.js
+
+      - name: Check website JavaScript syntax
+        shell: bash
+        run: node --input-type=module --check < docs/script.js
