@@ -1,85 +1,82 @@
-A 1-folder offline GLB viewer. Right-click any GLB, Open With, GLB Viewer. No install, no internet, no Blender.
+# GLB Viewer
 
-Status: **In Development** - **Help Wanted** - **Open Source**
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Latest release](https://img.shields.io/github/v/release/VeloraTech/GLB-Viewer?display_name=tag)](https://github.com/VeloraTech/GLB-Viewer/releases/latest)
+[![Windows](https://img.shields.io/badge/Windows-desktop%20Open%20With-0078D6)](PLATFORM_SUPPORT.md)
+[![Open source](https://img.shields.io/badge/Open%20source-yes-brightgreen)](https://github.com/VeloraTech/GLB-Viewer)
 
-![demo](demo.gif)
+**Need to open a 3D model without launching a heavyweight 3D suite? Open it in GLB Viewer.**  
+Rotate, zoom, and inspect your GLB in Chrome—without importing it into Blender or uploading your model.
 
-## Install
+GLB Viewer is a focused, open-source 3D model viewer for quick inspection of **GLB files**. It gives you the controls you need to look around a model, without asking you to open a full 3D production application just to preview one.
 
-1. Clone the repo:
+![GLB Viewer demo: opening and inspecting a 3D model](demo.gif)
 
-   ```bash
-   git clone https://github.com/VeloraTech/GLB-Viewer.git
-   cd GLB-Viewer
-   ```
+> The demo GIF will be added here. Replace `demo.gif` with your recorded Windows walkthrough when it is ready.
 
-2. Double-click `register.reg` to register GLB Viewer as the "Open With" handler for `.glb` files on Windows.
+## Why use it?
 
-3. Right-click any `.glb` file &rarr; **Open With** &rarr; **GLB Viewer**. It opens in Chrome.
+- **Open a model, not a whole 3D suite.** Quickly preview a GLB when you only need to inspect it.
+- **Look around naturally.** Rotate, zoom, and pan around the model.
+- **Keep your files local.** The desktop workflow reads the file on your computer; it does not upload the model to a GLB Viewer server.
+- **A focused experience.** No account, no project setup, and no Blender workflow required for basic viewing.
+- **Open source.** Inspect the code, report problems, and help shape the next release.
 
-**Requires no Python.** Uses a small Rust exe launcher (`launcher.exe`) that copies your file to `model.glb`, starts a local server on `localhost:8000`, and opens Chrome to `viewer.html`.
+## Getting started on Windows
 
-## Before / After
+The Windows desktop workflow registers GLB Viewer as an **Open With** option for `.glb` files.
 
-| Before | After |
-|--------|-------|
-| Install Blender (~300 MB) just to view 1 file | 1 folder, double-click, done |
+1. Download or clone this repository.
+2. Follow the Windows setup instructions in [Platform support](PLATFORM_SUPPORT.md).
+3. Run the provided registration file if you want GLB Viewer to appear in the Windows **Open With** menu.
+4. Right-click a `.glb` file and choose **Open With → GLB Viewer**.
 
-## Privacy
+The launcher starts a local viewer session and opens it in Chrome. The first-time setup involves a local file-association change; this is not a portable, zero-setup installer. Review the scripts and [privacy notice](docs/privacy.html) before running them.
 
-Your files never leave your computer. We never upload. We track downloads only, not your models.
+### Try the browser viewer
+
+The project website also includes a browser-based preview. Open the [GLB Viewer website](https://veloratech.github.io/GLB-Viewer/), choose a `.glb` or `.gltf` file, and inspect it in the current browser tab. The browser demo needs its web rendering resources; it is not the same as the offline-oriented desktop viewer.
+
+## What works today
+
+| Capability | Current state |
+|---|---|
+| View GLB models | Available |
+| Rotate, zoom, and pan | Available |
+| Windows right-click **Open With** workflow | Available |
+| Browser-based model preview | Available |
+| macOS/Linux browser viewing through `viewer.html` | Available in a modern Chrome/Edge browser |
+| Native macOS/Linux **Open With** launchers | Not available yet |
+| Editing tools and GLB export | Not part of the current release |
+
+See [Platform support](PLATFORM_SUPPORT.md) for the distinction between browser viewing and native desktop file-opening integration.
 
 ## Roadmap
 
-**V1 - Just View and Interact - Current Phase**  
-Scroll, zoom, pan, rotate. Just enjoy to view and interact with the file. Includes loading state, error messages, file size and polygon count, screenshot button.
+The current release is deliberately focused on viewing and inspection. The next major version is being explored around the small set of model-adjustment tools people repeatedly need—not an attempt to recreate all of Blender.
 
-**V2 - The 20 percent of Blender people use 80 percent of the time - Future, do NOT build now**  
-Lighting controls, background color, material color, metalness, roughness, Move Rotate Scale with TransformControls gizmo. Export order: screenshot export FIRST, GLB export SECOND. Screenshot is safe, GLB export is risky.
+Potential V2 areas include lighting and environment adjustments, background and material appearance controls, transform tools, and safe image export. These are **research candidates, not a confirmed feature list**. We want to validate real workflows and keep the application lightweight before committing to scope.
 
-**V3 - Remaining OS - Future, do NOT build now**  
-Mac launcher and Linux launcher. `viewer.html` already works on Mac and Linux in Chrome, only Open With registration needs Mac and Linux version.
+See [ROADMAP.md](ROADMAP.md) for the current direction and [GitHub Issues](https://github.com/VeloraTech/GLB-Viewer/issues) to share what you actually need.
 
-**V4 - Offline Install - Future, do NOT build now**  
-Works and allows for edits and view offline. Install as app / PWA, fully offline after first install, no server needed after install. Use Service Worker. Best in Chrome / Edge.
+## Privacy
 
-**V5 - Smart plus Website - Future, do NOT build now**  
-Drag and drop multiple models at once, auto-save last model even when web closes so it reopens on next visit, and a website that people install from. Website must check your OS and give you the download for the OS you are using, with a dropdown to choose download for other OS. User clicks Install, allows hard drive access, and allows the new Open With command.
+The desktop viewer is designed to read the file you explicitly open on your computer. The browser demo renders a file selected in your browser tab and does not provide a model-upload endpoint. The website itself still loads web resources, and its privacy notice explains those requests and the current analytics configuration.
 
-## Folder structure
+Read the full [Privacy Notice](docs/privacy.html).
 
-```
-viewer.html
-launcher.rs
-open-glb.bat
-register.reg
-three/
-sample/ring.glb
-README.md
-CONTRIBUTING.md
-PLATFORM_SUPPORT.md
-LICENSE
-.gitignore
-```
+## Project details
 
-## Tech stack
-
-- Vanilla HTML, CSS, JS — no React, no framework, no build step
-- Three.js r170, pinned locally in `three/` — no CDN, no unpkg, no internet
-- Importmap pointing to `./three/`
-- Rust launcher (`launcher.rs`, stdlib only) — copies file, serves `localhost:8000`, opens Chrome
-- `open-glb.bat` — runs the Rust exe
-- `register.reg` — Windows Open With registration
+- **Rendering:** Three.js
+- **Application:** HTML, CSS, and JavaScript
+- **Windows launcher:** Rust launcher and Windows file association
+- **License:** MIT
+- **Repository:** [VeloraTech/GLB-Viewer](https://github.com/VeloraTech/GLB-Viewer)
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md). You do not need permission — just open a PR. Small PRs welcome.
-
-## Platform support
-
-See [PLATFORM_SUPPORT.md](./PLATFORM_SUPPORT.md).
+Bug reports, platform testing, documentation improvements, and focused pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), check the open [issues](https://github.com/VeloraTech/GLB-Viewer/issues), and include clear reproduction steps when reporting a problem.
 
 ## License
 
-[MIT](./LICENSE)
-
+GLB Viewer is released under the [MIT License](LICENSE).

@@ -1,44 +1,65 @@
 # Contributing to GLB Viewer
 
-You do not need permission. Just open a PR. Small PRs welcome.
+Thanks for helping make GLB Viewer a focused, lightweight way to open and inspect 3D models.
 
-If you are new, start with Issue 1.
+Contributions are welcome: bug reports, platform testing, accessibility fixes, documentation, and carefully scoped code changes.
 
-## How to contribute
+## Before you start
 
-1. Fork or clone the repo:
+1. Browse the [open issues](https://github.com/VeloraTech/GLB-Viewer/issues).
+2. For a substantial change, open an issue first so the goal and trade-offs are clear.
+3. Keep the product focused. GLB Viewer is not intended to become a full Blender replacement.
+4. Avoid adding frameworks, build systems, or large dependencies without a clear need.
 
-   ```bash
-   git clone https://github.com/VeloraTech/GLB-Viewer.git
-   cd GLB-Viewer
-   ```
+## Local setup
 
-2. Make your change (keep it small and focused).
-3. Test locally — open `viewer.html` in Chrome, or run `open-glb.bat` on Windows.
-4. Open a pull request. No build step, no npm install — just vanilla HTML/CSS/JS and a Rust launcher.
+```bash
+git clone https://github.com/VeloraTech/GLB-Viewer.git
+cd GLB-Viewer
+```
 
-## Reporting bugs
+There is no npm install or frontend build step for the current vanilla HTML/CSS/JavaScript application.
 
-Open an issue with:
-- Your OS and Chrome version
-- Steps to reproduce
-- What you expected vs. what happened
-- A screenshot if possible
+- To inspect the standalone viewer, open `viewer.html` in a supported modern browser.
+- To test the Windows file-opening workflow, follow [PLATFORM_SUPPORT.md](PLATFORM_SUPPORT.md) and use the provided launcher scripts.
+- To work on the website, serve the `docs/` directory locally so browser module imports and file selection behave as expected.
 
-## Good first issues
+## Making a contribution
 
-- Test `viewer.html` on Windows, Mac, and Linux (Issue 1, Issue 2)
-- Build the Mac launcher (V3)
-- Build the Linux launcher (V3)
-- Create `demo.gif` for the README (Issue 4)
-- Add V2 features (lighting controls, TransformControls gizmo, etc.)
+1. Create a focused branch.
+2. Make the smallest change that solves the issue.
+3. Test the affected workflow on the relevant platform and browser.
+4. Check the browser console for errors and verify responsive layouts when changing the website.
+5. Open a pull request describing the problem, implementation, testing performed, and any limitations.
 
-## Areas to help with
+Do not claim a platform or browser was tested unless it was actually tested.
 
-- Test `viewer.html` on Windows, Mac, and Linux.
-- Build the Mac launcher (V3).
-- Build the Linux launcher (V3).
-- Create `demo.gif` for the README.
-- Add V2 features (lighting controls, TransformControls gizmo, etc.).
+## Reporting a bug
 
-Please keep changes lightweight and avoid adding frameworks or build tools. Do not add Zustand — it is for React and will break this project.
+Include:
+- Operating system and version
+- Browser and version (if applicable)
+- Which experience you used: desktop launcher, standalone `viewer.html`, or website demo
+- Exact steps to reproduce
+- Expected result and actual result
+- Console output or screenshots when useful
+
+Do not attach private 3D files unless they are safe to share publicly.
+
+## Areas where help is useful
+
+- Test the viewer across Windows, macOS, and Linux browsers.
+- Help investigate native macOS and Linux file-opening workflows.
+- Improve accessibility, keyboard interaction, and mobile website behavior.
+- Research common quick-editing workflows to inform V2.
+- Create and maintain the product demo recording.
+
+## Product direction
+
+V2 is in a discovery phase. Suggestions should explain the real task they solve and how often that task occurs. A feature being available in Blender does not automatically make it right for GLB Viewer.
+
+Please keep the experience fast to understand, light to run, and centered on the model.
+
+## License
+
+By contributing, you agree that your contributions will be made available under the project's MIT License.
