@@ -110,20 +110,21 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         }
       }, false);
 
-      // Click to pick file
-      demoViewport.addEventListener('click', () => {
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.accept = '.glb,.gltf';
-        input.onchange = (e) => {
+      // Click to pick file via visible upload button
+      const uploadBtn = document.getElementById('demo-upload-btn');
+      const fileInput = document.getElementById('demo-file-input');
+      if (uploadBtn && fileInput) {
+        uploadBtn.addEventListener('click', () => {
+          fileInput.click();
+        });
+        fileInput.addEventListener('change', (e) => {
           const file = e.target.files[0];
           if (file) {
             track('demo_pick', { file: file.name });
             loadDemoModel(file);
           }
-        };
-        input.click();
-      });
+        });
+      }
     }
 
     function loadDemoModel(file) {
