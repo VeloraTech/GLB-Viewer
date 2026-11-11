@@ -22,7 +22,7 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
       - name: Build installer
-        run: iscc installer/GLB-Viewer.iss /DAppVersion=${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '1.0.1' }}
+        run: iscc installer/GLB-Viewer.iss /DAppVersion=${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '1.0.2' }}
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
