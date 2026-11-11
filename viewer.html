@@ -468,6 +468,14 @@ window.addEventListener('resize', () => {
 
 // ---------- Initialize: reload last model ----------
 (async () => {
+  const sessionParams = new URLSearchParams(window.location.search);
+  if (sessionParams.has('open') || sessionParams.has('standalone')) {
+    const heartbeat = () => fetch('./__heartbeat', { cache: 'no-store' }).catch(() => {});
+    heartbeat();
+    const heartbeatTimer = window.setInterval(heartbeat, 30000);
+    window.addEventListener('pagehide', () => window.clearInterval(heartbeatTimer), { once: true });
+  }
+
   await updateStorageChip();
   // The Windows launcher serves the explicitly selected local file at /__model.
   // Browser-only sessions continue to use the last saved model or bundled sample.
