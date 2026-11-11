@@ -19,6 +19,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Build Windows launcher
         run: rustc launcher.rs -O -o launcher.exe
+      - name: Test Windows launcher lifecycle and Open With behavior
+        run: node tests/test-launcher.js
       - name: Install Inno Setup
         run: choco install innosetup --no-progress -y
       - name: Build installer
