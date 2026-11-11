@@ -2,7 +2,7 @@
 
 Notable user-facing changes are recorded here. Versions refer to published GitHub releases.
 
-## [1.0.2] - 2026-11-11
+## [1.0.3] - 2026-11-11
 
 ### Windows
 - Added a standalone launch path so the Start menu shortcut and post-install launch open the viewer without requiring a model argument.
