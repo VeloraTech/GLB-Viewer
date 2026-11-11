@@ -56,11 +56,16 @@ jobs:
         run: choco install innosetup --no-progress -y
       - name: Build installer
         run: iscc installer/GLB-Viewer.iss /DAppVersion=${{ steps.version.outputs.version }}
+      - name: Create stable latest-installer filename
+        shell: pwsh
+        run: Copy-Item "dist/GLB-Viewer-Setup-v${{ steps.version.outputs.version }}.exe" "dist/GLB-Viewer-Setup.exe"
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: GLB-Viewer-Windows-Installer
-          path: dist/GLB-Viewer-Setup-v${{ steps.version.outputs.version }}.exe
+          path: |
+            dist/GLB-Viewer-Setup-v${{ steps.version.outputs.version }}.exe
+            dist/GLB-Viewer-Setup.exe
           if-no-files-found: error
       - name: Create tag and publish GitHub release with installer
         if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
@@ -69,7 +74,9 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           target_commitish: main
           name: GLB Viewer ${{ steps.version.outputs.tag }}
-          files: dist/GLB-Viewer-Setup-v${{ steps.version.outputs.version }}.exe
+          files: |
+            dist/GLB-Viewer-Setup-v${{ steps.version.outputs.version }}.exe
+            dist/GLB-Viewer-Setup.exe
           generate_release_notes: true
           draft: false
           prerelease: false
