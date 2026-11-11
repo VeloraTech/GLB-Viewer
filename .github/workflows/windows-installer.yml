@@ -43,7 +43,7 @@ jobs:
           } else {
             $version = "1.0.3"
           }
-          if ($version -notmatch '^\\d+\\.\\d+\\.\\d+$') {
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
             throw "Version must use the format X.Y.Z (received: $version)"
           }
           "version=$version" >> $env:GITHUB_OUTPUT
