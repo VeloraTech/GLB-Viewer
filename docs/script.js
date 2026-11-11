@@ -50,11 +50,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     const url = isSupported ? releases[osKey] : '#download';
 
     if (navCta) {
-      navCta.textContent = isMobile ? 'View desktop options' : (osKey === 'windows' ? 'View Windows release' : label);
+      navCta.textContent = isMobile ? 'View desktop options' : (osKey === 'windows' ? 'Download for Windows' : label);
       navCta.href = isMobile ? '#download' : url;
     }
     if (heroBtn) {
-      heroBtn.textContent = isMobile ? 'View desktop downloads' : (osKey === 'windows' ? 'View Windows release' : label);
+      heroBtn.textContent = isMobile ? 'View desktop downloads' : (osKey === 'windows' ? 'Download for Windows' : label);
       heroBtn.href = isMobile ? '#download' : url;
     }
     if (downloadBtn) {
