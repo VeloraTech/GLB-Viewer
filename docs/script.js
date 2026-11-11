@@ -3,9 +3,8 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 (function () {
-  // The current v1.0.0 release has no attached installer assets.
-  // Link to the real release page rather than inventing download filenames.
-  const releasePage = 'https://github.com/VeloraTech/GLB-Viewer/releases/download/v1.0.2/GLB-Viewer-Setup-v1.0.2.exe';
+  // GitHub Releases remains the source of truth for the current Windows installer.
+  const releasePage = 'https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/GLB-Viewer-Setup-v1.0.2.exe';
   const platformGuide = 'https://github.com/VeloraTech/GLB-Viewer/blob/main/PLATFORM_SUPPORT.md';
   const releases = {
     windows: releasePage,
@@ -58,7 +57,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       heroBtn.href = isMobile ? '#download' : url;
     }
     if (downloadBtn) {
-      downloadBtn.textContent = isMobile ? 'Choose a desktop platform' : (osKey === 'windows' ? 'View Windows release' : label);
+      downloadBtn.textContent = isMobile ? 'Choose a desktop platform' : (osKey === 'windows' ? 'Download for Windows' : label);
       downloadBtn.href = isMobile ? '#dl-other' : url;
       if (!downloadBtn.querySelector('span')) downloadBtn.insertAdjacentHTML('beforeend', ' <span aria-hidden="true">↗</span>');
     }
