@@ -28,7 +28,7 @@ GLB Viewer is a focused, open-source 3D model viewer for quick inspection of **G
 
 The Windows desktop workflow registers GLB Viewer as an **Open With** option for `.glb` files.
 
-1. Download the [Windows installer](https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/GLB-Viewer-Setup-v1.0.3.exe) from the latest release.
+1. Download the [Windows installer](https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/GLB-Viewer-Setup.exe) from the latest release.
 2. Run the installer and approve the Windows installation prompt.
 3. Right-click a `.glb` file and choose **Open With → GLB Viewer**. You can also launch GLB Viewer from the Start menu.
 
