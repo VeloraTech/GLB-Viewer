@@ -10,6 +10,12 @@ Rotate, zoom, and inspect your GLB in Chrome—without importing it into Blender
 
 GLB Viewer is a focused, open-source 3D model viewer for quick inspection of **GLB files**. It gives you the controls you need to look around a model, without asking you to open a full 3D production application just to preview one.
 
+## See it in action
+
+![GLB Viewer demo](assets/demo.gif)
+
+<!-- Upload or replace your recording at assets/demo.gif to display it here. -->
+
 ## Why use it?
 
 - **Open a model, not a whole 3D suite.** Quickly preview a GLB when you only need to inspect it.
@@ -22,7 +28,7 @@ GLB Viewer is a focused, open-source 3D model viewer for quick inspection of **G
 
 The Windows desktop workflow registers GLB Viewer as an **Open With** option for `.glb` files.
 
-1. Download the [Windows installer](https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/GLB-Viewer-Setup-v1.0.3.exe) from the latest release.
+1. Download the [Windows installer](https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/GLB-Viewer-Setup.exe) from the latest release.
 2. Run the installer and approve the Windows installation prompt.
 3. Right-click a `.glb` file and choose **Open With → GLB Viewer**. You can also launch GLB Viewer from the Start menu.
 
@@ -32,7 +38,7 @@ The launcher starts a local viewer session and opens it in your default browser.
 
 ### Try the browser viewer
 
-The project website also includes a browser-based preview. Open the [GLB Viewer website](https://veloratech.github.io/GLB-Viewer/), choose a `.glb` or `.gltf` file, and inspect it in the current browser tab. The browser demo needs its web rendering resources; it is not the same as the offline-oriented desktop viewer.
+The project website also includes a browser-based preview. Open the [GLB Viewer website](https://veloratech.github.io/GLB-Viewer/), choose a `.glb` or `.gltf` file, and inspect it in the current browser tab. This browser preview also works in Chrome on Android, so you can quickly view a model on your phone without installing a native Android app. The browser demo needs its web rendering resources; it is not the same as the offline-oriented Windows desktop viewer.
 
 ## What works today
 
@@ -42,8 +48,9 @@ The project website also includes a browser-based preview. Open the [GLB Viewer 
 | Rotate, zoom, and pan | Available |
 | Windows right-click **Open With** workflow | Available |
 | Browser-based model preview | Available |
+| Android Chrome browser preview through the website | Available |
 | macOS/Linux browser viewing through `viewer.html` | Available in a modern Chrome/Edge browser |
-| Native macOS/Linux **Open With** launchers | Not available yet |
+| Native Android, iOS, macOS, or Linux app / **Open With** integration | Not available |
 | Editing tools and GLB export | Not part of the current release |
 
 See [Platform support](PLATFORM_SUPPORT.md) for the distinction between browser viewing and native desktop file-opening integration.

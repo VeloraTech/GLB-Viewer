@@ -4,7 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 (function () {
   // GitHub Releases remains the source of truth for the current Windows installer.
-  const releasePage = 'https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/GLB-Viewer-Setup-v1.0.3.exe';
+  const releasePage = 'https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/GLB-Viewer-Setup.exe';
   const platformGuide = 'https://github.com/VeloraTech/GLB-Viewer/blob/main/PLATFORM_SUPPORT.md';
   const releases = {
     windows: releasePage,
