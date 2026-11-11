@@ -13,7 +13,7 @@ GLB Viewer has two ways to use it: the standalone desktop workflow and the brows
 
 ## Windows desktop workflow
 
-Download the [Windows installer](https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/GLB-Viewer-Setup-v1.0.2.exe) from the latest release and run it. The installer:
+Download the [Windows installer](https://github.com/VeloraTech/GLB-Viewer/releases/latest/download/GLB-Viewer-Setup-v1.0.3.exe) from the latest release and run it. The installer:
 
 - Installs the launcher, viewer page, bundled Three.js runtime, and sample model.
 - Registers GLB Viewer as a Windows **Open With** option for `.glb` files.
