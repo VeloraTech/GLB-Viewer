@@ -10,8 +10,6 @@ Rotate, zoom, and inspect your GLB in Chrome—without importing it into Blender
 
 GLB Viewer is a focused, open-source 3D model viewer for quick inspection of **GLB files**. It gives you the controls you need to look around a model, without asking you to open a full 3D production application just to preview one.
 
-> The demo GIF will be added here. Replace `demo.gif` with your recorded Windows walkthrough when it is ready.
-
 ## Why use it?
 
 - **Open a model, not a whole 3D suite.** Quickly preview a GLB when you only need to inspect it.
@@ -70,6 +68,7 @@ Read the full [Privacy Notice](docs/privacy.html).
 - **Application:** HTML, CSS, and JavaScript
 - **Windows launcher:** Rust launcher and Windows file association
 - **License:** MIT
+- **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 - **Repository:** [VeloraTech/GLB-Viewer](https://github.com/VeloraTech/GLB-Viewer)
 
 ## Contributing
