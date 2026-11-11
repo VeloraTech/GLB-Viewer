@@ -1,15 +1,16 @@
 # Platform Support
 
-GLB Viewer has two ways to use it: the standalone desktop workflow and the browser-based viewer. They have different setup and network requirements.
+GLB Viewer has two ways to use it: the Windows desktop workflow and the browser-based viewer. They have different setup and network requirements.
 
 ## At a glance
 
-| Platform | Browser viewer (`viewer.html`) | Native file-opening integration |
+| Platform | Browser viewer | Native file-opening integration |
 |---|---|---|
 | Windows | Supported in modern Chrome/Edge | Available |
-| macOS | Supported in modern Chrome/Edge | Planned |
-| Linux | Supported in modern Chrome/Edge | Planned |
-| Android / iOS | Not a supported native app in this release | Not available |
+| Android | Website demo works in Chrome for quick model previews | Not available |
+| macOS | Supported in modern Chrome/Edge | Not available |
+| Linux | Supported in modern Chrome/Edge | Not available |
+| iOS | Not currently documented as supported | Not available |
 
 ## Windows desktop workflow
 
@@ -23,6 +24,10 @@ Download the [Windows installer](https://github.com/VeloraTech/GLB-Viewer/releas
 When a model is opened through **Open With**, the launcher serves the selected file through a local server bound to the loopback interface and opens the viewer in the default browser. The model is not sent to a remote GLB Viewer server. Starting the app from the Start menu opens the viewer without a preselected model. The local server shuts down after three minutes without a viewer heartbeat; the viewer renews that heartbeat while its tab is active.
 
 The installer currently targets 64-bit Windows. The application is not digitally signed, so Windows SmartScreen may show an unfamiliar-app warning. Only install software you trust; the installer source and packaging script are available in this repository.
+
+## Android browser preview
+
+On Android, open the [GLB Viewer website](https://veloratech.github.io/GLB-Viewer/) in Chrome, scroll to the browser viewer, and choose a `.glb` or `.gltf` file from your device. The model is rendered in the browser tab. This is a quick browser preview, not a native Android app or an offline desktop installation.
 
 ## Browser viewer on macOS and Linux
 
