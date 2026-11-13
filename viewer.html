@@ -610,8 +610,13 @@ document.getElementById('transform-form').addEventListener('submit', (event) => 
   updateSelectionPanel();
 });
 
+updateSelectionPanel();
+updateHistoryControls();
+
 window.addEventListener('keydown', (event) => {
   if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+  const activeTag = document.activeElement?.tagName;
+  if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
   const key = event.key.toLowerCase();
   if (key !== 'z' && key !== 'y') return;
   event.preventDefault();
