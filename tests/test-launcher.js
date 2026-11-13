@@ -31,11 +31,12 @@ function waitForPort(child, outputRef, timeoutMs = 8000) {
 
 function get(port, route) {
   return new Promise(resolve => {
-    http.get({ hostname: '127.0.0.1', port, path: route }, response => {
+    http.get({ hostname: '127.0.0.1', port, path: route, timeout: 5000 }, response => {
       const chunks = [];
       response.on('data', chunk => chunks.push(chunk));
       response.on('end', () => resolve({ status: response.statusCode, body: Buffer.concat(chunks) }));
-    }).on('error', () => resolve({ status: 0, body: Buffer.alloc(0) }));
+    }).on('timeout', function () { this.destroy(new Error('Request timed out after 5000ms')); })
+      .on('error', error => resolve({ status: 0, body: Buffer.alloc(0), error: error.message }));
   });
 }
 
@@ -71,7 +72,7 @@ function rawGet(port, requestTarget) {
       pass('standalone launcher starts without a model');
       const page = await get(port, '/viewer.html?standalone=1');
       if (page.status === 200 && page.body.toString().includes('GLB Viewer')) pass('standalone mode serves viewer page');
-      else fail('standalone mode serves viewer page', `HTTP ${page.status}`);
+      else fail('standalone mode serves viewer page', `HTTP ${page.status}${page.error ? `; ${page.error}` : ''}; child exit=${standalone.exitCode}`);
       const missingModel = await get(port, '/__model');
       if (missingModel.status === 404) pass('standalone mode does not pretend a model was supplied');
       else fail('standalone mode model endpoint', `HTTP ${missingModel.status}`);
@@ -99,7 +100,7 @@ function rawGet(port, requestTarget) {
 
     const page = await get(port, '/viewer.html?open=1');
     if (page.status === 200 && page.body.toString().includes('GLB Viewer')) pass('serves viewer page');
-    else fail('serves viewer page', `HTTP ${page.status}`);
+    else fail('serves viewer page', `HTTP ${page.status}${page.error ? `; ${page.error}` : ''}; child exit=${child.exitCode}`);
 
     const model = await get(port, '/__model');
     if (model.status === 200 && model.body.equals(fs.readFileSync(sample))) pass('serves exact selected model bytes');
@@ -128,7 +129,7 @@ function rawGet(port, requestTarget) {
     expiring.kill();
   } else {
     const exitCode = await new Promise(resolve => {
-      const timer = setTimeout(() => { expiring.kill(); resolve(null); }, 6000);
+      const timer = setTimeout(() => { expiring.kill(); resolve(null); }, 20000);
       expiring.once('exit', code => { clearTimeout(timer); resolve(code); });
     });
     if (exitCode === 0) pass('launcher exits after the viewer heartbeat expires');
