@@ -98,3 +98,76 @@ export class SetTransformCommand {
     this.sceneStore.setTransform(this.objectId, this.previousTransform);
   }
 }
+
+
+function requireSceneMutationApi(sceneStore, method) {
+  if (!sceneStore || typeof sceneStore[method] !== 'function') {
+    throw new TypeError('A compatible SceneStore is required.');
+  }
+}
+
+export class AddObjectCommand {
+  constructor(sceneStore, object, parentId = null, index = -1) {
+    requireSceneMutationApi(sceneStore, 'addObject');
+    this.sceneStore = sceneStore;
+    this.object = object;
+    this.parentId = parentId;
+    this.index = index;
+    this.executed = false;
+  }
+
+  do() {
+    const parent = this.parentId == null ? this.sceneStore.root : this.sceneStore.requireObject(this.parentId);
+    this.sceneStore.addObject(this.object, parent, this.index);
+    this.index = this.sceneStore.getChildIndex(this.object);
+    this.executed = true;
+  }
+
+  undo() {
+    if (!this.executed) throw new Error('Cannot undo an add command before it executes.');
+    this.sceneStore.removeObject(this.sceneStore.getId(this.object));
+  }
+}
+
+export class RemoveObjectCommand {
+  constructor(sceneStore, objectId) {
+    requireSceneMutationApi(sceneStore, 'removeObject');
+    this.sceneStore = sceneStore;
+    this.objectId = String(objectId);
+    this.snapshot = null;
+  }
+
+  do() {
+    const result = this.sceneStore.removeObject(this.objectId);
+    if (!result) throw new Error(`Unknown scene object "${this.objectId}".`);
+    if (!this.snapshot) this.snapshot = result;
+  }
+
+  undo() {
+    if (!this.snapshot) throw new Error('Cannot undo a remove command before it executes.');
+    this.sceneStore.addObject(this.snapshot.object, this.snapshot.parent, this.snapshot.index);
+  }
+}
+
+export class ReparentObjectCommand {
+  constructor(sceneStore, objectId, newParentId, index = -1) {
+    requireSceneMutationApi(sceneStore, 'reparentObject');
+    this.sceneStore = sceneStore;
+    this.objectId = String(objectId);
+    this.newParentId = String(newParentId);
+    this.index = index;
+    this.snapshot = null;
+  }
+
+  do() {
+    const newParent = this.sceneStore.requireObject(this.newParentId);
+    const result = this.sceneStore.reparentObject(this.objectId, newParent, this.index);
+    if (!this.snapshot) this.snapshot = result;
+    this.index = result.newIndex;
+  }
+
+  undo() {
+    if (!this.snapshot) throw new Error('Cannot undo a reparent command before it executes.');
+    this.sceneStore.reparentObject(this.objectId, this.snapshot.oldParent, this.snapshot.oldIndex);
+  }
+}
