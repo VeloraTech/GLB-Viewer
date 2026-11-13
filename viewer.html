@@ -106,6 +106,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { disposeObjectResources } from './src/core/ResourceDisposer.js';
 import { PerformanceMonitor } from './src/core/PerformanceMonitor.js';
+import { SceneStore } from './src/core/SceneStore.js';
+import { CommandHistory } from './src/core/CommandHistory.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
 const performanceMonitor = new PerformanceMonitor();
@@ -225,6 +227,8 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 canvas.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
+const sceneStore = new SceneStore(scene);
+const commandHistory = new CommandHistory({ limit: 100 });
 scene.background = new THREE.Color(0x111111);
 scene.environment = new RoomEnvironment();
 
@@ -356,13 +360,14 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       const nextModel = gltf.scene;
       const previousModel = currentModel;
       if (previousModel) {
-        scene.remove(previousModel);
+        sceneStore.removeObject(previousModel.uuid);
+        commandHistory.clear();
         clearCurrentAnimation();
         disposeObjectResources(previousModel);
       }
 
       currentModel = nextModel;
-      scene.add(currentModel);
+      sceneStore.addObject(currentModel, scene);
       mixer = new THREE.AnimationMixer(currentModel);
       gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
 
