@@ -121,3 +121,90 @@ test('transform command snapshots target values instead of retaining caller muta
   history.undo();
   assert.equal(object.position.x, 0);
 });
+
+
+test('remove command preserves subtree identity, sibling index and selection through undo/redo', () => {
+  const root = new FakeObject('root');
+  const first = new FakeObject('first');
+  const group = new FakeObject('group');
+  const nested = new FakeObject('nested');
+  const last = new FakeObject('last');
+  group.add(nested);
+  root.add(first);
+  root.add(group);
+  root.add(last);
+  const store = new SceneStore(root);
+  const history = new CommandHistory();
+  store.select('nested');
+
+  history.execute(new RemoveObjectCommand(store, 'group'));
+  assert.deepEqual(root.children.map((node) => node.uuid), ['first', 'last']);
+  assert.equal(store.getObject('nested'), null);
+  assert.equal(store.getSelection(), null);
+
+  history.undo();
+  assert.deepEqual(root.children.map((node) => node.uuid), ['first', 'group', 'last']);
+  assert.equal(store.getObject('nested'), nested);
+  assert.equal(group.children[0], nested);
+
+  history.redo();
+  assert.deepEqual(root.children.map((node) => node.uuid), ['first', 'last']);
+  assert.equal(store.getObject('group'), null);
+});
+
+test('add command registers and unregisters an entire subtree without disposing resources', () => {
+  const root = new FakeObject('root');
+  const group = new FakeObject('group');
+  const child = new FakeObject('child');
+  group.add(child);
+  let disposed = false;
+  child.geometry = { dispose() { disposed = true; } };
+  const store = new SceneStore(root);
+  const history = new CommandHistory();
+
+  history.execute(new AddObjectCommand(store, group));
+  assert.equal(store.getObject('child'), child);
+  history.undo();
+  assert.equal(store.getObject('child'), null);
+  assert.equal(disposed, false);
+  history.redo();
+  assert.equal(store.getObject('child'), child);
+  assert.equal(disposed, false);
+});
+
+test('reparent command preserves hierarchy and exact sibling order across undo/redo', () => {
+  const root = new FakeObject('root');
+  const left = new FakeObject('left');
+  const right = new FakeObject('right');
+  const moving = new FakeObject('moving');
+  const sibling = new FakeObject('sibling');
+  root.add(left);
+  root.add(right);
+  left.add(moving);
+  left.add(sibling);
+  const store = new SceneStore(root);
+  const history = new CommandHistory();
+
+  history.execute(new ReparentObjectCommand(store, 'moving', 'right'));
+  assert.equal(moving.parent, right);
+  assert.deepEqual(left.children.map((node) => node.uuid), ['sibling']);
+  history.undo();
+  assert.equal(moving.parent, left);
+  assert.deepEqual(left.children.map((node) => node.uuid), ['moving', 'sibling']);
+  history.redo();
+  assert.equal(moving.parent, right);
+});
+
+test('scene graph rejects cycles and unregistered destination parents', () => {
+  const root = new FakeObject('root');
+  const parent = new FakeObject('parent');
+  const child = new FakeObject('child');
+  root.add(parent);
+  parent.add(child);
+  const store = new SceneStore(root);
+  const outsider = new FakeObject('outsider');
+  assert.throws(() => store.reparentObject('parent', child), /cycle/);
+  assert.throws(() => store.reparentObject('child', outsider), /destination parent/);
+  assert.equal(parent.parent, root);
+  assert.equal(child.parent, parent);
+});
