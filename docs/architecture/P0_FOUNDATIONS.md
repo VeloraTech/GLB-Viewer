@@ -27,7 +27,7 @@ It does not dispose GPU resources. Disposal belongs to the asset/renderer lifecy
 - Failed commands are not added to history.
 - A callback reports history state changes.
 
-Commands implement `do()` and `undo()`. Scene operations are not automatically recorded yet; callers must explicitly wrap an operation as a command. This avoids hidden mutations and makes the eventual UI integration deliberate.
+Commands implement `do()` and `undo()`. `src/core/SceneCommands.js` now provides `SetVisibilityCommand` and `SetTransformCommand`. Both mutate through SceneStore, capture the original value on first execution, and restore it on undo; redo reapplies the requested value. Transform snapshots are copied into plain component objects, so later mutation of the caller's input or Three.js vectors does not rewrite history. Commands remain synchronous and renderer-independent. Callers explicitly pass a command to `commandHistory.execute(command)`; no scene mutation is silently recorded.
 
 ### ResourceDisposer and model-load lifecycle
 
@@ -67,7 +67,7 @@ A bounded `CommandHistory` instance is also created and cleared when the active 
 ## P0 work still outstanding
 
 - Route future selection, visibility, transform, add, and remove UI actions through SceneStore.
-- Add explicit transform/visibility/add/remove commands backed by CommandHistory and test undo/redo against scene objects.
+- Add add/remove commands and connect editing UI actions to the command layer when those controls are introduced.
 - Collect comparable diagnostics across representative devices and models; document test conditions before setting thresholds.
 - Measure memory/resource trends over repeated load/replace cycles; renderer counters are not total process-memory measurements.
 - Add adaptive quality decisions only after measurements establish useful signals.
