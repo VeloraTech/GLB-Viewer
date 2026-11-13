@@ -32,13 +32,17 @@ export class SceneStore {
 
   unregisterTree(object) {
     if (!object) return;
-    const remove = (child) => {
+    const ids = [];
+    const collect = (child) => {
       const id = this.getId(child);
-      if (id != null) this.objects.delete(String(id));
-      if (this.selectedId === String(id)) this.select(null);
+      if (id != null) ids.push(String(id));
     };
-    if (typeof object.traverse === 'function') object.traverse(remove);
-    else remove(object);
+    if (typeof object.traverse === 'function') object.traverse(collect);
+    else collect(object);
+
+    // Clear selection while the selected object is still resolvable for listeners.
+    if (ids.includes(this.selectedId)) this.select(null);
+    for (const id of ids) this.objects.delete(id);
   }
 
   getObject(id) {
