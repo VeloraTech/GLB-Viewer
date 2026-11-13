@@ -9,7 +9,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 const SESSION_IDLE_TIMEOUT: Duration = Duration::from_secs(180);
-const TEST_IDLE_TIMEOUT: Duration = Duration::from_secs(2);
+const TEST_IDLE_TIMEOUT: Duration = Duration::from_secs(15);
 
 fn main() -> io::Result<()> {
     let model = env::args_os().nth(1).map(PathBuf::from);
