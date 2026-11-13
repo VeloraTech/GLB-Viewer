@@ -45,6 +45,30 @@
   /* File picker hidden input */
   #file-input { display: none; }
 
+  /* Scene editing panel */
+  #scene-panel { position: absolute; top: 64px; right: 12px; bottom: 64px; width: min(300px, calc(100vw - 24px)); max-height: calc(100vh - 128px); overflow: auto; padding: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(20,20,20,0.94); color: #eee; pointer-events: auto; z-index: 20; backdrop-filter: blur(8px); font-size: 12px; }
+  #scene-panel h2 { font-size: 14px; margin-bottom: 10px; }
+  #scene-panel h3 { font-size: 12px; color: #aaa; margin: 14px 0 7px; text-transform: uppercase; letter-spacing: .06em; }
+  #scene-panel button, #scene-panel input { font: inherit; }
+  #history-controls { display: flex; gap: 6px; }
+  #history-controls button, .scene-row button, #transform-form button { border: 1px solid rgba(255,255,255,.22); border-radius: 4px; padding: 6px 8px; color: #eee; background: rgba(255,255,255,.09); cursor: pointer; }
+  #history-controls button:disabled { opacity: .35; cursor: default; }
+  #object-list { display: flex; flex-direction: column; gap: 4px; max-height: 34vh; overflow: auto; }
+  .scene-row { display: flex; align-items: center; gap: 5px; min-width: 0; padding: 4px; border-radius: 4px; }
+  .scene-row.selected { background: rgba(0,150,255,.22); outline: 1px solid rgba(0,150,255,.45); }
+  .scene-row .object-select { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; border: 0; background: transparent; color: inherit; padding: 4px; cursor: pointer; }
+  .scene-row .visibility-toggle { flex: 0 0 auto; padding: 4px 6px; }
+  #selected-name { color: #bbb; overflow-wrap: anywhere; }
+  #transform-form { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+  #transform-form label { display: flex; flex-direction: column; gap: 3px; color: #aaa; }
+  #transform-form input { width: 100%; min-width: 0; padding: 6px 4px; border: 1px solid rgba(255,255,255,.2); border-radius: 4px; background: rgba(255,255,255,.08); color: #fff; }
+  #transform-form button { grid-column: 1 / -1; margin-top: 4px; }
+  #scene-hint { margin-top: 8px; color: #999; line-height: 1.4; }
+  body.light #scene-panel { background: rgba(250,250,250,.96); color: #222; border-color: rgba(0,0,0,.2); }
+  body.light #scene-panel h3, body.light #selected-name, body.light #scene-hint, body.light #transform-form label { color: #666; }
+  body.light #scene-panel button { color: #222; border-color: rgba(0,0,0,.2); background: rgba(0,0,0,.05); }
+  body.light #transform-form input { color: #222; border-color: rgba(0,0,0,.2); background: #fff; }
+
   /* Light theme override */
   body.light { background: #f5f5f5; color: #222; }
   body.light #loading { background: #f5f5f5; }
@@ -67,6 +91,30 @@
     <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
   </div>
+  <aside id="scene-panel" aria-label="Scene editor">
+    <h2>Scene</h2>
+    <div id="history-controls">
+      <button id="undo-btn" type="button" disabled>Undo</button>
+      <button id="redo-btn" type="button" disabled>Redo</button>
+    </div>
+    <h3>Objects</h3>
+    <div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
+    <h3>Selection</h3>
+    <div id="selected-name">Nothing selected</div>
+    <form id="transform-form">
+      <label>X <input name="x" type="number" step="any" value="0"></label>
+      <label>Y <input name="y" type="number" step="any" value="0"></label>
+      <label>Z <input name="z" type="number" step="any" value="0"></label>
+      <label>Rotate X° <input name="rx" type="number" step="any" value="0"></label>
+      <label>Rotate Y° <input name="ry" type="number" step="any" value="0"></label>
+      <label>Rotate Z° <input name="rz" type="number" step="any" value="0"></label>
+      <label>Scale X <input name="sx" type="number" step="any" value="1"></label>
+      <label>Scale Y <input name="sy" type="number" step="any" value="1"></label>
+      <label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
+      <button type="submit">Apply transform</button>
+    </form>
+    <p id="scene-hint">Select an object in the list or click it in the viewer. Undo: Ctrl/Cmd + Z · Redo: Ctrl/Cmd + Shift + Z.</p>
+  </aside>
   <div id="loading">
     <div class="spinner"></div>
     <p id="loading-text">Loading ring.glb...</p>
@@ -108,6 +156,7 @@ import { disposeObjectResources } from './src/core/ResourceDisposer.js';
 import { PerformanceMonitor } from './src/core/PerformanceMonitor.js';
 import { SceneStore } from './src/core/SceneStore.js';
 import { CommandHistory } from './src/core/CommandHistory.js';
+import { SetTransformCommand, SetVisibilityCommand } from './src/core/SceneCommands.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
 const performanceMonitor = new PerformanceMonitor();
@@ -384,6 +433,8 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       updateInfoChip();
 
       fitCamera(currentModel);
+      refreshObjectList();
+      selectObject(null);
       showLoading(false);
       if (blob) scheduleSave(url, blob, fileSize);
       state.lastModelUrl = null;
@@ -411,6 +462,86 @@ function loadModelFromFile(file) {
   loadModelFromUrl(url, file.name, file.size, file);
 }
 
+function refreshObjectList() {
+  const list = document.getElementById('object-list');
+  list.replaceChildren();
+  if (!currentModel) {
+    const empty = document.createElement('span');
+    empty.textContent = 'Open a model to inspect its objects.';
+    list.appendChild(empty);
+    return;
+  }
+
+  currentModel.traverse((object) => {
+    if (object === currentModel || (!object.isMesh && !object.isGroup && !object.isObject3D)) return;
+    const row = document.createElement('div');
+    row.className = 'scene-row';
+    row.dataset.objectId = object.uuid;
+
+    const selectButton = document.createElement('button');
+    selectButton.type = 'button';
+    selectButton.className = 'object-select';
+    selectButton.textContent = object.name || object.type || 'Object';
+    selectButton.title = object.name || object.uuid;
+    selectButton.addEventListener('click', () => selectObject(object));
+
+    const visibilityButton = document.createElement('button');
+    visibilityButton.type = 'button';
+    visibilityButton.className = 'visibility-toggle';
+    visibilityButton.textContent = object.visible ? 'Visible' : 'Hidden';
+    visibilityButton.setAttribute('aria-label', object.visible ? 'Hide object' : 'Show object');
+    visibilityButton.addEventListener('click', () => {
+      commandHistory.execute(new SetVisibilityCommand(sceneStore, object.uuid, !object.visible));
+      refreshObjectList();
+      updateHistoryControls();
+      if (sceneStore.getSelection() === object) updateSelectionPanel();
+    });
+
+    row.append(selectButton, visibilityButton);
+    list.appendChild(row);
+  });
+}
+
+function selectObject(object) {
+  if (object && !sceneStore.getObject(object.uuid)) return;
+  sceneStore.select(object ? object.uuid : null);
+  updateSelectionPanel();
+  document.querySelectorAll('.scene-row').forEach((row) => {
+    row.classList.toggle('selected', row.dataset.objectId === (object?.uuid || ''));
+  });
+}
+
+function updateSelectionPanel() {
+  const object = sceneStore.getSelection();
+  document.getElementById('selected-name').textContent = object
+    ? (object.name || object.type || object.uuid)
+    : 'Nothing selected';
+  const form = document.getElementById('transform-form');
+  form.querySelector('[name="x"]').value = object?.position.x ?? 0;
+  form.querySelector('[name="y"]').value = object?.position.y ?? 0;
+  form.querySelector('[name="z"]').value = object?.position.z ?? 0;
+  form.querySelector('[name="rx"]').value = THREE.MathUtils.radToDeg(object?.rotation.x ?? 0);
+  form.querySelector('[name="ry"]').value = THREE.MathUtils.radToDeg(object?.rotation.y ?? 0);
+  form.querySelector('[name="rz"]').value = THREE.MathUtils.radToDeg(object?.rotation.z ?? 0);
+  form.querySelector('[name="sx"]').value = object?.scale.x ?? 1;
+  form.querySelector('[name="sy"]').value = object?.scale.y ?? 1;
+  form.querySelector('[name="sz"]').value = object?.scale.z ?? 1;
+  form.querySelectorAll('input, button').forEach((input) => { input.disabled = !object; });
+}
+
+function updateHistoryControls() {
+  document.getElementById('undo-btn').disabled = !commandHistory.canUndo();
+  document.getElementById('redo-btn').disabled = !commandHistory.canRedo();
+}
+
+function applyHistoryAction(action) {
+  if (action === 'undo') commandHistory.undo();
+  else commandHistory.redo();
+  refreshObjectList();
+  updateHistoryControls();
+  updateSelectionPanel();
+}
+
 function fitCamera(object) {
   const box = new THREE.Box3().setFromObject(object);
   const center = box.getCenter(new THREE.Vector3());
@@ -427,6 +558,66 @@ function fitCamera(object) {
   camera.far = far;
   camera.updateProjectionMatrix();
 }
+
+// ---------- Scene selection and command-backed editing ----------
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let pointerDown = null;
+
+renderer.domElement.addEventListener('pointerdown', (event) => {
+  pointerDown = { x: event.clientX, y: event.clientY, button: event.button };
+});
+renderer.domElement.addEventListener('pointerup', (event) => {
+  if (!pointerDown || pointerDown.button !== 0) return;
+  const moved = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y);
+  pointerDown = null;
+  if (moved > 5 || !currentModel) return;
+  const bounds = renderer.domElement.getBoundingClientRect();
+  pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+  pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hit = raycaster.intersectObject(currentModel, true)[0];
+  if (!hit) return;
+  let target = hit.object;
+  while (target.parent && target.parent !== currentModel) target = target.parent;
+  selectObject(target);
+});
+
+sceneStore.on('selection:changed', updateSelectionPanel);
+commandHistory.onChange = updateHistoryControls;
+
+document.getElementById('undo-btn').addEventListener('click', () => applyHistoryAction('undo'));
+document.getElementById('redo-btn').addEventListener('click', () => applyHistoryAction('redo'));
+
+document.getElementById('transform-form').addEventListener('submit', (event) => {
+  event.preventDefault();
+  const object = sceneStore.getSelection();
+  if (!object) return;
+  const form = event.currentTarget;
+  const number = (name) => Number(form.elements[name].value);
+  const transform = {
+    position: { x: number('x'), y: number('y'), z: number('z') },
+    rotation: {
+      x: THREE.MathUtils.degToRad(number('rx')),
+      y: THREE.MathUtils.degToRad(number('ry')),
+      z: THREE.MathUtils.degToRad(number('rz')),
+      order: object.rotation.order
+    },
+    scale: { x: number('sx'), y: number('sy'), z: number('sz') }
+  };
+  commandHistory.execute(new SetTransformCommand(sceneStore, object.uuid, transform));
+  updateHistoryControls();
+  updateSelectionPanel();
+});
+
+window.addEventListener('keydown', (event) => {
+  if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+  const key = event.key.toLowerCase();
+  if (key !== 'z' && key !== 'y') return;
+  event.preventDefault();
+  if (key === 'y' || (key === 'z' && event.shiftKey)) applyHistoryAction('redo');
+  else applyHistoryAction('undo');
+});
 
 // ---------- Drag and drop ----------
 window.addEventListener('dragover', (e) => { e.preventDefault(); });
