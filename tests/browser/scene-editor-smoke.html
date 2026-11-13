@@ -94,7 +94,6 @@
         if (Math.abs(object.position.x - original) > 1e-8) throw new Error('Undo did not restore position.');
         api.applyHistoryAction('redo');
         if (Math.abs(object.position.x - (original + 1.25)) > 1e-8) throw new Error('Redo did not reapply position.');
-        api.applyHistoryAction('undo');
       });
 
       report('Undo/Redo buttons reflect history state', () => {
