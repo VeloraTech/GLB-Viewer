@@ -2,7 +2,7 @@
 
 This document tracks the first code slice of the P0 foundations work. It is intentionally separate from the NativeRelay hardware integration workstream.
 
-## Implemented in this branch
+## Implemented on main
 
 ### SceneStore
 
@@ -28,6 +28,19 @@ It does not dispose GPU resources. Disposal belongs to the asset/renderer lifecy
 - A callback reports history state changes.
 
 Commands implement `do()` and `undo()`. Scene operations are not automatically recorded yet; callers must explicitly wrap an operation as a command. This avoids hidden mutations and makes the eventual UI integration deliberate.
+
+### ResourceDisposer and model-load lifecycle
+
+`src/core/ResourceDisposer.js` centralizes cleanup for a loaded Object3D tree:
+
+- Disposes geometries, materials and textures, including textures nested in material uniforms.
+- Handles material arrays and skeleton bone textures.
+- Uses sets to avoid duplicate disposal when GLTF resources are shared.
+- Does not dispose renderer-owned resources such as the scene environment.
+
+The viewer now uses this disposer when replacing a successfully loaded model. Its load callbacks are guarded by a monotonically increasing request ID, so an older request that completes late cannot replace a newer user selection. Stale successful results are disposed, and temporary blob URLs are revoked after success or failure. The previous model remains active until the new model has loaded successfully.
+
+This is stale-result protection, not transport cancellation: the underlying loader request may continue in the background until it settles.
 
 ## Tests
 
