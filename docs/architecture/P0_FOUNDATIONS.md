@@ -52,17 +52,18 @@ Run from the repository root with a modern Node.js version:
 node --experimental-default-type=module --test tests/*.test.js
 ```
 
-## Integration boundary
+## Viewer integration status
 
-These modules are not wired into `viewer.html` yet. The existing viewer remains the working product surface while the foundations are tested independently. The next integration step should adapt the current loaded GLTF scene into SceneStore, then route existing selection/object operations through it without changing model loading, IndexedDB persistence, screenshots, animation playback, or launcher heartbeat behavior.
+The viewer now creates a `SceneStore` after its base scene (camera-independent scene objects, ambient light, and directional light) is initialized. Successfully loaded models are registered through `sceneStore.addObject`; replacing a model removes it through `sceneStore.removeObject` before resource disposal. This keeps the registry synchronized with the loaded model lifecycle while leaving GLTF loading, IndexedDB persistence, screenshots, animation playback, and launcher heartbeat behavior intact.
+
+A bounded `CommandHistory` instance is also created and cleared when the active model is replaced, preventing future undo entries from crossing model boundaries. Existing UI actions are not yet recorded as commands, and there is not yet an object-selection or hierarchy UI. Those are separate follow-up slices rather than implied capabilities.
 
 ## P0 work still outstanding
 
-- Integrate the store into the existing viewer in a small, reversible change.
-- Add resource lifecycle/disposal ownership and tests.
-- Add explicit transform/visibility/add/remove commands backed by CommandHistory.
-- Establish reproducible performance baselines before setting thresholds.
-- Measure render frame time, load time, and memory/resource behavior where browser APIs permit.
+- Route future selection, visibility, transform, add, and remove UI actions through SceneStore.
+- Add explicit transform/visibility/add/remove commands backed by CommandHistory and test undo/redo against scene objects.
+- Collect comparable diagnostics across representative devices and models; document test conditions before setting thresholds.
+- Measure memory/resource trends over repeated load/replace cycles; renderer counters are not total process-memory measurements.
 - Add adaptive quality decisions only after measurements establish useful signals.
 - Review privacy/data flows and ensure diagnostics remain local by default.
 
