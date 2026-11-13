@@ -27,6 +27,9 @@ jobs:
       - name: Test launcher HTTP server
         run: node tests/test-launcher.js
 
+      - name: Run core foundation tests
+        run: node --experimental-default-type=module --test tests/*.test.js
+
       - name: Check website JavaScript syntax
         shell: bash
         run: node --input-type=module --check < docs/script.js
