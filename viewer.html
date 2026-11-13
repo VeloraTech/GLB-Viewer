@@ -245,6 +245,18 @@ scene.add(dirLight);
 // ---------- Model loading ----------
 let currentModel = null;
 let mixer = null;
+let loadRequestId = 0;
+
+function releaseObjectUrl(url) {
+  if (typeof url === 'string' && url.startsWith('blob:')) URL.revokeObjectURL(url);
+}
+
+function clearCurrentAnimation() {
+  if (!mixer || !currentModel) return;
+  mixer.stopAllAction();
+  mixer.uncacheRoot(currentModel);
+  mixer = null;
+}
 
 function countStats(object) {
   let triangles = 0;
@@ -320,25 +332,36 @@ function setBackground(mode) {
 }
 
 function loadModelFromUrl(url, fileName, fileSize, blob) {
+  const requestId = ++loadRequestId;
   hideError();
   showLoading(true, `Loading ${fileName}...`);
-  state.fileName = fileName;
-  state.fileSize = fileSize;
 
   const loader = new GLTFLoader();
   loader.load(
     url,
     (gltf) => {
-      if (currentModel) {
-        scene.remove(currentModel);
-        disposeObjectResources(currentModel);
+      // A slower earlier request must never replace a newer user selection.
+      if (requestId !== loadRequestId) {
+        disposeObjectResources(gltf.scene);
+        releaseObjectUrl(url);
+        return;
       }
-      currentModel = gltf.scene;
-      scene.add(currentModel);
 
+      const nextModel = gltf.scene;
+      const previousModel = currentModel;
+      if (previousModel) {
+        scene.remove(previousModel);
+        clearCurrentAnimation();
+        disposeObjectResources(previousModel);
+      }
+
+      currentModel = nextModel;
+      scene.add(currentModel);
       mixer = new THREE.AnimationMixer(currentModel);
       gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
 
+      state.fileName = fileName;
+      state.fileSize = fileSize;
       const stats = countStats(currentModel);
       state.triangles = stats.triangles;
       state.vertices = stats.vertices;
@@ -347,21 +370,19 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
 
       fitCamera(currentModel);
       showLoading(false);
-
-      // Debounced auto-save to IndexedDB
-      if (blob) {
-        scheduleSave(url, blob, fileSize);
-      }
-      state.lastModelUrl = url;
+      if (blob) scheduleSave(url, blob, fileSize);
+      state.lastModelUrl = null;
+      releaseObjectUrl(url);
     },
     (xhr) => {
-      if (xhr.lengthComputable) {
-        const pct = Math.round((xhr.loaded / xhr.total) * 100);
-        updateProgress(pct);
-        document.getElementById('loading-text').textContent = `Loading ${fileName}... ${pct}%`;
-      }
+      if (requestId !== loadRequestId || !xhr.lengthComputable) return;
+      const pct = Math.round((xhr.loaded / xhr.total) * 100);
+      updateProgress(pct);
+      document.getElementById('loading-text').textContent = `Loading ${fileName}... ${pct}%`;
     },
     (err) => {
+      releaseObjectUrl(url);
+      if (requestId !== loadRequestId) return;
       console.error(err);
       showError('It may be corrupt or not a valid GLB.');
       showLoading(false);
