@@ -103,6 +103,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { disposeObjectResources } from './src/core/ResourceDisposer.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
 const state = {
@@ -330,12 +331,7 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
     (gltf) => {
       if (currentModel) {
         scene.remove(currentModel);
-        currentModel.traverse((c) => {
-          if (c.isMesh) {
-            c.geometry.dispose();
-            c.material.dispose();
-          }
-        });
+        disposeObjectResources(currentModel);
       }
       currentModel = gltf.scene;
       scene.add(currentModel);
