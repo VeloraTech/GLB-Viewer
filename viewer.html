@@ -64,6 +64,7 @@
     <button id="bg-toggle" title="Toggle dark/light background">Dark</button>
     <button id="screenshot" title="Screenshot">Screenshot</button>
     <button id="file-picker-btn" title="Open file">Open GLB</button>
+    <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
   </div>
   <div id="loading">
@@ -104,8 +105,11 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { disposeObjectResources } from './src/core/ResourceDisposer.js';
+import { PerformanceMonitor } from './src/core/PerformanceMonitor.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
+const performanceMonitor = new PerformanceMonitor();
+
 const state = {
   fileName: null,
   fileSize: 0,
@@ -333,6 +337,7 @@ function setBackground(mode) {
 
 function loadModelFromUrl(url, fileName, fileSize, blob) {
   const requestId = ++loadRequestId;
+  const loadStartedAt = performance.now();
   hideError();
   showLoading(true, `Loading ${fileName}...`);
 
@@ -427,7 +432,7 @@ document.getElementById('file-picker-btn').addEventListener('click', () => {
   document.getElementById('file-input').value = '';
   document.getElementById('file-input').click();
 });
-document.getElementById('file-input').addEventListener('change', (e) => {
+document.getElementById('diagnostics-btn').addEventListener('click', () => {\n  const gl = renderer.getContext();\n  const diagnostics = {\n    ...performanceMonitor.snapshot(),\n    runtime: {\n      userAgent: navigator.userAgent,\n      devicePixelRatio: window.devicePixelRatio || 1,\n      viewport: { width: window.innerWidth, height: window.innerHeight },\n      rendererPixelRatio: renderer.getPixelRatio(),\n      webglVersion: gl instanceof WebGL2RenderingContext ? 2 : 1,\n      maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),\n      maxRenderbufferSize: gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),\n      maxTextureImageUnits: gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS),\n      maxVertexTextureImageUnits: gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS),\n      extensions: gl.getSupportedExtensions() || []\n    },\n    renderer: { ...renderer.info.render, memory: { ...renderer.info.memory }, programs: renderer.info.programs ? renderer.info.programs.length : null }\n  };\n  const blob = new Blob([JSON.stringify(diagnostics, null, 2)], { type: 'application/json' });\n  const url = URL.createObjectURL(blob);\n  const link = document.createElement('a');\n  link.href = url;\n  link.download = 'glb-viewer-diagnostics.json';\n  link.click();\n  URL.revokeObjectURL(url);\n});\n\ndocument.getElementById('file-input').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (file) loadModelFromFile(file);
 });
