@@ -62,12 +62,24 @@ node --experimental-default-type=module --test tests/*.test.js
 
 The viewer now creates a `SceneStore` after its base scene (camera-independent scene objects, ambient light, and directional light) is initialized. Successfully loaded models are registered through `sceneStore.addObject`; replacing a model removes it through `sceneStore.removeObject` before resource disposal. This keeps the registry synchronized with the loaded model lifecycle while leaving GLTF loading, IndexedDB persistence, screenshots, animation playback, and launcher heartbeat behavior intact.
 
-A bounded `CommandHistory` instance is also created and cleared when the active model is replaced, preventing future undo entries from crossing model boundaries. Existing UI actions are not yet recorded as commands, and there is not yet an object-selection or hierarchy UI. Those are separate follow-up slices rather than implied capabilities.
+A bounded `CommandHistory` instance is also created and cleared when the active model is replaced, preventing undo entries from crossing model boundaries.
+
+The viewer now has an initial command-backed scene editing surface:
+
+- Lists loaded model descendants and lets the user select an object from the list.
+- Supports viewport picking with a raycaster; the hit is resolved to the top-level child under the loaded model root.
+- Provides per-object visibility toggles routed through `SetVisibilityCommand`.
+- Provides numeric position, Euler rotation (displayed in degrees), and scale fields routed through `SetTransformCommand`.
+- Provides Undo/Redo buttons and Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z, and Ctrl/Cmd+Y shortcuts.
+- Refreshes the object list and selection fields after history actions.
+
+This is a first functional editing slice, not a complete hierarchy editor or transform gizmo. The object list is a flat list of descendants; nested hierarchy navigation, multi-selection, add/remove commands, drag gizmos, and animation-aware transform editing remain out of scope. Existing GLTF loading, IndexedDB persistence, screenshots, animation playback, and launcher heartbeat behavior are retained.
 
 ## P0 work still outstanding
 
 - Route future selection, visibility, transform, add, and remove UI actions through SceneStore.
-- Add add/remove commands and connect editing UI actions to the command layer when those controls are introduced.
+- Add add/remove commands and hierarchy-aware operations.
+- Add interaction-level browser tests for viewport picking, transform form behavior, visibility toggles, and keyboard/button history controls.
 - Collect comparable diagnostics across representative devices and models; document test conditions before setting thresholds.
 - Measure memory/resource trends over repeated load/replace cycles; renderer counters are not total process-memory measurements.
 - Add adaptive quality decisions only after measurements establish useful signals.
