@@ -9,7 +9,9 @@ This document tracks the first code slice of the P0 foundations work. It is inte
 `src/core/SceneStore.js` provides a renderer-independent registry for Object3D-like scene nodes:
 
 - Registers an existing scene tree and resolves objects by stable `uuid` or `id`.
-- Adds and removes objects through a single API.
+- Adds and removes objects through a single API, registering and unregistering complete subtrees.
+- Reparents registered objects while preventing scene-graph cycles and preserving sibling order.
+- Supports insertion at a specific child index.
 - Tracks one selected object and emits selection changes.
 - Emits scene-change and object-change events.
 - Updates visibility and transforms without importing Three.js.
@@ -27,7 +29,7 @@ It does not dispose GPU resources. Disposal belongs to the asset/renderer lifecy
 - Failed commands are not added to history.
 - A callback reports history state changes.
 
-Commands implement `do()` and `undo()`. `src/core/SceneCommands.js` now provides `SetVisibilityCommand` and `SetTransformCommand`. Both mutate through SceneStore, capture the original value on first execution, and restore it on undo; redo reapplies the requested value. Transform snapshots are copied into plain component objects, so later mutation of the caller's input or Three.js vectors does not rewrite history. Commands remain synchronous and renderer-independent. Callers explicitly pass a command to `commandHistory.execute(command)`; no scene mutation is silently recorded.
+Commands implement `do()` and `undo()`. `src/core/SceneCommands.js` now provides `SetVisibilityCommand` and `SetTransformCommand`. Both mutate through SceneStore, capture the original value on first execution, and restore it on undo; redo reapplies the requested value. Transform snapshots are copied into plain component objects, so later mutation of the caller's input or Three.js vectors does not rewrite history. Commands remain synchronous and renderer-independent. Callers explicitly pass a command to `commandHistory.execute(command)`; no scene mutation is silently recorded. The command set now includes `AddObjectCommand`, `RemoveObjectCommand`, and `ReparentObjectCommand`. Remove/undo retains the same object instances and their resources; reversible hierarchy commands never dispose GPU resources. Reparenting preserves local transforms and exact parent/sibling position on undo; it does not attempt world-transform preservation.
 
 ### ResourceDisposer and model-load lifecycle
 
@@ -77,7 +79,6 @@ This is a first functional editing slice, not a complete hierarchy editor or tra
 
 ## P0 work still outstanding
 
-- Add add/remove commands and hierarchy-aware operations.
 - Add interaction-level browser tests for viewport picking, transform form behavior, visibility toggles, and keyboard/button history controls.
 - Collect comparable diagnostics across representative devices and models; document test conditions before setting thresholds.
 - Measure memory/resource trends over repeated load/replace cycles; renderer counters are not total process-memory measurements.
