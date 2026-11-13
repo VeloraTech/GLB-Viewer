@@ -42,7 +42,13 @@ The viewer now uses this disposer when replacing a successfully loaded model. It
 
 This is stale-result protection, not transport cancellation: the underlying loader request may continue in the background until it settles.
 
-### Local performance diagnostics\n\n`src/core/PerformanceMonitor.js` maintains a bounded rolling frame-time sample and bounded recent model-load history. The viewer records successful, failed, and stale load outcomes, and updates scene complexity after a model is accepted. The Diagnostics toolbar action downloads a JSON snapshot containing these measurements, renderer counters, viewport/pixel-ratio details, WebGL version, supported extensions, and selected WebGL limits.\n\nDiagnostics are generated on demand and remain in the browser; this implementation does not send telemetry or model data over the network. Frame samples are collected in memory without per-frame logging or object allocation. The exported snapshot sorts a copy of the bounded sample window to calculate average and p95 frame time. These measurements are observational baselines, not performance grades or hardware guarantees. Browser APIs and WebGL limits vary by device and browser.\n\n## Tests
+### Local performance diagnostics
+
+`src/core/PerformanceMonitor.js` maintains a bounded rolling frame-time sample and bounded recent model-load history. The viewer records successful, failed, and stale load outcomes, and updates scene complexity after a model is accepted. The Diagnostics toolbar action downloads a JSON snapshot containing these measurements, renderer counters, viewport/pixel-ratio details, WebGL version, supported extensions, and selected WebGL limits.
+
+Diagnostics are generated on demand and remain in the browser; this implementation does not send telemetry or model data over the network. Frame samples are collected in memory without per-frame logging or object allocation. The exported snapshot sorts a copy of the bounded sample window to calculate average and p95 frame time. These measurements are observational baselines, not performance grades or hardware guarantees. Browser APIs and WebGL limits vary by device and browser.
+
+## Tests
 
 The initial tests are in `tests/core-foundations.test.js`. They use Node's built-in test runner and a small Object3D-like test double; no Three.js or third-party dependency is needed.
 
