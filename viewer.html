@@ -227,8 +227,6 @@ renderer.outputColorSpace = THREE.SRGBColorSpace;
 canvas.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-const sceneStore = new SceneStore(scene);
-const commandHistory = new CommandHistory({ limit: 100 });
 scene.background = new THREE.Color(0x111111);
 scene.environment = new RoomEnvironment();
 
@@ -249,6 +247,10 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
 dirLight.position.set(5, 10, 7);
 dirLight.castShadow = true;
 scene.add(dirLight);
+
+// Register the fully initialized base scene before user models are loaded.
+const sceneStore = new SceneStore(scene);
+const commandHistory = new CommandHistory({ limit: 100 });
 
 // ---------- Model loading ----------
 let currentModel = null;
