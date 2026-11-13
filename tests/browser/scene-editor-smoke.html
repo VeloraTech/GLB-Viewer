@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GLB Viewer — Browser Smoke Tests</title>
+  <style>
+    body { margin: 0; padding: 20px; font: 14px system-ui, sans-serif; background: #171717; color: #eee; }
+    h1 { font-size: 20px; }
+    #results { padding: 0; list-style: none; display: grid; gap: 8px; }
+    #results li { padding: 9px 12px; border: 1px solid #555; border-radius: 5px; }
+    .pass { border-color: #27834b !important; }
+    .fail { border-color: #b43c3c !important; }
+    iframe { position: fixed; right: 12px; bottom: 12px; width: min(760px, 62vw); height: min(560px, 72vh); border: 1px solid #666; background: #111; }
+    #status { color: #bbb; }
+    @media (max-width: 760px) { iframe { position: static; width: 100%; height: 520px; margin-top: 16px; } }
+  </style>
+</head>
+<body>
+  <h1>GLB Viewer browser smoke tests</h1>
+  <p id="status">Opening the viewer and waiting for its sample model…</p>
+  <ol id="results"></ol>
+  <iframe id="viewer" src="../../viewer.html?test=1" title="GLB Viewer under test"></iframe>
+  <script type="module">
+    const frame = document.getElementById('viewer');
+    const status = document.getElementById('status');
+    const results = document.getElementById('results');
+
+    function report(name, operation) {
+      const row = document.createElement('li');
+      row.textContent = name + ' …';
+      results.append(row);
+      try {
+        operation();
+        row.textContent = name + ' — PASS';
+        row.className = 'pass';
+      } catch (error) {
+        row.textContent = name + ' — FAIL: ' + error.message;
+        row.className = 'fail';
+        throw error;
+      }
+    }
+
+    function waitForViewer() {
+      return new Promise((resolve, reject) => {
+        const started = Date.now();
+        const poll = () => {
+          try {
+            const win = frame.contentWindow;
+            const api = win.__GLB_VIEWER_TEST__;
+            if (api?.currentModel) return resolve({ win, api });
+            if (Date.now() - started > 30000) return reject(new Error(
+              'Viewer test API/model did not become ready. Confirm sample/ring.glb is available and inspect the iframe console.'
+            ));
+          } catch (error) {
+            return reject(error);
+          }
+          setTimeout(poll, 250);
+        };
+        poll();
+      });
+    }
+
+    try {
+      const { win, api } = await waitForViewer();
+      const doc = frame.contentDocument;
+      const rows = [...doc.querySelectorAll('.scene-row')];
+      if (!rows.length) throw new Error('Sample model loaded but the scene list is empty.');
+      status.textContent = 'Viewer ready. Running scene editor interaction checks…';
+
+      report('Object list selects an object', () => {
+        rows[0].querySelector('.object-select').click();
+        if (!api.sceneStore.getSelection()) throw new Error('Selection was not updated.');
+        if (!rows[0].classList.contains('selected')) throw new Error('Selected row styling was not updated.');
+      });
+
+      report('Visibility control changes object visibility', () => {
+        const object = api.sceneStore.getSelection();
+        const before = object.visible;
+        rows[0].querySelector('.visibility-toggle').click();
+        if (object.visible === before) throw new Error('Visibility did not change.');
+        api.applyHistoryAction('undo');
+        if (object.visible !== before) throw new Error('Undo did not restore visibility.');
+      });
+
+      report('Transform form applies a command-backed change', () => {
+        const object = api.sceneStore.getSelection();
+        const input = doc.querySelector('#transform-form [name="x"]');
+        const original = object.position.x;
+        input.value = String(original + 1.25);
+        doc.querySelector('#transform-form').dispatchEvent(new win.Event('submit', { bubbles: true, cancelable: true }));
+        if (Math.abs(object.position.x - (original + 1.25)) > 1e-8) throw new Error('Position was not updated.');
+        api.applyHistoryAction('undo');
+        if (Math.abs(object.position.x - original) > 1e-8) throw new Error('Undo did not restore position.');
+        api.applyHistoryAction('redo');
+        if (Math.abs(object.position.x - (original + 1.25)) > 1e-8) throw new Error('Redo did not reapply position.');
+        api.applyHistoryAction('undo');
+      });
+
+      report('Undo/Redo buttons reflect history state', () => {
+        const undo = doc.getElementById('undo-btn');
+        const redo = doc.getElementById('redo-btn');
+        if (undo.disabled) throw new Error('Undo should be enabled after the transform command.');
+        undo.click();
+        if (!redo.disabled) throw new Error('Redo should become enabled after undo.');
+        redo.click();
+        if (!undo.disabled) throw new Error('Undo should become enabled after redo.');
+        undo.click();
+      });
+
+      report('Keyboard shortcut performs undo', () => {
+        const object = api.sceneStore.getSelection();
+        const before = object.visible;
+        doc.querySelector('.visibility-toggle').click();
+        doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'z', ctrlKey: true, bubbles: true }));
+        if (object.visible !== before) throw new Error('Ctrl+Z did not undo visibility.');
+      });
+
+      status.textContent = 'Completed. These checks ran in the browser against the embedded viewer.';
+    } catch (error) {
+      status.textContent = 'Smoke tests stopped: ' + error.message;
+      const row = document.createElement('li');
+      row.className = 'fail';
+      row.textContent = 'Setup — FAIL: ' + error.message;
+      results.append(row);
+    }
+  </script>
+</body>
+</html>
