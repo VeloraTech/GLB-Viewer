@@ -586,6 +586,19 @@ renderer.domElement.addEventListener('pointerup', (event) => {
 sceneStore.on('selection:changed', updateSelectionPanel);
 commandHistory.onChange = updateHistoryControls;
 
+// Opt-in test surface for browser automation. It is absent during normal use.
+if (new URLSearchParams(window.location.search).has('test')) {
+  window.__GLB_VIEWER_TEST__ = Object.freeze({
+    get sceneStore() { return sceneStore; },
+    get commandHistory() { return commandHistory; },
+    get currentModel() { return currentModel; },
+    selectObject,
+    refreshObjectList,
+    updateSelectionPanel,
+    applyHistoryAction,
+  });
+}
+
 document.getElementById('undo-btn').addEventListener('click', () => applyHistoryAction('undo'));
 document.getElementById('redo-btn').addEventListener('click', () => applyHistoryAction('redo'));
 
