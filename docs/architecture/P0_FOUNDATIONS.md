@@ -77,7 +77,6 @@ This is a first functional editing slice, not a complete hierarchy editor or tra
 
 ## P0 work still outstanding
 
-- Route future selection, visibility, transform, add, and remove UI actions through SceneStore.
 - Add add/remove commands and hierarchy-aware operations.
 - Add interaction-level browser tests for viewport picking, transform form behavior, visibility toggles, and keyboard/button history controls.
 - Collect comparable diagnostics across representative devices and models; document test conditions before setting thresholds.
