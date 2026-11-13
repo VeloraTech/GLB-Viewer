@@ -347,6 +347,7 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
     (gltf) => {
       // A slower earlier request must never replace a newer user selection.
       if (requestId !== loadRequestId) {
+        performanceMonitor.recordLoad({ fileName, durationMs: performance.now() - loadStartedAt, status: 'stale' });
         disposeObjectResources(gltf.scene);
         releaseObjectUrl(url);
         return;
@@ -371,6 +372,8 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       state.triangles = stats.triangles;
       state.vertices = stats.vertices;
       state.meshes = stats.meshes;
+      performanceMonitor.setSceneStats(stats);
+      performanceMonitor.recordLoad({ fileName, durationMs: performance.now() - loadStartedAt, status: 'success' });
       updateInfoChip();
 
       fitCamera(currentModel);
@@ -388,6 +391,7 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
     (err) => {
       releaseObjectUrl(url);
       if (requestId !== loadRequestId) return;
+      performanceMonitor.recordLoad({ fileName, durationMs: performance.now() - loadStartedAt, status: 'failed' });
       console.error(err);
       showError('It may be corrupt or not a valid GLB.');
       showLoading(false);
@@ -432,7 +436,38 @@ document.getElementById('file-picker-btn').addEventListener('click', () => {
   document.getElementById('file-input').value = '';
   document.getElementById('file-input').click();
 });
-document.getElementById('diagnostics-btn').addEventListener('click', () => {\n  const gl = renderer.getContext();\n  const diagnostics = {\n    ...performanceMonitor.snapshot(),\n    runtime: {\n      userAgent: navigator.userAgent,\n      devicePixelRatio: window.devicePixelRatio || 1,\n      viewport: { width: window.innerWidth, height: window.innerHeight },\n      rendererPixelRatio: renderer.getPixelRatio(),\n      webglVersion: gl instanceof WebGL2RenderingContext ? 2 : 1,\n      maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),\n      maxRenderbufferSize: gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),\n      maxTextureImageUnits: gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS),\n      maxVertexTextureImageUnits: gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS),\n      extensions: gl.getSupportedExtensions() || []\n    },\n    renderer: { ...renderer.info.render, memory: { ...renderer.info.memory }, programs: renderer.info.programs ? renderer.info.programs.length : null }\n  };\n  const blob = new Blob([JSON.stringify(diagnostics, null, 2)], { type: 'application/json' });\n  const url = URL.createObjectURL(blob);\n  const link = document.createElement('a');\n  link.href = url;\n  link.download = 'glb-viewer-diagnostics.json';\n  link.click();\n  URL.revokeObjectURL(url);\n});\n\ndocument.getElementById('file-input').addEventListener('change', (e) => {
+document.getElementById('diagnostics-btn').addEventListener('click', () => {
+  const gl = renderer.getContext();
+  const diagnostics = {
+    ...performanceMonitor.snapshot(),
+    runtime: {
+      userAgent: navigator.userAgent,
+      devicePixelRatio: window.devicePixelRatio || 1,
+      viewport: { width: window.innerWidth, height: window.innerHeight },
+      rendererPixelRatio: renderer.getPixelRatio(),
+      webglVersion: typeof WebGL2RenderingContext !== 'undefined' && gl instanceof WebGL2RenderingContext ? 2 : 1,
+      maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE),
+      maxRenderbufferSize: gl.getParameter(gl.MAX_RENDERBUFFER_SIZE),
+      maxTextureImageUnits: gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS),
+      maxVertexTextureImageUnits: gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS),
+      extensions: gl.getSupportedExtensions() || []
+    },
+    renderer: {
+      ...renderer.info.render,
+      memory: { ...renderer.info.memory },
+      programs: renderer.info.programs ? renderer.info.programs.length : null
+    }
+  };
+  const blob = new Blob([JSON.stringify(diagnostics, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'glb-viewer-diagnostics.json';
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+});
+
+document.getElementById('file-input').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (file) loadModelFromFile(file);
 });
@@ -475,6 +510,7 @@ const clock = new THREE.Clock();
 function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
+  performanceMonitor.recordFrame(dt);
   if (mixer) mixer.update(dt);
   controls.update();
   renderer.render(scene, camera);
