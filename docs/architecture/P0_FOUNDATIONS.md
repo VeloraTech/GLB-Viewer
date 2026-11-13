@@ -77,6 +77,12 @@ The viewer now has an initial command-backed scene editing surface:
 
 This is a first functional editing slice, not a complete hierarchy editor or transform gizmo. The object list is a flat list of descendants; nested hierarchy navigation, multi-selection, add/remove commands, drag gizmos, and animation-aware transform editing remain out of scope. Existing GLTF loading, IndexedDB persistence, screenshots, animation playback, and launcher heartbeat behavior are retained.
 
+## Browser smoke test
+
+A dependency-free browser smoke page is available at `tests/browser/scene-editor-smoke.html`. Serve the repository over HTTP (do not open the page as a `file://` URL), then open that HTML page in the same browser origin. It embeds `viewer.html?test=1`, waits for the bundled sample model, and exercises object-list selection, visibility, transform submission, undo/redo buttons, and the Ctrl+Z shortcut.
+
+The viewer exposes a read-only test surface as `window.__GLB_VIEWER_TEST__` only when the `test` query parameter is present. Normal viewer sessions do not create this global. The smoke page requires `sample/ring.glb` to load successfully. It is a manual browser-run smoke harness, not a headless CI test; the results must be observed in a browser before being reported as passing.
+
 ## P0 work still outstanding
 
 - Add interaction-level browser tests for viewport picking, transform form behavior, visibility toggles, and keyboard/button history controls.
