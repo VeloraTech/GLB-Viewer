@@ -49,7 +49,7 @@ The initial tests are in `tests/core-foundations.test.js`. They use Node's built
 Run from the repository root with a modern Node.js version:
 
 ```sh
-node --experimental-default-type=module --test tests/core-foundations.test.js
+node --experimental-default-type=module --test tests/*.test.js
 ```
 
 ## Integration boundary
