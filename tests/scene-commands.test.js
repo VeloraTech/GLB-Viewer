@@ -2,7 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SceneStore } from '../src/core/SceneStore.js';
 import { CommandHistory } from '../src/core/CommandHistory.js';
-import { SetTransformCommand, SetVisibilityCommand } from '../src/core/SceneCommands.js';
+import {
+  AddObjectCommand,
+  RemoveObjectCommand,
+  ReparentObjectCommand,
+  SetTransformCommand,
+  SetVisibilityCommand,
+} from '../src/core/SceneCommands.js';
 
 function vector(x, y, z, extra = {}) {
   return {
