@@ -13,7 +13,11 @@ export function evaluateAdaptiveQuality({ nativeRelay, browser, performance } = 
     ? availableBytes / memoryTotal
     : null;
 
-  const hasCapabilitySignal = Boolean(nativeRelay?.available || browser?.available ||\n    (Number.isFinite(performance?.frame?.p95FrameMs) && performance.frame.sampleCount >= 30));\n  if (!hasCapabilitySignal) reasons.push('no_capability_signals_available');\n\n  if (memoryPressure !== null && memoryPressure < 0.12) {
+  const hasCapabilitySignal = Boolean(nativeRelay?.available || browser?.available ||
+    (Number.isFinite(performance?.frame?.p95FrameMs) && performance.frame.sampleCount >= 30));
+  if (!hasCapabilitySignal) reasons.push('no_capability_signals_available');
+
+  if (memoryPressure !== null && memoryPressure < 0.12) {
     level = 'conservative';
     reasons.push('low_available_system_memory');
   }
