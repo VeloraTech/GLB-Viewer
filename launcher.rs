@@ -114,11 +114,11 @@ fn handle_request(
             if name.eq_ignore_ascii_case("host") { Some(value.trim()) } else { None }
         });
         if origin != Some(expected_origin.as_str()) || host != Some(expected_host.as_str()) {
-            ("403 Forbidden", "application/json", b"{\\"error\\":\\"origin_not_allowed\\"}".to_vec())
+            ("403 Forbidden", "application/json", b"{\"error\":\"origin_not_allowed\"}".to_vec())
         } else {
             match collect_native_hardware_profile() {
                 Ok(json) => ("200 OK", "application/json; charset=utf-8", json),
-                Err(_) => ("503 Service Unavailable", "application/json", b"{\\"error\\":\\"native_relay_unavailable\\"}".to_vec())
+                Err(_) => ("503 Service Unavailable", "application/json", b"{\"error\":\"native_relay_unavailable\"}".to_vec())
             }
         }
     } else if path == "/__heartbeat" {
