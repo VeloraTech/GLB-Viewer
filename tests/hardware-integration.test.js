@@ -38,9 +38,9 @@ test('all providers unavailable selects conservative defaults without fabricated
     browser: { available: false },
     performance: { frame: { sampleCount: 0, p95FrameMs: null } }
   });
-  assert.equal(decision.level, 'balanced');
+  assert.equal(decision.level, 'conservative');
   assert.equal(decision.signals.memoryPressure, null);
-  assert.deepEqual(decision.reasons, []);
+  assert.deepEqual(decision.reasons, ['no_capability_signals_available']);
 });
 
 test('low memory pressure independently recommends conservative quality', () => {
