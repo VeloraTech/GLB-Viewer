@@ -15,7 +15,14 @@ export function evaluateAdaptiveQuality({ nativeRelay, browser, performance } = 
 
   const hasCapabilitySignal = Boolean(nativeRelay?.available || browser?.available ||
     (Number.isFinite(performance?.frame?.p95FrameMs) && performance.frame.sampleCount >= 30));
-  if (!hasCapabilitySignal) reasons.push('no_capability_signals_available');
+  if (!hasCapabilitySignal) {
+    reasons.push('no_capability_signals_available');
+  } else {
+    // A usable provider is evidence that the viewer can make a normal
+    // recommendation. Missing individual readings remain neutral; they are
+    // not converted to zero or treated as a reason to downgrade.
+    level = 'balanced';
+  }
 
   if (memoryPressure !== null && memoryPressure < 0.12) {
     level = 'conservative';
