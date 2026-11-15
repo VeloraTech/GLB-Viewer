@@ -4,7 +4,7 @@
  */
 export function evaluateAdaptiveQuality({ nativeRelay, browser, performance } = {}) {
   const reasons = [];
-  let level = 'balanced';
+  let level = 'conservative';
   const profile = nativeRelay?.available ? nativeRelay.profile : null;
   const memory = profile?.memory;
   const availableBytes = Number.isFinite(memory?.available_bytes) ? memory.available_bytes : null;
@@ -13,7 +13,7 @@ export function evaluateAdaptiveQuality({ nativeRelay, browser, performance } = 
     ? availableBytes / memoryTotal
     : null;
 
-  if (memoryPressure !== null && memoryPressure < 0.12) {
+  const hasCapabilitySignal = Boolean(nativeRelay?.available || browser?.available ||\n    (Number.isFinite(performance?.frame?.p95FrameMs) && performance.frame.sampleCount >= 30));\n  if (!hasCapabilitySignal) reasons.push('no_capability_signals_available');\n\n  if (memoryPressure !== null && memoryPressure < 0.12) {
     level = 'conservative';
     reasons.push('low_available_system_memory');
   }
