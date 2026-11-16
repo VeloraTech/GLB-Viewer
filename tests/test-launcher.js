@@ -10,23 +10,24 @@ const results = [];
 const pass = name => { results.push(true); console.log('PASS:', name); };
 const fail = (name, error) => { results.push(false); console.error('FAIL:', name, error); };
 
-function waitForPort(child, outputRef, timeoutMs = 8000) {
-  return new Promise(resolve => {
-    const started = Date.now();
-    const poll = () => {
-      const marker = 'Server listening on http://127.0.0.1:';
-      const position = outputRef.value.indexOf(marker);
-      if (position !== -1) {
-        const value = Number(outputRef.value.slice(position + marker.length).split(/[\r\n]/, 1)[0]);
-        resolve(Number.isInteger(value) && value > 0 ? value : null);
-      } else if (child.exitCode !== null || Date.now() - started > timeoutMs) {
-        resolve(null);
-      } else {
-        setTimeout(poll, 100);
+async function waitForPort(child, outputRef, timeoutMs = 8000) {
+  const started = Date.now();
+  const marker = 'Server listening on http://127.0.0.1:';
+  while (Date.now() - started <= timeoutMs && child.exitCode === null) {
+    const position = outputRef.value.indexOf(marker);
+    if (position !== -1) {
+      const port = Number(outputRef.value.slice(position + marker.length).split(/[\r\n]/, 1)[0]);
+      if (Number.isInteger(port) && port > 0) {
+        // The startup banner is emitted immediately after bind, before the
+        // accept loop is servicing requests. Wait for an actual HTTP response
+        // so the first functional request cannot race server initialization.
+        const health = await get(port, '/__heartbeat');
+        if (health.status === 204) return port;
       }
-    };
-    poll();
-  });
+    }
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  return null;
 }
 
 function get(port, route) {

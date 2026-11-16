@@ -3,7 +3,7 @@ use std::fs;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Component, Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -61,7 +61,7 @@ fn main() -> io::Result<()> {
                 let model = model.clone();
                 let activity = Arc::clone(&last_activity);
                 thread::spawn(move || {
-                    let _ = handle_request(stream, &root, model.as_deref(), &activity);
+                    let _ = handle_request(stream, &root, model.as_deref(), &activity, port);
                 });
             }
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
@@ -79,6 +79,7 @@ fn handle_request(
     root: &Path,
     model: Option<&Path>,
     last_activity: &Mutex<Instant>,
+    server_port: u16,
 ) -> io::Result<()> {
     stream.set_read_timeout(Some(Duration::from_secs(5)))?;
     if let Ok(mut last) = last_activity.lock() {
@@ -101,7 +102,26 @@ fn handle_request(
     }
 
     let path = request_target.split('?').next().unwrap_or("/");
-    let (status, content_type, body) = if path == "/__heartbeat" {
+    let (status, content_type, body) = if path == "/__hardware/profile" {
+        let expected_origin = format!("http://127.0.0.1:{server_port}");
+        let expected_host = format!("127.0.0.1:{server_port}");
+        let origin = request.lines().find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            if name.eq_ignore_ascii_case("origin") { Some(value.trim()) } else { None }
+        });
+        let host = request.lines().find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            if name.eq_ignore_ascii_case("host") { Some(value.trim()) } else { None }
+        });
+        if origin != Some(expected_origin.as_str()) || host != Some(expected_host.as_str()) {
+            ("403 Forbidden", "application/json", b"{\"error\":\"origin_not_allowed\"}".to_vec())
+        } else {
+            match collect_native_hardware_profile() {
+                Ok(json) => ("200 OK", "application/json; charset=utf-8", json),
+                Err(_) => ("503 Service Unavailable", "application/json", b"{\"error\":\"native_relay_unavailable\"}".to_vec())
+            }
+        }
+    } else if path == "/__heartbeat" {
         return write_response(&mut stream, "204 No Content", "text/plain", b"", method == "HEAD");
     } else if path == "/__model" {
         match model {
@@ -127,6 +147,33 @@ fn handle_request(
     };
 
     write_response(&mut stream, status, content_type, &body, method == "HEAD")
+}
+
+fn collect_native_hardware_profile() -> Result<Vec<u8>, String> {
+    let executable = env::var_os("NATIVERELAY_EXE").unwrap_or_else(|| "nativerelay".into());
+    let mut child = Command::new(executable)
+        .args(["hardware", "--json"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn().map_err(|_| "could_not_start".to_string())?;
+    let deadline = Instant::now() + Duration::from_secs(4);
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) if status.success() => {
+                let output = child.wait_with_output().map_err(|_| "read_failed".to_string())?;
+                if output.stdout.len() > 1024 * 1024 { return Err("profile_too_large".to_string()); }
+                let text = String::from_utf8_lossy(&output.stdout);
+                let text = text.trim();
+                if !text.starts_with('{') || !text.ends_with('}') { return Err("invalid_profile_json".to_string()); }
+                return Ok(text.as_bytes().to_vec());
+            }
+            Ok(Some(_)) => return Err("hardware_command_failed".to_string()),
+            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(40)),
+            Ok(None) => { let _ = child.kill(); let _ = child.wait(); return Err("hardware_command_timeout".to_string()); }
+            Err(_) => return Err("process_wait_failed".to_string()),
+        }
+    }
 }
 
 fn write_response(

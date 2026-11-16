@@ -154,6 +154,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { disposeObjectResources } from './src/core/ResourceDisposer.js';
 import { PerformanceMonitor } from './src/core/PerformanceMonitor.js';
+import { NativeRelayHardwareProvider, BrowserCapabilityProvider } from './src/core/HardwareProviders.js';
+import { evaluateAdaptiveQuality } from './src/core/AdaptiveQualityPolicy.js';
 import { SceneStore } from './src/core/SceneStore.js';
 import { CommandHistory } from './src/core/CommandHistory.js';
 import { SetTransformCommand, SetVisibilityCommand } from './src/core/SceneCommands.js';
@@ -169,6 +171,8 @@ const state = {
   meshes: 0,
   background: 'dark', // 'dark' | 'light'
   lastModelUrl: null,
+  hardwareSignals: null,
+  adaptiveQuality: null,
 };
 
 // ---------- IndexedDB persistence ----------
@@ -270,6 +274,21 @@ const canvas = document.getElementById('canvas');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const nativeRelayProvider = new NativeRelayHardwareProvider();
+const browserCapabilityProvider = new BrowserCapabilityProvider();
+const browserCapabilities = browserCapabilityProvider.getCapabilities({ renderer });
+state.hardwareSignals = { nativeRelay: { available: false, status: 'pending' }, browser: browserCapabilities };
+async function initializeHardwareSignals() {
+  const nativeRelay = await nativeRelayProvider.getProfile();
+  state.hardwareSignals.nativeRelay = nativeRelay;
+  state.adaptiveQuality = evaluateAdaptiveQuality({
+    nativeRelay,
+    browser: browserCapabilities,
+    performance: performanceMonitor.snapshot()
+  });
+}
+void initializeHardwareSignals();
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.1;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
