@@ -8,7 +8,7 @@ P0 establishes small, renderer-independent foundations before additional editing
 - **CommandHistory** (`src/core/CommandHistory.js`): bounded synchronous undo/redo history. Failed commands are not recorded; a new command clears redo history.
 - **SceneCommands** (`src/core/SceneCommands.js`): explicit reversible commands for transforms, visibility, adding, removing, and reparenting. Commands depend on SceneStore, not Three.js.
 - **ResourceDisposer** (`src/core/ResourceDisposer.js`): disposes resources belonging to a removed/replaced model tree, deduplicating shared geometries, materials, textures, and skeletons within a disposal pass.
-- **PerformanceMonitor**: collects local runtime measurements, separately from hardware discovery and quality recommendations.
+- **PerformanceMonitor**: collects local runtime measurements, separately from hardware discovery and quality recommendations; bounded sample/load history and invalid-sample handling are covered by tests.
 - **HardwareProviders / AdaptiveQualityPolicy**: optional independent capability providers and recommendation-only policy. Missing readings must not be fabricated as zero or block browser viewing.
 
 ## Ownership and lifecycle rules
