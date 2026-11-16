@@ -29,7 +29,7 @@ The endpoint accepts the versioned `glb-viewer.hardware-profile` contract. It re
 The policy considers low available system memory, low battery while on battery power, slow measured frame times, and limited WebGL texture capacity. Missing memory or battery readings are neutral. Browser WebGL detection is guarded against context loss and individual parameter-query failures. NativeRelay failure does not disable browser/frame-time signals; browser failure does not disable a valid NativeRelay profile. If all sources are unavailable, the recommendation defaults to conservative.
 
 ## Local security and privacy
-- The launcher binds to IPv4 loopback (`127.0.0..1`), not a LAN interface.
+- The launcher binds to IPv4 loopback (`127.0.0.1`), not a LAN interface.
 - The hardware endpoint requires the exact loopback Host and same-origin Origin for the active port.
 - The endpoint does not enable CORS and responses use `Cache-Control: no-store`.
 - NativeRelay runs as a child process without shell interpolation; stdin and stderr are not exposed to the viewer.
