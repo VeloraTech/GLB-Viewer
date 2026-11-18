@@ -97,162 +97,193 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     btn.addEventListener('click', () => track('download_clicked', { os: detected }));
   });
 
-    // Demo section: drag and drop GLB support
+    // Browser demo: show a lightweight bundled sample first, then replace it with local user files.
     const demoViewport = document.getElementById('demo-viewport');
-    if (demoViewport) {
-      // Prevent default drag behaviors on document (avoid about:blank#blocked navigation)
-      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-        document.addEventListener(eventName, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }, false);
-      });
+    const demoStatus = document.getElementById('demo-preview-status');
+    let demoRenderer = null;
+    let demoScene = null;
+    let demoCamera = null;
+    let demoControls = null;
+    let demoModel = null;
+    let demoFrame = 0;
+    let demoResizeObserver = null;
+    let demoInitialized = false;
+    const demoLoader = new GLTFLoader();
 
-      // Prevent default drag behaviors on viewport
-      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((eventName) => {
-        demoViewport.addEventListener(eventName, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }, false);
-      });
+    function setDemoStatus(message, hidden = false) {
+      if (!demoStatus) return;
+      demoStatus.querySelector('span:last-child').textContent = message;
+      demoStatus.hidden = hidden;
+      if (demoViewport) demoViewport.setAttribute('aria-busy', String(!hidden));
+    }
 
-      demoViewport.addEventListener('dragenter', () => {
-        demoViewport.classList.add('drag-over');
-      }, false);
-
-      demoViewport.addEventListener('dragleave', () => {
-        demoViewport.classList.remove('drag-over');
-      }, false);
-
-      demoViewport.addEventListener('drop', (e) => {
-        demoViewport.classList.remove('drag-over');
-        const file = e.dataTransfer.files[0];
-        if (file && (file.name.endsWith('.glb') || file.name.endsWith('.gltf') || file.type.includes('model'))) {
-          track('demo_drop', { extension: file.name.split('.').pop().toLowerCase() });
-          loadDemoModel(file);
-        }
-      }, false);
-
-      // Click to pick file via visible upload button
-      const fileInput = document.getElementById('demo-file-input');
-      if (fileInput) {
-        // Use a real label/input activation instead of a scripted click. This is
-        // more reliable with Android browser file pickers and preserves user activation.
-        fileInput.addEventListener('change', (e) => {
-          const file = e.target.files && e.target.files[0];
-          if (!file) return;
-
-          const extension = file.name.split('.').pop().toLowerCase();
-          if (extension !== 'glb' && extension !== 'gltf') {
-            showDemoError('Please choose a .glb or .gltf model file.');
-            fileInput.value = '';
-            return;
+    function disposeDemoTree(root) {
+      if (!root) return;
+      const geometries = new Set(), materials = new Set(), textures = new Set();
+      root.traverse((node) => {
+        if (node.geometry) geometries.add(node.geometry);
+        const list = Array.isArray(node.material) ? node.material : [node.material];
+        for (const material of list) {
+          if (!material) continue;
+          materials.add(material);
+          for (const value of Object.values(material)) {
+            if (value && value.isTexture) textures.add(value);
           }
+        }
+      });
+      textures.forEach((item) => item.dispose());
+      materials.forEach((item) => item.dispose());
+      geometries.forEach((item) => item.dispose());
+    }
 
-          track('demo_pick', { extension });
-          loadDemoModel(file);
-
-          // Clear after starting the load so the same file can be selected again.
-          fileInput.value = '';
-        });
+    function initDemo() {
+      if (!demoViewport || demoInitialized) return;
+      demoInitialized = true;
+      try {
+        demoScene = new THREE.Scene();
+        demoScene.background = new THREE.Color(0x111318);
+        demoCamera = new THREE.PerspectiveCamera(45, 1, 0.01, 1000);
+        demoCamera.position.set(0, 0, 4);
+        demoRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'low-power' });
+        demoRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
+        demoRenderer.outputColorSpace = THREE.SRGBColorSpace;
+        demoViewport.appendChild(demoRenderer.domElement);
+        demoScene.add(new THREE.HemisphereLight(0xffffff, 0x555566, 1.6));
+        const key = new THREE.DirectionalLight(0xffffff, 2);
+        key.position.set(3, 5, 4);
+        demoScene.add(key);
+        demoControls = new OrbitControls(demoCamera, demoRenderer.domElement);
+        demoControls.enableDamping = true;
+        demoControls.dampingFactor = 0.06;
+        demoControls.minDistance = 0.2;
+        demoControls.maxDistance = 100;
+        const resize = () => {
+          if (!demoRenderer || !demoCamera) return;
+          const width = Math.max(demoViewport.clientWidth, 1);
+          const height = Math.max(demoViewport.clientHeight, 1);
+          demoCamera.aspect = width / height;
+          demoCamera.updateProjectionMatrix();
+          demoRenderer.setSize(width, height, false);
+        };
+        if ('ResizeObserver' in window) {
+          demoResizeObserver = new ResizeObserver(resize);
+          demoResizeObserver.observe(demoViewport);
+        } else {
+          window.addEventListener('resize', resize, { passive: true });
+        }
+        resize();
+        const render = () => {
+          demoFrame = requestAnimationFrame(render);
+          demoControls.update();
+          demoRenderer.render(demoScene, demoCamera);
+        };
+        render();
+        loadDemoSource('sample/ring.glb', 'Loading sample ring…');
+      } catch (error) {
+        console.error('Could not initialize the 3D preview:', error);
+        setDemoStatus('Interactive preview unavailable. You can still choose a GLB or glTF file.', true);
       }
     }
 
-    function showDemoError(message) {
-      const container = document.getElementById('demo-viewport');
-      if (container) {
-        container.innerHTML = '';
-        const notice = document.createElement('p');
-        notice.textContent = message;
-        notice.style.cssText = 'color:#ff6b6b;padding:20px;text-align:center;';
-        container.appendChild(notice);
-      }
+    function fitDemoModel(model) {
+      const bounds = new THREE.Box3().setFromObject(model);
+      const size = bounds.getSize(new THREE.Vector3());
+      const center = bounds.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z) || 1;
+      model.position.sub(center);
+      const distance = (maxDim / (2 * Math.tan(THREE.MathUtils.degToRad(demoCamera.fov) / 2))) * 1.7;
+      demoCamera.position.set(0, 0, distance);
+      demoCamera.near = Math.max(distance / 1000, 0.001);
+      demoCamera.far = Math.max(distance * 100, 100);
+      demoCamera.updateProjectionMatrix();
+      demoControls.target.set(0, 0, 0);
+      demoControls.minDistance = Math.max(maxDim * 0.15, 0.05);
+      demoControls.maxDistance = maxDim * 30;
+      demoControls.update();
+    }
+
+    function loadDemoSource(source, loadingText = 'Loading your model…') {
+      if (!demoScene) initDemo();
+      if (!demoScene) return;
+      setDemoStatus(loadingText);
+      demoLoader.load(source, (gltf) => {
+        const nextModel = gltf.scene;
+        demoScene.add(nextModel);
+        fitDemoModel(nextModel);
+        const previous = demoModel;
+        demoModel = nextModel;
+        if (previous) {
+          demoScene.remove(previous);
+          disposeDemoTree(previous);
+        }
+        setDemoStatus('', true);
+      }, undefined, (error) => {
+        console.error('Demo model load failed:', error);
+        setDemoStatus('Sample preview could not load. Choose a GLB or glTF file to try the viewer.', true);
+      });
     }
 
     function loadDemoModel(file) {
-      const container = document.getElementById('demo-viewport');
-      if (!container) return;
-
-      let url;
-      try {
-        url = URL.createObjectURL(file);
-      } catch (error) {
-        console.error('Could not create a local URL for the selected model:', error);
-        showDemoError('Your browser could not open this file. Try a GLB file in a current version of Chrome.');
-        return;
-      }
-
-      // Clear existing content before rendering the selected model.
-      while (container.firstChild) container.removeChild(container.firstChild);
-
-      const scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0f1115);
-
-      const aspect = container.clientWidth / container.clientHeight || 16 / 9;
-      const camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
-      camera.position.set(0, 1.5, 4);
-
-      let renderer;
-      try {
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      } catch (error) {
+      if (!demoScene) initDemo();
+      if (!demoScene) return;
+      const url = URL.createObjectURL(file);
+      setDemoStatus('Loading ' + file.name + '…');
+      demoLoader.load(url, (gltf) => {
         URL.revokeObjectURL(url);
-        console.error('WebGL renderer initialization failed:', error);
-        showDemoError('3D rendering is unavailable in this browser. Check that hardware acceleration and WebGL are enabled.');
-        return;
-      }
-
-      renderer.setSize(container.clientWidth, container.clientHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
-      container.appendChild(renderer.domElement);
-
-      const ambient = new THREE.AmbientLight(0xffffff, 0.5);
-      scene.add(ambient);
-
-      const dir = new THREE.DirectionalLight(0xffffff, 1.5);
-      dir.position.set(3, 5, 4);
-      scene.add(dir);
-
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-
-      const loader = new GLTFLoader();
-      loader.load(url, (gltf) => {
-        URL.revokeObjectURL(url);
-        const model = gltf.scene;
-        scene.add(model);
-
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const fov = camera.fov * (Math.PI / 180);
-        const cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2))) * 1.8;
-
-        model.position.sub(center);
-        camera.position.set(0, 0, cameraZ);
-        camera.lookAt(0, 0, 0);
-        controls.target.set(0, 0, 0);
-        controls.update();
-
-        function animate() {
-          requestAnimationFrame(animate);
-          controls.update();
-          renderer.render(scene, camera);
+        const nextModel = gltf.scene;
+        demoScene.add(nextModel);
+        fitDemoModel(nextModel);
+        const previous = demoModel;
+        demoModel = nextModel;
+        if (previous) {
+          demoScene.remove(previous);
+          disposeDemoTree(previous);
         }
-        animate();
-
-        window.addEventListener('resize', () => {
-          camera.aspect = container.clientWidth / container.clientHeight || 16 / 9;
-          camera.updateProjectionMatrix();
-          renderer.setSize(container.clientWidth, container.clientHeight);
-        });
-      }, undefined, (err) => {
+        setDemoStatus('', true);
+      }, undefined, (error) => {
         URL.revokeObjectURL(url);
-        console.error('Demo model load failed:', err);
-        showDemoError('Failed to load this model. Use a valid GLB file and try again.');
+        console.error('Demo model load failed:', error);
+        setDemoStatus('Could not load this model. Check that it is a valid GLB or glTF file.', true);
       });
+    }
+
+    if (demoViewport) {
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((name) => {
+        demoViewport.addEventListener(name, (event) => { event.preventDefault(); event.stopPropagation(); });
+      });
+      demoViewport.addEventListener('dragenter', () => demoViewport.classList.add('drag-over'));
+      demoViewport.addEventListener('dragleave', () => demoViewport.classList.remove('drag-over'));
+      demoViewport.addEventListener('drop', (event) => {
+        demoViewport.classList.remove('drag-over');
+        const file = event.dataTransfer?.files?.[0];
+        if (file && /\.(glb|gltf)$/i.test(file.name)) loadDemoModel(file);
+      });
+      const fileInput = document.getElementById('demo-file-input');
+      fileInput?.addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        if (!/\.(glb|gltf)$/i.test(file.name)) setDemoStatus('Please choose a .glb or .gltf file.', true);
+        else loadDemoModel(file);
+        fileInput.value = '';
+      });
+      if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            observer.disconnect();
+            initDemo();
+          }
+        }, { rootMargin: '250px 0px' });
+        observer.observe(demoViewport);
+      } else {
+        initDemo();
+      }
+      window.addEventListener('pagehide', () => {
+        if (demoFrame) cancelAnimationFrame(demoFrame);
+        demoResizeObserver?.disconnect();
+        demoControls?.dispose();
+        if (demoModel) disposeDemoTree(demoModel);
+        demoRenderer?.dispose();
+      }, { once: true });
     }
 
   // Compact mobile navigation with keyboard and touch support.
