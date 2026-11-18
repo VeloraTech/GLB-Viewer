@@ -52,7 +52,7 @@
   #workspace-rail button { width:36px; height:36px; border:0; border-radius:8px; color:#aeb5c1; background:transparent; cursor:pointer; font-size:11px; font-weight:650; }
   #workspace-rail button:hover,#workspace-rail button.active { color:#fff; background:rgba(255,255,255,.12); }
   #workspace-main { min-width:0; flex:1; display:flex; flex-direction:column; overflow:hidden; }
-  #workspace-header { min-height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,.1); cursor:grab; }
+  #workspace-header { min-height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,.1); cursor:grab; touch-action:none; user-select:none; }
   #workspace-header h2 { font-size:13px; letter-spacing:.02em; }
   #workspace-collapse { width:28px; height:28px; border:0; border-radius:6px; color:inherit; background:rgba(255,255,255,.08); cursor:pointer; }
   #workspace-content { flex:1; overflow:auto; padding:14px; }
@@ -389,6 +389,38 @@ function setWorkspaceView(name) {
   if (workspace.classList.contains('collapsed')) workspace.classList.remove('collapsed');
 }
 workspaceButtons.forEach((button) => button.addEventListener('click', () => setWorkspaceView(button.dataset.workspace)));
+const workspaceHeader = document.getElementById('workspace-header');
+const savedPosition = JSON.parse(localStorage.getItem('glb-workspace-position') || 'null');
+if (savedPosition && Number.isFinite(savedPosition.left) && Number.isFinite(savedPosition.top)) {
+  workspace.style.left = savedPosition.left + 'px';
+  workspace.style.top = savedPosition.top + 'px';
+  workspace.style.right = 'auto';
+  workspace.style.bottom = 'auto';
+}
+let workspaceDrag = null;
+workspaceHeader.addEventListener('pointerdown', (event) => {
+  if (event.target.closest('button')) return;
+  const rect = workspace.getBoundingClientRect();
+  workspaceDrag = { pointerId: event.pointerId, x: event.clientX - rect.left, y: event.clientY - rect.top };
+  workspaceHeader.setPointerCapture(event.pointerId);
+});
+workspaceHeader.addEventListener('pointermove', (event) => {
+  if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
+  const left = Math.max(0, Math.min(window.innerWidth - Math.min(workspace.offsetWidth, 48), event.clientX - workspaceDrag.x));
+  const top = Math.max(0, Math.min(window.innerHeight - 100, event.clientY - workspaceDrag.y));
+  workspace.style.left = left + 'px';
+  workspace.style.top = top + 'px';
+  workspace.style.right = 'auto';
+  workspace.style.bottom = 'auto';
+});
+function finishWorkspaceDrag(event) {
+  if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
+  workspaceDrag = null;
+  const rect = workspace.getBoundingClientRect();
+  localStorage.setItem('glb-workspace-position', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) }));
+}
+workspaceHeader.addEventListener('pointerup', finishWorkspaceDrag);
+workspaceHeader.addEventListener('pointercancel', finishWorkspaceDrag);
 const collapseButton = document.getElementById('workspace-collapse');
 function setWorkspaceCollapsed(collapsed) {
   workspace.classList.toggle('collapsed', collapsed);
