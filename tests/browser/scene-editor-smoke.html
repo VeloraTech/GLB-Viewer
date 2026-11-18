@@ -101,9 +101,9 @@
         const redo = doc.getElementById('redo-btn');
         if (undo.disabled) throw new Error('Undo should be enabled after the transform command.');
         undo.click();
-        if (!redo.disabled) throw new Error('Redo should become enabled after undo.');
+        if (redo.disabled) throw new Error('Redo should become enabled after undo.');
         redo.click();
-        if (!undo.disabled) throw new Error('Undo should become enabled after redo.');
+        if (undo.disabled) throw new Error('Undo should become enabled after redo.');
         undo.click();
       });
 
