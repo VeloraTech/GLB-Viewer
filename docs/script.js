@@ -110,11 +110,11 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     let demoInitialized = false;
     const demoLoader = new GLTFLoader();
 
-    function setDemoStatus(message, hidden = false) {
+    function setDemoStatus(message, hidden = false, busy = true) {
       if (!demoStatus) return;
       demoStatus.querySelector('span:last-child').textContent = message;
       demoStatus.hidden = hidden;
-      if (demoViewport) demoViewport.setAttribute('aria-busy', String(!hidden));
+      if (demoViewport) demoViewport.setAttribute('aria-busy', String(busy));
     }
 
     function disposeDemoTree(root) {
@@ -178,10 +178,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
           demoRenderer.render(demoScene, demoCamera);
         };
         render();
-        loadDemoSource('sample/ring.glb', 'Loading sample ring…');
+        loadDemoSource('https://raw.githubusercontent.com/VeloraTech/GLB-Viewer/main/sample/ring.glb', 'Loading sample ring…');
       } catch (error) {
         console.error('Could not initialize the 3D preview:', error);
-        setDemoStatus('Interactive preview unavailable. You can still choose a GLB or glTF file.', true);
+        setDemoStatus('Interactive preview unavailable. You can still choose a GLB or glTF file.', false, false);
       }
     }
 
@@ -219,7 +219,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         setDemoStatus('', true);
       }, undefined, (error) => {
         console.error('Demo model load failed:', error);
-        setDemoStatus('Sample preview could not load. Choose a GLB or glTF file to try the viewer.', true);
+        setDemoStatus('Sample preview could not load. Choose a GLB or glTF file to try the viewer.', false, false);
       });
     }
 
@@ -243,7 +243,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       }, undefined, (error) => {
         URL.revokeObjectURL(url);
         console.error('Demo model load failed:', error);
-        setDemoStatus('Could not load this model. Check that it is a valid GLB or glTF file.', true);
+        setDemoStatus('Could not load this model. Check that it is a valid GLB or glTF file.', false, false);
       });
     }
 
