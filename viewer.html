@@ -45,29 +45,47 @@
   /* File picker hidden input */
   #file-input { display: none; }
 
-  /* Scene editing panel */
-  #scene-panel { position: absolute; top: 64px; right: 12px; bottom: 64px; width: min(300px, calc(100vw - 24px)); max-height: calc(100vh - 128px); overflow: auto; padding: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(20,20,20,0.94); color: #eee; pointer-events: auto; z-index: 20; backdrop-filter: blur(8px); font-size: 12px; }
-  #scene-panel h2 { font-size: 14px; margin-bottom: 10px; }
-  #scene-panel h3 { font-size: 12px; color: #aaa; margin: 14px 0 7px; text-transform: uppercase; letter-spacing: .06em; }
-  #scene-panel button, #scene-panel input { font: inherit; }
-  #history-controls { display: flex; gap: 6px; }
-  #history-controls button, .scene-row button, #transform-form button { border: 1px solid rgba(255,255,255,.22); border-radius: 4px; padding: 6px 8px; color: #eee; background: rgba(255,255,255,.09); cursor: pointer; }
-  #history-controls button:disabled { opacity: .35; cursor: default; }
-  #object-list { display: flex; flex-direction: column; gap: 4px; max-height: 34vh; overflow: auto; }
-  .scene-row { display: flex; align-items: center; gap: 5px; min-width: 0; padding: 4px; border-radius: 4px; }
-  .scene-row.selected { background: rgba(0,150,255,.22); outline: 1px solid rgba(0,150,255,.45); }
-  .scene-row .object-select { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; border: 0; background: transparent; color: inherit; padding: 4px; cursor: pointer; }
-  .scene-row .visibility-toggle { flex: 0 0 auto; padding: 4px 6px; }
-  #selected-name { color: #bbb; overflow-wrap: anywhere; }
-  #transform-form { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
-  #transform-form label { display: flex; flex-direction: column; gap: 3px; color: #aaa; }
-  #transform-form input { width: 100%; min-width: 0; padding: 6px 4px; border: 1px solid rgba(255,255,255,.2); border-radius: 4px; background: rgba(255,255,255,.08); color: #fff; }
-  #transform-form button { grid-column: 1 / -1; margin-top: 4px; }
-  #scene-hint { margin-top: 8px; color: #999; line-height: 1.4; }
-  body.light #scene-panel { background: rgba(250,250,250,.96); color: #222; border-color: rgba(0,0,0,.2); }
-  body.light #scene-panel h3, body.light #selected-name, body.light #scene-hint, body.light #transform-form label { color: #666; }
-  body.light #scene-panel button { color: #222; border-color: rgba(0,0,0,.2); background: rgba(0,0,0,.05); }
-  body.light #transform-form input { color: #222; border-color: rgba(0,0,0,.2); background: #fff; }
+  /* Editor workspace: docked, collapsible inspector with focused workspaces. */
+  #scene-panel { position:absolute; top:64px; left:12px; bottom:64px; width:326px; display:flex; overflow:hidden; border:1px solid rgba(255,255,255,.16); border-radius:12px; background:rgba(24,26,30,.96); color:#eee; pointer-events:auto; z-index:20; backdrop-filter:blur(14px); box-shadow:0 18px 48px rgba(0,0,0,.28); font-size:12px; transition:width .2s ease, transform .2s ease; }
+  #scene-panel.collapsed { width:48px; }
+  #workspace-rail { width:48px; flex:0 0 48px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 5px; border-right:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.025); }
+  #workspace-rail button { width:36px; height:36px; border:0; border-radius:8px; color:#aeb5c1; background:transparent; cursor:pointer; font-size:11px; font-weight:650; }
+  #workspace-rail button:hover,#workspace-rail button.active { color:#fff; background:rgba(255,255,255,.12); }
+  #workspace-main { min-width:0; flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  #workspace-header { min-height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,.1); cursor:grab; touch-action:none; user-select:none; }
+  #workspace-header h2 { font-size:13px; letter-spacing:.02em; }
+  #workspace-collapse { width:28px; height:28px; border:0; border-radius:6px; color:inherit; background:rgba(255,255,255,.08); cursor:pointer; }
+  #workspace-content { flex:1; overflow:auto; padding:14px; }
+  .workspace-view[hidden] { display:none; }
+  #scene-panel h3 { font-size:11px; color:#a7afbb; margin:14px 0 7px; text-transform:uppercase; letter-spacing:.08em; }
+  #scene-panel button,#scene-panel input { font:inherit; }
+  #history-controls { display:flex; gap:6px; }
+  #history-controls button,.scene-row button,#transform-form button { border:1px solid rgba(255,255,255,.18); border-radius:6px; padding:7px 9px; color:#eee; background:rgba(255,255,255,.07); cursor:pointer; }
+  #history-controls button:disabled { opacity:.35; cursor:default; }
+  #object-list { display:flex; flex-direction:column; gap:4px; max-height:36vh; overflow:auto; }
+  .scene-row { display:flex; align-items:center; gap:5px; min-width:0; padding:4px; border-radius:6px; }
+  .scene-row.selected { background:rgba(104,164,255,.16); outline:1px solid rgba(104,164,255,.38); }
+  .scene-row .object-select { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:left; border:0; background:transparent; color:inherit; padding:5px; cursor:pointer; }
+  .scene-row .visibility-toggle { flex:0 0 auto; padding:5px 7px; }
+  #selected-name { color:#c2c8d1; overflow-wrap:anywhere; margin-bottom:10px; }
+  #transform-form { display:grid; grid-template-columns:1fr 1fr 1fr; gap:7px; }
+  #transform-form label,.light-control { display:flex; flex-direction:column; gap:5px; color:#aeb5c1; }
+  #transform-form input,.light-control input[type=number] { width:100%; min-width:0; padding:7px 6px; border:1px solid rgba(255,255,255,.16); border-radius:6px; background:rgba(255,255,255,.06); color:#fff; }
+  #transform-form button { grid-column:1/-1; margin-top:5px; }
+  #scene-hint,.workspace-note { margin-top:10px; color:#929ba8; line-height:1.5; }
+  .light-control { margin:14px 0; }
+  .light-control .range-line { display:flex; justify-content:space-between; gap:10px; }
+  .light-control input[type=range] { width:100%; accent-color:#8eb7ff; }
+  .workspace-placeholder { padding:12px; border:1px dashed rgba(255,255,255,.18); border-radius:8px; color:#aeb5c1; line-height:1.55; }
+  body.light #scene-panel { background:rgba(249,250,252,.97); color:#222; border-color:rgba(0,0,0,.16); }
+  body.light #workspace-rail { border-color:rgba(0,0,0,.1); }
+  body.light #workspace-rail button { color:#555; }
+  body.light #workspace-rail button.active,body.light #workspace-rail button:hover { color:#111; background:rgba(0,0,0,.08); }
+  body.light #workspace-header { border-color:rgba(0,0,0,.1); }
+  body.light #workspace-collapse,body.light #history-controls button,body.light .scene-row button,body.light #transform-form button { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
+  body.light #scene-panel h3,body.light #selected-name,body.light #scene-hint,body.light .workspace-note,body.light .light-control { color:#626b78; }
+  body.light #transform-form input,body.light .light-control input[type=number] { color:#222; border-color:rgba(0,0,0,.16); background:#fff; }
+  @media (max-width:700px) { #scene-panel { top:58px; left:8px; bottom:58px; width:min(326px,calc(100vw - 16px)); } #toolbar { left:8px; top:8px; gap:5px; flex-wrap:wrap; max-width:calc(100vw - 16px); } #toolbar button { padding:7px 9px; font-size:11px; } }
 
   /* Light theme override */
   body.light { background: #f5f5f5; color: #222; }
@@ -91,29 +109,52 @@
     <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
   </div>
-  <aside id="scene-panel" aria-label="Scene editor">
-    <h2>Scene</h2>
-    <div id="history-controls">
-      <button id="undo-btn" type="button" disabled>Undo</button>
-      <button id="redo-btn" type="button" disabled>Redo</button>
+  <aside id="scene-panel" aria-label="Editor workspace">
+    <nav id="workspace-rail" aria-label="Workspace sections">
+      <button type="button" class="active" data-workspace="scene" title="Scene">SC</button>
+      <button type="button" data-workspace="objects" title="Objects">OB</button>
+      <button type="button" data-workspace="transform" title="Transform">TR</button>
+      <button type="button" data-workspace="lighting" title="Lighting">LI</button>
+      <button type="button" data-workspace="plugins" title="Plugins">PL</button>
+      <button type="button" data-workspace="extensions" title="Extensions">EX</button>
+    </nav>
+    <div id="workspace-main">
+      <header id="workspace-header"><h2 id="workspace-title">Scene</h2><button id="workspace-collapse" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button></header>
+      <div id="workspace-content">
+        <section class="workspace-view" data-view="scene">
+          <div id="history-controls"><button id="undo-btn" type="button" disabled>Undo</button><button id="redo-btn" type="button" disabled>Redo</button></div>
+          <h3>Scene overview</h3><p class="workspace-note">Inspect the active model and manage your current editing session.</p>
+          <div id="selected-name">Nothing selected</div>
+        </section>
+        <section class="workspace-view" data-view="objects" hidden>
+          <h3>Hierarchy</h3><div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
+          <p id="scene-hint">Select an object in the list or click it directly in the viewport.</p>
+        </section>
+        <section class="workspace-view" data-view="transform" hidden>
+          <h3>Transform</h3>
+          <form id="transform-form">
+            <label>X <input name="x" type="number" step="any" value="0"></label><label>Y <input name="y" type="number" step="any" value="0"></label><label>Z <input name="z" type="number" step="any" value="0"></label>
+            <label>Rotate X° <input name="rx" type="number" step="any" value="0"></label><label>Rotate Y° <input name="ry" type="number" step="any" value="0"></label><label>Rotate Z° <input name="rz" type="number" step="any" value="0"></label>
+            <label>Scale X <input name="sx" type="number" step="any" value="1"></label><label>Scale Y <input name="sy" type="number" step="any" value="1"></label><label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
+            <button type="submit">Apply transform</button>
+          </form>
+          <p class="workspace-note">Position, rotation and scale are independently editable on all three axes.</p>
+        </section>
+        <section class="workspace-view" data-view="lighting" hidden>
+          <h3>Viewport lighting</h3>
+          <label class="light-control"><span class="range-line"><span>Ambient fill</span><output id="ambient-value">1.1</output></span><input id="ambient-intensity" type="range" min="0" max="3" step=".05" value="1.1"></label>
+          <label class="light-control"><span class="range-line"><span>Key light</span><output id="key-value">2.0</output></span><input id="key-intensity" type="range" min="0" max="5" step=".05" value="2"></label>
+          <label class="light-control"><span class="range-line"><span>Fill light</span><output id="fill-value">1.0</output></span><input id="fill-intensity" type="range" min="0" max="4" step=".05" value="1"></label>
+          <h3>Key light direction</h3>
+          <label class="light-control">Horizontal <input id="light-azimuth" type="range" min="-180" max="180" step="1" value="35"></label>
+          <label class="light-control">Vertical <input id="light-elevation" type="range" min="-80" max="80" step="1" value="48"></label>
+          <p class="workspace-note">Move the light around the model and adjust fill to reveal darker surfaces and edges.</p>
+          <button id="lighting-reset" type="button">Reset lighting</button>
+        </section>
+        <section class="workspace-view" data-view="plugins" hidden><h3>Plugins</h3><div class="workspace-placeholder">Plugin panels will appear here when plugin support is available. The workspace is reserved for dockable tools.</div></section>
+        <section class="workspace-view" data-view="extensions" hidden><h3>Extensions</h3><div class="workspace-placeholder">Extension tools and format capabilities will be organized here.</div></section>
+      </div>
     </div>
-    <h3>Objects</h3>
-    <div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
-    <h3>Selection</h3>
-    <div id="selected-name">Nothing selected</div>
-    <form id="transform-form">
-      <label>X <input name="x" type="number" step="any" value="0"></label>
-      <label>Y <input name="y" type="number" step="any" value="0"></label>
-      <label>Z <input name="z" type="number" step="any" value="0"></label>
-      <label>Rotate X° <input name="rx" type="number" step="any" value="0"></label>
-      <label>Rotate Y° <input name="ry" type="number" step="any" value="0"></label>
-      <label>Rotate Z° <input name="rz" type="number" step="any" value="0"></label>
-      <label>Scale X <input name="sx" type="number" step="any" value="1"></label>
-      <label>Scale Y <input name="sy" type="number" step="any" value="1"></label>
-      <label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
-      <button type="submit">Apply transform</button>
-    </form>
-    <p id="scene-hint">Select an object in the list or click it in the viewer. Undo: Ctrl/Cmd + Z · Redo: Ctrl/Cmd + Shift + Z.</p>
   </aside>
   <div id="loading">
     <div class="spinner"></div>
@@ -307,18 +348,126 @@ controls.dampingFactor = 0.05;
 controls.rotateSpeed = 0.8;
 controls.zoomSpeed = 1.0;
 controls.panSpeed = 0.8;
+// Full free-orbit: no polar, azimuth, or target-axis restrictions.
+controls.minPolarAngle = 0;
+controls.maxPolarAngle = Math.PI;
+controls.minAzimuthAngle = -Infinity;
+controls.maxAzimuthAngle = Infinity;
 
-// Lighting: AmbientLight + DirectionalLight + RoomEnvironment
-const ambient = new THREE.AmbientLight(0xffffff, 0.5);
+// Balanced, user-adjustable three-point lighting. Keep the model readable from every side.
+const ambient = new THREE.AmbientLight(0xffffff, 1.1);
 scene.add(ambient);
-const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
-dirLight.position.set(5, 10, 7);
+const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
+dirLight.position.set(5, 7, 6);
 dirLight.castShadow = true;
 scene.add(dirLight);
+const fillLight = new THREE.DirectionalLight(0xc8dcff, 1.0);
+fillLight.position.set(-5, 2, -4);
+scene.add(fillLight);
+const rimLight = new THREE.DirectionalLight(0xffffff, 0.65);
+rimLight.position.set(0, 5, -7);
+scene.add(rimLight);
 
 // Register the fully initialized base scene before user models are loaded.
 const sceneStore = new SceneStore(scene);
 const commandHistory = new CommandHistory({ limit: 100 });
+ 
+// ---------- Editor workspace navigation and persisted layout ----------
+const workspace = document.getElementById('scene-panel');
+const workspaceTitle = document.getElementById('workspace-title');
+const workspaceViews = [...document.querySelectorAll('.workspace-view')];
+const workspaceButtons = [...document.querySelectorAll('[data-workspace]')];
+function setWorkspaceView(name) {
+  workspaceViews.forEach((view) => { view.hidden = view.dataset.view !== name; });
+  workspaceButtons.forEach((button) => {
+    const active = button.dataset.workspace === name;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  workspaceTitle.textContent = name[0].toUpperCase() + name.slice(1);
+  localStorage.setItem('glb-workspace-view', name);
+  if (workspace.classList.contains('collapsed')) workspace.classList.remove('collapsed');
+}
+workspaceButtons.forEach((button) => button.addEventListener('click', () => setWorkspaceView(button.dataset.workspace)));
+const workspaceHeader = document.getElementById('workspace-header');
+const savedPosition = JSON.parse(localStorage.getItem('glb-workspace-position') || 'null');
+if (savedPosition && Number.isFinite(savedPosition.left) && Number.isFinite(savedPosition.top)) {
+  workspace.style.left = savedPosition.left + 'px';
+  workspace.style.top = savedPosition.top + 'px';
+  workspace.style.right = 'auto';
+  workspace.style.bottom = 'auto';
+}
+let workspaceDrag = null;
+workspaceHeader.addEventListener('pointerdown', (event) => {
+  if (event.target.closest('button')) return;
+  const rect = workspace.getBoundingClientRect();
+  workspaceDrag = { pointerId: event.pointerId, x: event.clientX - rect.left, y: event.clientY - rect.top };
+  workspaceHeader.setPointerCapture(event.pointerId);
+});
+workspaceHeader.addEventListener('pointermove', (event) => {
+  if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
+  const left = Math.max(0, Math.min(window.innerWidth - Math.min(workspace.offsetWidth, 48), event.clientX - workspaceDrag.x));
+  const top = Math.max(0, Math.min(window.innerHeight - 100, event.clientY - workspaceDrag.y));
+  workspace.style.left = left + 'px';
+  workspace.style.top = top + 'px';
+  workspace.style.right = 'auto';
+  workspace.style.bottom = 'auto';
+});
+function finishWorkspaceDrag(event) {
+  if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
+  workspaceDrag = null;
+  const rect = workspace.getBoundingClientRect();
+  localStorage.setItem('glb-workspace-position', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) }));
+}
+workspaceHeader.addEventListener('pointerup', finishWorkspaceDrag);
+workspaceHeader.addEventListener('pointercancel', finishWorkspaceDrag);
+const collapseButton = document.getElementById('workspace-collapse');
+function setWorkspaceCollapsed(collapsed) {
+  workspace.classList.toggle('collapsed', collapsed);
+  collapseButton.textContent = collapsed ? '›' : '‹';
+  collapseButton.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+  collapseButton.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+  localStorage.setItem('glb-workspace-collapsed', String(collapsed));
+}
+collapseButton.addEventListener('click', () => setWorkspaceCollapsed(!workspace.classList.contains('collapsed')));
+setWorkspaceCollapsed(localStorage.getItem('glb-workspace-collapsed') === 'true');
+const savedWorkspace = localStorage.getItem('glb-workspace-view');
+if (workspaceViews.some((view) => view.dataset.view === savedWorkspace)) setWorkspaceView(savedWorkspace);
+
+// Lighting controls update the actual scene lights, not just their labels.
+function setKeyLightDirection() {
+  const azimuth = THREE.MathUtils.degToRad(Number(document.getElementById('light-azimuth').value));
+  const elevation = THREE.MathUtils.degToRad(Number(document.getElementById('light-elevation').value));
+  const radius = 9;
+  dirLight.position.set(
+    radius * Math.cos(elevation) * Math.sin(azimuth),
+    radius * Math.sin(elevation),
+    radius * Math.cos(elevation) * Math.cos(azimuth)
+  );
+}
+function bindLightRange(id, light, outputId) {
+  const input = document.getElementById(id);
+  const output = document.getElementById(outputId);
+  const update = () => { light.intensity = Number(input.value); output.value = Number(input.value).toFixed(2); };
+  input.addEventListener('input', update);
+  update();
+}
+bindLightRange('ambient-intensity', ambient, 'ambient-value');
+bindLightRange('key-intensity', dirLight, 'key-value');
+bindLightRange('fill-intensity', fillLight, 'fill-value');
+document.getElementById('light-azimuth').addEventListener('input', setKeyLightDirection);
+document.getElementById('light-elevation').addEventListener('input', setKeyLightDirection);
+setKeyLightDirection();
+document.getElementById('lighting-reset').addEventListener('click', () => {
+  document.getElementById('ambient-intensity').value = '1.1';
+  document.getElementById('key-intensity').value = '2';
+  document.getElementById('fill-intensity').value = '1';
+  document.getElementById('light-azimuth').value = '35';
+  document.getElementById('light-elevation').value = '48';
+  ['ambient-intensity','key-intensity','fill-intensity'].forEach((id) => document.getElementById(id).dispatchEvent(new Event('input')));
+  setKeyLightDirection();
+});
+
 
 // ---------- Model loading ----------
 let currentModel = null;
@@ -608,6 +757,11 @@ commandHistory.onChange = updateHistoryControls;
 // Opt-in test surface for browser automation. It is absent during normal use.
 if (new URLSearchParams(window.location.search).has('test')) {
   window.__GLB_VIEWER_TEST__ = Object.freeze({
+    setWorkspaceView,
+    setWorkspaceCollapsed,
+    get workspace() { return workspace; },
+    get controls() { return controls; },
+    get lights() { return { ambient, key: dirLight, fill: fillLight }; },
     get sceneStore() { return sceneStore; },
     get commandHistory() { return commandHistory; },
     get currentModel() { return currentModel; },
