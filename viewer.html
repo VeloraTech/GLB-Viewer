@@ -163,7 +163,7 @@
     <button id="bg-toggle" title="Toggle dark/light background">Dark</button>
     <button id="screenshot" title="Screenshot">Screenshot</button>
     <button id="file-picker-btn" title="Open file">Open GLB</button>
-    <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
+    <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button><button id="export-glb-btn" title="Export a new GLB copy">Export GLB</button><button id="projection-toggle" title="Switch camera projection">Perspective</button>
     <button id="orbit-preview-btn" title="Rotate the model automatically">Orbit Preview</button><button id="frame-all-btn">Frame All</button><button id="view-front-btn">Front</button><button id="view-right-btn">Right</button><button id="view-top-btn">Top</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
   </div>
@@ -196,7 +196,7 @@
         <div id="selected-name">Nothing selected</div>
       </section>
       <section class="workspace-view" data-view="objects" hidden>
-        <h3>Hierarchy</h3><input id="outliner-search" type="search" placeholder="Filter objects…" aria-label="Filter objects" style="width:100%;padding:8px;margin-bottom:8px"><div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
+        <h3>Hierarchy</h3><div id="outliner-actions"><button id="rename-object-btn" type="button">Rename</button><button id="delete-object-btn" type="button">Delete</button></div><input id="outliner-search" type="search" placeholder="Filter objects…" aria-label="Filter objects" style="width:100%;padding:8px;margin-bottom:8px"><div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
         <p id="scene-hint">Select an object in the list or click it directly in the viewport.</p>
       </section>
       <section class="workspace-view" data-view="transform" hidden>
@@ -260,6 +260,7 @@
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { disposeObjectResources } from './src/core/ResourceDisposer.js';
@@ -268,7 +269,7 @@ import { NativeRelayHardwareProvider, BrowserCapabilityProvider } from './src/co
 import { evaluateAdaptiveQuality } from './src/core/AdaptiveQualityPolicy.js';
 import { SceneStore } from './src/core/SceneStore.js';
 import { CommandHistory } from './src/core/CommandHistory.js';
-import { SetTransformCommand, SetVisibilityCommand } from './src/core/SceneCommands.js';
+import { SetTransformCommand, SetVisibilityCommand, RenameObjectCommand, RemoveObjectCommand } from './src/core/SceneCommands.js';
 import { EditorStateStore } from './src/editor/EditorStateStore.js';
 import { ToolRegistry } from './src/editor/ToolRegistry.js';
 import { WorkspaceManager } from './src/editor/WorkspaceManager.js';
@@ -629,6 +630,11 @@ document.getElementById('lighting-reset').addEventListener('click', () => {
 
 // ---------- Model loading ----------
 let currentModel = null;
+let isDirty = false;
+let orthographicCamera = null;
+let useOrthographic = false;
+let selectedIds = new Set();
+const lockedObjectIds = new Set();
 let commandPalette;
 let orbitPreview;
 let orbitUiSync = () => {};
@@ -680,6 +686,15 @@ document.getElementById('material-color').addEventListener('input',e=>editSelect
 document.getElementById('material-metalness').addEventListener('input',e=>editSelectedMaterial('metalness',e.target.value));
 document.getElementById('material-roughness').addEventListener('input',e=>editSelectedMaterial('roughness',e.target.value));
 document.getElementById('material-opacity').addEventListener('input',e=>editSelectedMaterial('opacity',e.target.value));
+document.getElementById('projection-toggle').addEventListener('click',()=>{
+  if(!orthographicCamera){const aspect=window.innerWidth/window.innerHeight;orthographicCamera=new THREE.OrthographicCamera(-2*aspect,2*aspect,2,-2,0.01,10000);orthographicCamera.position.copy(camera.position);orthographicCamera.quaternion.copy(camera.quaternion);}
+  const old=useOrthographic?orthographicCamera:camera,next=useOrthographic?camera:orthographicCamera;
+  next.position.copy(old.position);next.quaternion.copy(old.quaternion);next.up.copy(old.up);next.lookAt(controls.target);
+  controls.object=next;useOrthographic=!useOrthographic;
+  if(useOrthographic){const distance=next.position.distanceTo(controls.target);const span=Math.max(distance*.7,.1);const aspect=innerWidth/innerHeight;next.left=-span*aspect;next.right=span*aspect;next.top=span;next.bottom=-span;next.updateProjectionMatrix();}
+  else next.updateProjectionMatrix();
+  document.getElementById('projection-toggle').textContent=useOrthographic?'Orthographic':'Perspective';
+});
 document.getElementById('frame-all-btn').addEventListener('click',()=>viewportWorkspace.frame(currentModel));
 document.getElementById('grid-toggle').addEventListener('change',e=>viewportWorkspace.setGrid(e.target.checked));
 document.getElementById('axes-toggle').addEventListener('change',e=>viewportWorkspace.setAxes(e.target.checked));
@@ -690,6 +705,8 @@ document.getElementById('reset-view-btn').addEventListener('click',()=>viewportW
 document.getElementById('view-front-btn').addEventListener('click',()=>viewportWorkspace.preset('front'));
 document.getElementById('view-right-btn').addEventListener('click',()=>viewportWorkspace.preset('right'));
 document.getElementById('view-top-btn').addEventListener('click',()=>viewportWorkspace.preset('top'));
+document.getElementById('rename-object-btn').addEventListener('click',()=>{const object=sceneStore.getSelection();if(object)renameObject(object);});
+document.getElementById('delete-object-btn').addEventListener('click',()=>{const object=sceneStore.getSelection();if(!object)return;if(!window.confirm('Delete '+(object.name||object.type)+'?'))return;commandHistory.execute(new RemoveObjectCommand(sceneStore,object.uuid));selectedIds.clear();markDirty();refreshObjectList();updateHistoryControls();updateSelectionPanel();});
 document.getElementById('outliner-search').addEventListener('input',e=>{
   const q=e.target.value.trim().toLowerCase();
   document.querySelectorAll('.scene-row').forEach(row=>{row.hidden=!row.dataset.objectName.includes(q);});
@@ -755,6 +772,26 @@ function countStats(object) {
   return { triangles: Math.round(triangles), vertices: Math.round(vertices), meshes };
 }
 
+function updateInspection() {
+  const panel=document.getElementById('model-inspection');
+  if(!currentModel){panel.textContent='Open a model to inspect it.';return;}
+  let meshes=0,vertices=0,triangles=0,materials=new Set(),textures=new Set(),groups=0;
+  const box=new THREE.Box3().setFromObject(currentModel),size=box.getSize(new THREE.Vector3());
+  currentModel.traverse(o=>{
+    if(o.isGroup)groups++;
+    if(o.isMesh){meshes++;const p=o.geometry?.attributes?.position;const idx=o.geometry?.index;vertices+=p?.count||0;triangles+=idx?idx.count/3:(p?.count||0)/3;
+      (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean).forEach(m=>{materials.add(m);for(const value of Object.values(m)){if(value?.isTexture)textures.add(value);}});
+    }
+  });
+  const rows=[['File',state.fileName||'Untitled'],['File size',formatBytes(state.fileSize)],['Meshes',meshes],['Triangles',Math.round(triangles).toLocaleString()],['Vertices',vertices.toLocaleString()],['Groups',groups],['Materials',materials.size],['Textures',textures.size],['Dimensions',size.toArray().map(v=>v.toFixed(3)).join(' × ')]];
+  panel.replaceChildren(...rows.flatMap(([k,v])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=k;dd.textContent=String(v);return[dt,dd];}));
+}
+function markDirty(){isDirty=true;document.title='* GLB Viewer';}
+function renameObject(object){
+  const next=window.prompt('New object name:',object.name||'');
+  if(next===null||!next.trim()||next.trim()===(object.name||''))return;
+  commandHistory.execute(new RenameObjectCommand(sceneStore,object.uuid,next));markDirty();refreshObjectList();updateHistoryControls();updateSelectionPanel();
+}
 function formatBytes(bytes) {
   if (!bytes && bytes !== 0) return '—';
   if (bytes === 0) return '0 B';
@@ -839,6 +876,7 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
 
       commandPalette.refresh();
+      isDirty = false; selectedIds.clear(); lockedObjectIds.clear();
       state.fileName = fileName;
       state.fileSize = fileSize;
       const stats = countStats(currentModel);
@@ -848,6 +886,7 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       performanceMonitor.setSceneStats(stats);
       performanceMonitor.recordLoad({ fileName, durationMs: performance.now() - loadStartedAt, status: 'success' });
       updateInfoChip();
+      updateInspection();
 
       fitCamera(currentModel);
       refreshObjectList();
@@ -889,44 +928,48 @@ function refreshObjectList() {
     return;
   }
 
-  currentModel.traverse((object) => {
-    if (object === currentModel || (!object.isMesh && !object.isGroup && !object.isObject3D)) return;
-    const row = document.createElement('div');
-    row.className = 'scene-row';
-    row.dataset.objectId = object.uuid;
-    row.dataset.objectName = (object.name || object.type || 'Object').toLowerCase();
-
-    const selectButton = document.createElement('button');
-    selectButton.type = 'button';
-    selectButton.className = 'object-select';
-    selectButton.textContent = object.name || object.type || 'Object';
-    selectButton.title = object.name || object.uuid;
-    selectButton.addEventListener('click', () => selectObject(object));
-
-    const visibilityButton = document.createElement('button');
-    visibilityButton.type = 'button';
-    visibilityButton.className = 'visibility-toggle';
-    visibilityButton.textContent = object.visible ? 'Visible' : 'Hidden';
-    visibilityButton.setAttribute('aria-label', object.visible ? 'Hide object' : 'Show object');
-    visibilityButton.addEventListener('click', () => {
-      commandHistory.execute(new SetVisibilityCommand(sceneStore, object.uuid, !object.visible));
-      refreshObjectList();
-      updateHistoryControls();
-      if (sceneStore.getSelection() === object) updateSelectionPanel();
+  const appendTree = (parent, depth = 0) => {
+    parent.children.forEach((object) => {
+      if (object.userData?.editorHelper) return;
+      const row = document.createElement('div');
+      row.className = 'scene-row';
+      row.dataset.objectId = object.uuid;
+      row.dataset.objectName = (object.name || object.type || 'Object').toLowerCase();
+      row.style.paddingLeft = (4 + depth * 14) + 'px';
+      if (selectedIds.has(object.uuid) || sceneStore.getSelection() === object) row.classList.add('selected');
+      const selectButton = document.createElement('button');
+      selectButton.type = 'button'; selectButton.className = 'object-select';
+      selectButton.textContent = object.name || object.type || 'Object';
+      selectButton.title = object.name || object.uuid;
+      selectButton.addEventListener('click', (event) => {
+        if (event.shiftKey || event.ctrlKey || event.metaKey) {
+          if (selectedIds.has(object.uuid)) selectedIds.delete(object.uuid); else selectedIds.add(object.uuid);
+          selectObject(object, true);
+          document.querySelectorAll('.scene-row').forEach((item) => item.classList.toggle('selected', selectedIds.has(item.dataset.objectId)));
+        } else { selectedIds = new Set([object.uuid]); selectObject(object); }
+      });
+      const rename = document.createElement('button');
+      rename.type='button'; rename.textContent='Rename'; rename.title='Rename object';
+      rename.addEventListener('click',()=>renameObject(object));
+      const visibility = document.createElement('button');
+      visibility.type='button'; visibility.className='visibility-toggle'; visibility.textContent=object.visible?'Shown':'Hidden';
+      visibility.addEventListener('click',()=>{commandHistory.execute(new SetVisibilityCommand(sceneStore,object.uuid,!object.visible));markDirty();refreshObjectList();updateHistoryControls();});
+      const lock = document.createElement('button');
+      lock.type='button'; lock.textContent=lockedObjectIds.has(object.uuid)?'Locked':'Lock';
+      lock.addEventListener('click',()=>{if(lockedObjectIds.has(object.uuid))lockedObjectIds.delete(object.uuid);else lockedObjectIds.add(object.uuid);refreshObjectList();});
+      row.append(selectButton,rename,visibility,lock); list.appendChild(row);
+      appendTree(object, depth + 1);
     });
-
-    row.append(selectButton, visibilityButton);
-    list.appendChild(row);
-  });
+  };
+  appendTree(currentModel);
 }
 
-function selectObject(object) {
+function selectObject(object, keepMulti = false) {
   if (object && !sceneStore.getObject(object.uuid)) return;
+  if (!keepMulti) selectedIds = new Set(object ? [object.uuid] : []);
   sceneStore.select(object ? object.uuid : null);
   updateSelectionPanel();
-  document.querySelectorAll('.scene-row').forEach((row) => {
-    row.classList.toggle('selected', row.dataset.objectId === (object?.uuid || ''));
-  });
+  document.querySelectorAll('.scene-row').forEach((row) => row.classList.toggle('selected', selectedIds.has(row.dataset.objectId)));
 }
 
 function updateSelectionPanel() {
@@ -955,6 +998,7 @@ function updateHistoryControls() {
 function applyHistoryAction(action) {
   if (action === 'undo') commandHistory.undo();
   else commandHistory.redo();
+  markDirty();
   refreshObjectList();
   updateHistoryControls();
   updateSelectionPanel();
@@ -999,6 +1043,8 @@ commandHistory.onChange = updateHistoryControls;
 if (new URLSearchParams(window.location.search).has('test')) {
   window.__GLB_VIEWER_TEST__ = Object.freeze({
     setWorkspaceView,
+    updateInspection,
+    get isDirty(){return isDirty;},
     get editorState() { return editorState; },
     get toolRegistry() { return toolRegistry; },
     get workspaceManager() { return workspaceManager; },
@@ -1046,7 +1092,9 @@ document.getElementById('transform-form').addEventListener('submit', (event) => 
     },
     scale: { x: number('sx'), y: number('sy'), z: number('sz') }
   };
+  if (lockedObjectIds.has(object.uuid)) { window.alert('Unlock this object before transforming it.'); return; }
   commandHistory.execute(new SetTransformCommand(sceneStore, object.uuid, transform));
+  markDirty();
   updateHistoryControls();
   updateSelectionPanel();
 });
@@ -1054,6 +1102,7 @@ document.getElementById('transform-form').addEventListener('submit', (event) => 
 updateSelectionPanel();
 updateHistoryControls();
 
+window.addEventListener('beforeunload',(event)=>{if(!isDirty)return;event.preventDefault();event.returnValue='';});
 window.addEventListener('keydown', (event) => {
   if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
   const activeTag = document.activeElement?.tagName;
@@ -1063,6 +1112,17 @@ window.addEventListener('keydown', (event) => {
   event.preventDefault();
   if (key === 'y' || (key === 'z' && event.shiftKey)) applyHistoryAction('redo');
   else applyHistoryAction('undo');
+});
+
+document.getElementById('export-glb-btn').addEventListener('click',()=>{
+  if(!currentModel){window.alert('Open a model before exporting.');return;}
+  const exporter=new GLTFExporter();
+  exporter.parse(currentModel,(result)=>{
+    const blob=new Blob([result],{type:'model/gltf-binary'}),url=URL.createObjectURL(blob);
+    const link=document.createElement('a');link.href=url;
+    const base=(state.fileName||'model').replace(/\.glb$/i,'');link.download=base+'-edited.glb';link.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);isDirty=false;document.title='GLB Viewer';
+  },(error)=>{console.error(error);window.alert('Export failed. See the developer console for details.');},{binary:true,onlyVisible:false});
 });
 
 // ---------- Drag and drop ----------
