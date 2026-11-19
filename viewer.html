@@ -279,7 +279,7 @@ import { NativeRelayHardwareProvider, BrowserCapabilityProvider } from './src/co
 import { evaluateAdaptiveQuality } from './src/core/AdaptiveQualityPolicy.js';
 import { SceneStore } from './src/core/SceneStore.js';
 import { CommandHistory } from './src/core/CommandHistory.js';
-import { SetTransformCommand, SetVisibilityCommand, RenameObjectCommand, RemoveObjectCommand } from './src/core/SceneCommands.js';
+import { SetTransformCommand, SetVisibilityCommand, RenameObjectCommand, RemoveObjectCommand, SetMaterialPropertiesCommand } from './src/core/SceneCommands.js';
 import { EditorStateStore } from './src/editor/EditorStateStore.js';
 import { ToolRegistry } from './src/editor/ToolRegistry.js';
 import { WorkspaceManager } from './src/editor/WorkspaceManager.js';
@@ -825,18 +825,82 @@ function syncMaterialControls() {
   document.getElementById('clear-material-texture').disabled=!material.map;
 }
 document.getElementById('material-slot').addEventListener('change',e=>{materialSlotIndex=Number(e.target.value)||0;syncMaterialControls();});
-function editSelectedMaterial(key,value) {
-  const material=selectedMaterial();if(!material)return;
-  if(key==='color'&&material.color)material.color.set(value);else if(key in material)material[key]=Number(value);
-  if(key==='opacity'){material.transparent=Number(value)<1;material.depthWrite=Number(value)>=1;}
-  material.needsUpdate=true;
+let materialEditStart = null;
+function snapshotMaterialProperties(material, keys) {
+  const values = {};
+  for (const key of keys) {
+    const value = material[key];
+    values[key] = value && typeof value.clone === 'function' ? value.clone() : value;
+  }
+  return values;
 }
-document.getElementById('material-color').addEventListener('input',e=>{editSelectedMaterial('color',e.target.value);markDirty();});
-document.getElementById('material-metalness').addEventListener('input',e=>{editSelectedMaterial('metalness',e.target.value);markDirty();});
-document.getElementById('material-roughness').addEventListener('input',e=>{editSelectedMaterial('roughness',e.target.value);markDirty();});
-document.getElementById('material-opacity').addEventListener('input',e=>{editSelectedMaterial('opacity',e.target.value);markDirty();});
-document.getElementById('material-texture').addEventListener('change',e=>{const file=e.target.files?.[0],material=selectedMaterial();if(!file||!material)return;const url=URL.createObjectURL(file);new THREE.TextureLoader().load(url,texture=>{URL.revokeObjectURL(url);texture.colorSpace=THREE.SRGBColorSpace;texture.flipY=false;material.map=texture;material.needsUpdate=true;markDirty();syncMaterialControls();},undefined,error=>{URL.revokeObjectURL(url);console.error(error);window.alert('Could not load this texture image.');});e.target.value='';});
-document.getElementById('clear-material-texture').addEventListener('click',()=>{const material=selectedMaterial();if(!material?.map)return;material.map=null;material.needsUpdate=true;markDirty();syncMaterialControls();});
+function applyMaterialPreview(material, values) {
+  for (const [key, value] of Object.entries(values)) {
+    const current = material[key];
+    if (current && value && typeof current.copy === 'function' && typeof value === 'object') current.copy(value);
+    else material[key] = value;
+  }
+  material.needsUpdate = true;
+}
+function beginMaterialEdit(key) {
+  const material = selectedMaterial();
+  if (!material) return;
+  const keys = key === 'opacity' ? ['opacity', 'transparent', 'depthWrite'] : [key];
+  materialEditStart = { material, values: snapshotMaterialProperties(material, keys) };
+}
+function previewMaterialEdit(key, value) {
+  const material = selectedMaterial();
+  if (!material) return;
+  const values = key === 'color'
+    ? { color: new THREE.Color(value) }
+    : key === 'opacity'
+      ? { opacity: Number(value), transparent: Number(value) < 1, depthWrite: Number(value) >= 1 }
+      : { [key]: Number(value) };
+  applyMaterialPreview(material, values);
+}
+function commitMaterialEdit(key, value) {
+  const material = selectedMaterial();
+  if (!material) return;
+  const start = materialEditStart?.material === material ? materialEditStart : null;
+  if (start) applyMaterialPreview(material, start.values);
+  const properties = key === 'color'
+    ? { color: new THREE.Color(value) }
+    : key === 'opacity'
+      ? { opacity: Number(value), transparent: Number(value) < 1, depthWrite: Number(value) >= 1 }
+      : { [key]: Number(value) };
+  commandHistory.execute(new SetMaterialPropertiesCommand(material, properties));
+  materialEditStart = null;
+  markDirty();
+  updateHistoryControls();
+  syncMaterialControls();
+}
+for (const [id, key] of [['material-color','color'],['material-metalness','metalness'],['material-roughness','roughness'],['material-opacity','opacity']]) {
+  const input = document.getElementById(id);
+  input.addEventListener('focus', () => beginMaterialEdit(key));
+  input.addEventListener('pointerdown', () => beginMaterialEdit(key));
+  input.addEventListener('input', event => previewMaterialEdit(key, event.target.value));
+  input.addEventListener('change', event => commitMaterialEdit(key, event.target.value));
+}
+document.getElementById('material-texture').addEventListener('change',e=>{
+  const file=e.target.files?.[0],material=selectedMaterial();
+  if(!file||!material){e.target.value='';return;}
+  const url=URL.createObjectURL(file);
+  new THREE.TextureLoader().load(url,texture=>{
+    URL.revokeObjectURL(url);
+    texture.colorSpace=THREE.SRGBColorSpace;
+    texture.flipY=false;
+    commandHistory.execute(new SetMaterialPropertiesCommand(material,{map:texture}));
+    markDirty();updateHistoryControls();syncMaterialControls();
+  },undefined,error=>{
+    URL.revokeObjectURL(url);console.error(error);window.alert('Could not load this texture image.');
+  });
+  e.target.value='';
+});
+document.getElementById('clear-material-texture').addEventListener('click',()=>{
+  const material=selectedMaterial();if(!material?.map)return;
+  commandHistory.execute(new SetMaterialPropertiesCommand(material,{map:null}));
+  markDirty();updateHistoryControls();syncMaterialControls();
+});
 document.getElementById('projection-toggle').addEventListener('click',()=>{
   if(!orthographicCamera){const aspect=window.innerWidth/window.innerHeight;orthographicCamera=new THREE.OrthographicCamera(-2*aspect,2*aspect,2,-2,0.01,10000);orthographicCamera.position.copy(camera.position);orthographicCamera.quaternion.copy(camera.quaternion);}
   const old=useOrthographic?orthographicCamera:camera,next=useOrthographic?camera:orthographicCamera;
