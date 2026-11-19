@@ -112,12 +112,13 @@ The Windows launcher now checks `scripts/update-viewer.ps1` before starting its 
 
 - Resolves the current `main` commit once and downloads the viewer plus its editor/core module dependencies from that exact immutable commit.
 - Skips the download when the installed commit marker already matches.
-- Stages and validates the complete asset set before replacing installed files.
-- Keeps backups and rolls back replacements if an installation step fails.
+- Stages and validates the complete asset set before activation.
+- Installs immutable versioned bundles under the current user's LocalAppData directory, so normal launches do not need administrator permission to update Program Files.
+- Atomically switches a small active-commit pointer only after the complete bundle is ready; an interrupted download leaves the previous bundle active.
 - Treats network failures as non-fatal and keeps the currently installed viewer.
 - Does not upload model files or diagnostics.
 
-The launcher caps the update check at 25 seconds and continues with the installed viewer if the check cannot complete. The updater log is written under the current Windows user's LocalAppData folder. The Inno Setup installer now includes the editor modules and updater script.
+The launcher caps the update check at 25 seconds and continues with the installed viewer if the check cannot complete. The local HTTP server serves active per-user bundle files first and falls back to the installer directory for static assets such as Three.js. The updater log and active bundle are stored under the current Windows user's LocalAppData folder. The Inno Setup installer now includes the editor modules and updater script.
 
 This is an update mechanism, not a signed software-update channel: transport relies on HTTPS/TLS to GitHub and the script performs content sanity checks, not publisher-signature verification. A future release should add a signed manifest or pinned release-key verification before treating updates as a stronger supply-chain trust boundary.
 
