@@ -990,15 +990,43 @@ function countStats(object) {
 function updateInspection() {
   const panel=document.getElementById('model-inspection');
   if(!currentModel){panel.textContent='Open a model to inspect it.';return;}
-  let meshes=0,vertices=0,triangles=0,materials=new Set(),textures=new Set(),groups=0;
+  let meshes=0,vertices=0,triangles=0,groups=0;
+  const materials=new Set(),textures=new Set(),warnings=new Set();
+  currentModel.updateWorldMatrix(true,true);
   const box=new THREE.Box3().setFromObject(currentModel),size=box.getSize(new THREE.Vector3());
   currentModel.traverse(o=>{
     if(o.isGroup)groups++;
-    if(o.isMesh){meshes++;const p=o.geometry?.attributes?.position;const idx=o.geometry?.index;vertices+=p?.count||0;triangles+=idx?idx.count/3:(p?.count||0)/3;
-      (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean).forEach(m=>{materials.add(m);for(const value of Object.values(m)){if(value?.isTexture)textures.add(value);}});
+    if(o.isMesh){
+      meshes++;
+      const geometry=o.geometry;
+      const position=geometry?.attributes?.position;
+      const index=geometry?.index;
+      if(!position){warnings.add('A mesh has no position attribute.');}
+      else{
+        vertices+=position.count;
+        const elementCount=index?index.count:position.count;
+        triangles+=Math.floor(elementCount/3);
+        if(elementCount%3!==0)warnings.add('Some mesh geometry is not a complete set of triangles.');
+      }
+      if(geometry?.morphAttributes&&Object.keys(geometry.morphAttributes).length)warnings.add('Morph targets are present; verify animation after export.');
+      if(o.isSkinnedMesh)warnings.add('Skinned mesh detected; verify skinning after export.');
+      (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean).forEach(material=>{
+        materials.add(material);
+        material.traverse?.(value=>{if(value?.isTexture)textures.add(value);});
+        for(const value of Object.values(material))if(value?.isTexture)textures.add(value);
+      });
     }
+    if(o.isLine||o.isPoints)warnings.add('Line or point geometry is present; GLB export compatibility should be checked.');
   });
-  const rows=[['File',state.fileName||'Untitled'],['File size',formatBytes(state.fileSize)],['Meshes',meshes],['Triangles',Math.round(triangles).toLocaleString()],['Vertices',vertices.toLocaleString()],['Groups',groups],['Materials',materials.size],['Textures',textures.size],['Dimensions',size.toArray().map(v=>v.toFixed(3)).join(' × ')]];
+  if(!Number.isFinite(size.x+size.y+size.z))warnings.add('Model bounds could not be calculated.');
+  const rows=[
+    ['File',state.fileName||'Untitled'],['File size',formatBytes(state.fileSize)],
+    ['Meshes',meshes],['Triangles',Math.round(triangles).toLocaleString()],
+    ['Vertices',vertices.toLocaleString()],['Groups',groups],
+    ['Materials',materials.size],['Textures',textures.size],
+    ['Dimensions',size.toArray().map(v=>Number.isFinite(v)?v.toFixed(3):'—').join(' × ')],
+    ['Inspection notes',warnings.size?[...warnings].join(' '):'No basic geometry warnings detected.']
+  ];
   panel.replaceChildren(...rows.flatMap(([k,v])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=k;dd.textContent=String(v);return[dt,dd];}));
 }
 function markDirty(){isDirty=true;document.title='* GLB Viewer';}
@@ -1078,6 +1106,12 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
 
       const nextModel = gltf.scene;
       const previousModel = currentModel;
+      // Restore real materials before the old model is disposed. Viewport-only
+      // wireframe/normal materials must never leak into a later model/export.
+      if (previousModel && viewportWorkspace.mode !== 'material') {
+        viewportWorkspace.restoreMaterials(previousModel);
+        viewportWorkspace.mode = 'material';
+      }
       if (orbitPreview.active) stopOrbitPreview();
       if (previousModel) {
         commandHistory.clear();
@@ -1344,13 +1378,34 @@ window.addEventListener('keydown', (event) => {
 
 document.getElementById('export-glb-btn').addEventListener('click',()=>{
   if(!currentModel){window.alert('Open a model before exporting.');return;}
+  const exportButton=document.getElementById('export-glb-btn');
+  if(exportButton.disabled)return;
+  exportButton.disabled=true;
   const exporter=new GLTFExporter();
+  const displayMode=viewportWorkspace.mode;
+  // Export the source materials, not temporary viewport-only shading.
+  if(displayMode!=='material'){
+    viewportWorkspace.restoreMaterials(currentModel);
+    viewportWorkspace.mode='material';
+  }
+  const restoreDisplayMode=()=>{
+    if(displayMode!=='material')viewportWorkspace.setShading(displayMode);
+    exportButton.disabled=false;
+  };
   exporter.parse(currentModel,(result)=>{
-    const blob=new Blob([result],{type:'model/gltf-binary'}),url=URL.createObjectURL(blob);
-    const link=document.createElement('a');link.href=url;
-    const base=(state.fileName||'model').replace(/\.glb$/i,'');link.download=base+'-edited.glb';link.click();
-    setTimeout(()=>URL.revokeObjectURL(url),1500);isDirty=false;document.title='GLB Viewer';
-  },(error)=>{console.error(error);window.alert('Export failed. See the developer console for details.');},{binary:true,onlyVisible:false});
+    try{
+      const blob=new Blob([result],{type:'model/gltf-binary'}),url=URL.createObjectURL(blob);
+      const link=document.createElement('a');link.href=url;
+      const base=(state.fileName||'model').replace(/\.glb$/i,'');link.download=base+'-edited.glb';
+      document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      isDirty=false;document.title='GLB Viewer';
+    }catch(error){console.error(error);window.alert('The GLB was generated but could not be downloaded.');}
+    finally{restoreDisplayMode();}
+  },(error)=>{
+    console.error(error);restoreDisplayMode();
+    window.alert('Export failed. See the developer console for details.');
+  },{binary:true,onlyVisible:false,animations:[]});
 });
 
 // ---------- Drag and drop ----------
