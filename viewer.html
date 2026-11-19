@@ -211,7 +211,7 @@
           <label>Scale X <input name="sx" type="number" step="any" value="1"></label><label>Scale Y <input name="sy" type="number" step="any" value="1"></label><label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
           <button type="submit">Apply to selected objects</button><button type="button" id="reset-transform-btn">Reset transform</button>
         </form>
-        <p class="workspace-note">The gizmo edits one object or transforms the selected group around a shared pivot. Numeric edits apply the active object's transform delta to all selected, unlocked objects. Axis locks preserve local components during single-object gizmo drags.</p>
+        <p class="workspace-note">The gizmo edits one object or transforms the selected group around a shared pivot. Numeric edits apply the active object's transform delta to all selected, unlocked objects. Axis locks preserve the corresponding local position, rotation or scale component for the active gizmo mode.</p>
       </section>
       <section class="workspace-view" data-view="lighting" hidden>
         <h3>Viewport lighting</h3>
@@ -1277,7 +1277,7 @@ transformGizmo.addEventListener('dragging-changed',event=>{
   controls.enabled=!event.value&&!panMode;
   if(event.value){
     if(multiObjectTransform.objects.length>1) multiObjectTransform.begin();
-    else {const object=sceneStore.getSelection();if(object)gizmoDragSnapshot={object,position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()};}
+    else {const object=sceneStore.getSelection();if(object)gizmoDragSnapshot={object,mode:transformGizmo.getMode(),position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()};}
   } else if(multiObjectTransform.before){
     const command=multiObjectTransform.finish();
     if(command){commandHistory.execute(command);markDirty();syncModelLighting();updateHistoryControls();updateSelectionPanel();}
@@ -1291,8 +1291,8 @@ transformGizmo.addEventListener('dragging-changed',event=>{
 });
 transformGizmo.addEventListener('objectChange',()=>{
   if(multiObjectTransform.before){multiObjectTransform.update();syncModelLighting();updateSelectionPanel();return;}
-  if(!gizmoDragSnapshot)return;const o=gizmoDragSnapshot.object;
-  for(const axis of ['x','y','z'])if(document.getElementById('lock-axis-'+axis).checked){o.position[axis]=gizmoDragSnapshot.position[axis];o.rotation[axis]=gizmoDragSnapshot.rotation[axis];o.scale[axis]=gizmoDragSnapshot.scale[axis];}
+  if(!gizmoDragSnapshot)return;const o=gizmoDragSnapshot.object,mode=gizmoDragSnapshot.mode;
+  for(const axis of ['x','y','z'])if(document.getElementById('lock-axis-'+axis).checked){if(mode==='translate')o.position[axis]=gizmoDragSnapshot.position[axis];else if(mode==='rotate')o.rotation[axis]=gizmoDragSnapshot.rotation[axis];else if(mode==='scale')o.scale[axis]=gizmoDragSnapshot.scale[axis];}
   o.updateMatrixWorld(true);syncModelLighting();updateSelectionPanel();
 });
 document.getElementById('gizmo-translate').addEventListener('click',()=>transformGizmo.setMode('translate'));
