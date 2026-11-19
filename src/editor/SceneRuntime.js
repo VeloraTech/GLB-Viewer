@@ -12,12 +12,19 @@ export class SceneRuntime {
     this.assertActive();
     if (!nextModel) throw new TypeError("A model is required.");
     const previous = this.model;
-    if (previous) { this.sceneStore.removeObject(previous.uuid); this.disposeResources(previous); }
-    try { this.sceneStore.addObject(nextModel, this.scene); this.model = nextModel; }
-    catch (error) {
-      if (previous) { this.sceneStore.addObject(previous, this.scene); this.model = previous; }
-      throw error;
+    // Register the replacement before releasing the current model. If scene
+    // registration fails, the visible model and its GPU resources stay intact.
+    this.sceneStore.addObject(nextModel, this.scene);
+    if (previous) {
+      try {
+        this.sceneStore.removeObject(previous.uuid);
+      } catch (error) {
+        this.sceneStore.removeObject(nextModel.uuid);
+        throw error;
+      }
     }
+    this.model = nextModel;
+    if (previous) this.disposeResources(previous);
     return previous;
   }
   clearModel() {
