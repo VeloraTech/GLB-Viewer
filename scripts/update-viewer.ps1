@@ -4,6 +4,7 @@ param(
   [switch]$Force
 )
 $ErrorActionPreference = 'Stop'
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 $Owner = 'VeloraTech'
 $Repository = 'GLB-Viewer'
 $Branch = 'main'
