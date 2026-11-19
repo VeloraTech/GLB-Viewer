@@ -1,21 +1,21 @@
 /**
- * Inspect a loaded Object3D tree without mutating it.
- * Counts rendered mesh geometry and reports content that deserves export review.
+ * Inspect a loaded Three.js Object3D tree without mutating it.
+ * Returns primitive counts, material/texture totals, bounds and review warnings.
  */
-export function inspectModel(root) {
-  if (!root || typeof root.traverse !== 'function') {
-    throw new TypeError('A model with a traverse() method is required.');
+export function inspectModel(root, THREE) {
+  if (!root || typeof root.traverse !== 'function' || !THREE?.Box3 || !THREE?.Vector3) {
+    throw new TypeError('A model and Three.js namespace are required.');
   }
   let meshes = 0, vertices = 0, triangles = 0, groups = 0;
   const materials = new Set(), textures = new Set(), warnings = new Set();
+  const visited = new Set();
   root.updateWorldMatrix?.(true, true);
-  const box = new globalThis.__GLB_VIEWER_THREE__?.Box3?.(); 
-  const collectTextures = (value, visited = new Set()) => {
+  const collectTextures = value => {
     if (!value || typeof value !== 'object' || visited.has(value)) return;
     visited.add(value);
     if (value.isTexture) { textures.add(value); return; }
-    if (Array.isArray(value)) { value.forEach(item => collectTextures(item, visited)); return; }
-    for (const nested of Object.values(value)) collectTextures(nested, visited);
+    if (Array.isArray(value)) { value.forEach(collectTextures); return; }
+    for (const nested of Object.values(value)) collectTextures(nested);
   };
   root.traverse(object => {
     if (object.isGroup) groups++;
@@ -41,10 +41,12 @@ export function inspectModel(root) {
     }
     if (object.isLine || object.isPoints) warnings.add('Line or point geometry is present; GLB export compatibility should be checked.');
   });
-  let dimensions = null;
-  if (root.constructor?.name === 'Scene' && root.position) {
-    // Box3 is supplied by the caller through the standard Three.js object API
-    // when available; geometry-derived inspection remains useful without it.
-  }
-  return { meshes, vertices, triangles, groups, materials: materials.size, textures: textures.size, warnings: [...warnings], dimensions };
+  const bounds = new THREE.Box3().setFromObject(root);
+  const size = bounds.getSize(new THREE.Vector3());
+  if (bounds.isEmpty()) warnings.add('Model bounds could not be calculated.');
+  return {
+    meshes, vertices, triangles: Math.round(triangles), groups,
+    materials: materials.size, textures: textures.size,
+    warnings: [...warnings], size,
+  };
 }
