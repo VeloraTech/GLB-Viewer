@@ -823,6 +823,7 @@ function applyLightingPreset(name){
   syncModelLighting();markDirty();
 }
 function selectedMaterial() {
+  if(viewportWorkspace.mode!=='material')return null;
   const object=sceneStore.getSelection();if(!object?.isMesh||!object.material)return null;
   const slots=Array.isArray(object.material)?object.material:[object.material];return slots[materialSlotIndex]||null;
 }
@@ -830,7 +831,7 @@ function syncMaterialControls() {
   const object=sceneStore.getSelection(),slots=object?.isMesh&&object.material?(Array.isArray(object.material)?object.material:[object.material]):[];
   const select=document.getElementById('material-slot');select.replaceChildren(...slots.map((m,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=m.name||'Material '+(i+1);return o;}));
   materialSlotIndex=Math.min(materialSlotIndex,Math.max(0,slots.length-1));select.value=String(materialSlotIndex);
-  const material=selectedMaterial();document.getElementById('material-target').textContent=material?(object.name||object.type||'Selected mesh'):'Select a mesh to edit its material.';
+  const material=selectedMaterial();document.getElementById('material-target').textContent=material?(object.name||object.type||'Selected mesh'):viewportWorkspace.mode!=='material'?'Switch viewport shading to Material to edit source materials.':'Select a mesh to edit its material.';
   const textureChannels=[['map','material-texture','clear-material-texture'],['metalnessMap','material-metalness-texture','clear-material-metalness-texture'],['roughnessMap','material-roughness-texture','clear-material-roughness-texture'],['normalMap','material-normal-texture','clear-material-normal-texture'],['aoMap','material-ao-texture','clear-material-ao-texture'],['emissiveMap','material-emissive-texture','clear-material-emissive-texture']];
   for(const id of ['material-slot','material-color','material-metalness','material-roughness','material-opacity',...textureChannels.flatMap(([,input,clear])=>[input,clear])])document.getElementById(id).disabled=!material;
   if(!material)return;
@@ -934,7 +935,7 @@ document.getElementById('projection-toggle').addEventListener('click',()=>{
 document.getElementById('frame-all-btn').addEventListener('click',()=>viewportWorkspace.frame(currentModel));
 document.getElementById('grid-toggle').addEventListener('change',e=>{viewportWorkspace.setGrid(e.target.checked);saveEditorPreferences();});
 document.getElementById('axes-toggle').addEventListener('change',e=>{viewportWorkspace.setAxes(e.target.checked);saveEditorPreferences();});
-document.getElementById('shading-mode').addEventListener('change',e=>{viewportWorkspace.setShading(e.target.value);saveEditorPreferences();});
+document.getElementById('shading-mode').addEventListener('change',e=>{viewportWorkspace.setShading(e.target.value);syncMaterialControls();saveEditorPreferences();});
 document.getElementById('frame-selected-btn').addEventListener('click',()=>viewportWorkspace.frame(sceneStore.getSelection()));
 document.getElementById('reset-view-btn').addEventListener('click',()=>viewportWorkspace.resetView());
 
