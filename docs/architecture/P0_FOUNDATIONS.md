@@ -118,13 +118,13 @@ The Windows launcher now checks `scripts/update-viewer.ps1` before starting its 
 - Treats network failures as non-fatal and keeps the currently installed viewer.
 - Does not upload model files or diagnostics.
 
-The launcher caps the update check at 25 seconds and continues with the installed viewer if the check cannot complete. The local HTTP server serves active per-user bundle files first and falls back to the installer directory for static assets such as Three.js. The updater log and active bundle are stored under the current Windows user's LocalAppData folder. The Inno Setup installer now includes the editor modules and updater script.
+The launcher caps the update check at 25 seconds and continues with the installed viewer if the check cannot complete. The local HTTP server serves active per-user bundle files first and falls back to the installer directory for static assets such as Three.js. The updater log, active bundle pointer, and versioned update bundles are stored under the current Windows user's LocalAppData folder. This avoids requiring administrator rights to update files beneath Program Files. The Inno Setup installer now includes the editor modules and updater script.
 
 This is an update mechanism, not a signed software-update channel: transport relies on HTTPS/TLS to GitHub and the script performs content sanity checks, not publisher-signature verification. A future release should add a signed manifest or pinned release-key verification before treating updates as a stronger supply-chain trust boundary.
 
 ### Still outstanding before P0 can be called complete
 
-- The current interface still has one floating tool window with tabbed tool views. The manager supports registering independent panels, but each tool view has not yet been migrated into its own independently managed panel.
+- Each registered tool view now becomes its own independently draggable, resizable, closable floating panel. Panels can remain open together, are brought forward on focus, and persist their own geometry. The remaining workspace work is docking/splitting and a richer panel layout system.
 - Scene setup, renderer configuration, camera configuration, lighting, loading, and animation are not yet fully separated into dedicated runtime services.
 - Transform gizmos, multi-selection, nested outliner hierarchy, viewport shading modes, grid/axes controls, and keyboard shortcut registration remain to be implemented.
 - Ionicons currently load from the official Ionicons CDN; they are not yet bundled locally, so first-time icon rendering requires internet access. This should be vendored for fully offline installations.
