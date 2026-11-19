@@ -24,9 +24,9 @@ SetupLogging=yes
 [Files]
 Source: "..\launcher.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\viewer.html"; DestDir: "{app}"; Flags: ignoreversion
-Source: "..\\src\\editor\\*"; DestDir: "{app}\\src\\editor"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\\src\\core\\*"; DestDir: "{app}\\src\\core"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\\scripts\\update-viewer.ps1"; DestDir: "{app}\\scripts"; Flags: ignoreversion
+Source: "..\src\editor\*"; DestDir: "{app}\src\editor"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\src\core\*"; DestDir: "{app}\src\core"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\scripts\update-viewer.ps1"; DestDir: "{app}\scripts"; Flags: ignoreversion
 Source: "..\three\*"; DestDir: "{app}\three"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\sample\*"; DestDir: "{app}\sample"; Flags: ignoreversion recursesubdirs createallsubdirs
 
