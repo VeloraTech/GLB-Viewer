@@ -54,6 +54,23 @@
   #workspace-rail ion-icon { width:20px; height:20px; pointer-events:none; }
   [data-tooltip]::after { content:attr(data-tooltip); position:absolute; right:calc(100% + 10px); top:50%; transform:translate(4px,-50%); padding:6px 9px; border:1px solid rgba(255,255,255,.14); border-radius:5px; background:#202329; color:#f5f5f5; font:500 11px/1.2 system-ui,sans-serif; white-space:nowrap; opacity:0; visibility:hidden; pointer-events:none; z-index:100; box-shadow:0 5px 18px rgba(0,0,0,.28); transition:opacity .12s ease,transform .12s ease,visibility .12s; }
   [data-tooltip]:hover::after,[data-tooltip]:focus-visible::after { opacity:1; visibility:visible; transform:translate(0,-50%); }
+  .editor-panel { position:fixed; top:96px; right:70px; width:340px; height:min(560px,calc(100vh - 116px)); min-width:280px; min-height:220px; max-width:calc(100vw - 90px); max-height:calc(100vh - 24px); display:flex; flex-direction:column; overflow:hidden; resize:both; border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(29,31,35,.97); color:#eee; pointer-events:auto; z-index:35; backdrop-filter:blur(16px); box-shadow:0 18px 48px rgba(0,0,0,.38); font-size:12px; }
+  .editor-panel[hidden] { display:none; }
+  .editor-panel-header { min-height:42px; flex:0 0 42px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.035); cursor:grab; touch-action:none; user-select:none; }
+  .editor-panel-header:active { cursor:grabbing; }
+  .editor-panel-header h2 { font-size:12px; font-weight:650; letter-spacing:.035em; }
+  .editor-panel-close { width:26px; height:26px; border:0; border-radius:5px; color:inherit; background:rgba(255,255,255,.08); cursor:pointer; }
+  .editor-panel-content { flex:1; min-height:0; overflow:auto; padding:14px; }
+  .editor-panel-content::-webkit-scrollbar { width:8px; }
+  .editor-panel-content::-webkit-scrollbar-thumb { background:rgba(255,255,255,.16); border-radius:8px; }
+  .editor-panel button:focus-visible,.editor-panel input:focus-visible { outline:2px solid #e59b52; outline-offset:2px; }
+  .editor-panel h3 { font-size:11px; color:#a7afbb; margin:14px 0 7px; text-transform:uppercase; letter-spacing:.08em; }
+  .editor-panel button,.editor-panel input { font:inherit; }
+  body.light .editor-panel { background:rgba(249,250,252,.98); color:#222; border-color:rgba(0,0,0,.16); }
+  body.light .editor-panel-header { border-color:rgba(0,0,0,.1); background:rgba(0,0,0,.025); }
+  body.light .editor-panel-close { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
+  body.light .editor-panel h3 { color:#626b78; }
+  @media (max-width:700px) { .editor-panel { top:64px; right:62px; width:min(340px,calc(100vw - 78px)); height:calc(100vh - 88px); max-width:calc(100vw - 70px); } }
   #workspace-main { position:fixed; top:96px; right:70px; width:340px; height:min(620px,calc(100vh - 120px)); min-width:280px; min-height:220px; max-width:calc(100vw - 90px); max-height:calc(100vh - 24px); display:flex; flex-direction:column; overflow:hidden; resize:both; border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(29,31,35,.97); color:#eee; pointer-events:auto; z-index:35; backdrop-filter:blur(16px); box-shadow:0 18px 48px rgba(0,0,0,.38); font-size:12px; }
   #workspace-main[hidden] { display:none; }
   #workspace-header { min-height:42px; flex:0 0 42px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.035); cursor:grab; touch-action:none; user-select:none; }
@@ -387,40 +404,15 @@ const sceneRuntime = new SceneRuntime({ scene, sceneStore, disposeResources: dis
 const commandHistory = new CommandHistory({ limit: 100 });
  
 // ---------- Editor workspace navigation and persisted layout ----------
-const workspace = document.getElementById('workspace-main');
-const workspaceTitle = document.getElementById('workspace-title');
+const workspaceShell = document.getElementById('workspace-main');
 const workspaceViews = [...document.querySelectorAll('.workspace-view')];
 const workspaceButtons = [...document.querySelectorAll('[data-workspace]')];
-const collapseButton = document.getElementById('workspace-collapse');
-function setWorkspaceView(name) {
-  workspaceViews.forEach((view) => { view.hidden = view.dataset.view !== name; });
-  workspaceButtons.forEach((button) => {
-    const active = button.dataset.workspace === name;
-    button.classList.toggle('active', active);
-    button.setAttribute('aria-pressed', String(active));
-  });
-  workspaceTitle.textContent = name[0].toUpperCase() + name.slice(1);
-  editorState.patch('activeTool', name, 'tool:activate');
-  workspace.setAttribute('aria-label', name[0].toUpperCase() + name.slice(1) + ' tool panel');
-  workspace.hidden = false;
-  workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', String(button.dataset.workspace === name)));
-  localStorage.setItem('glb-workspace-view', name);
-}
-workspaceButtons.forEach((button) => button.addEventListener('click', () => {
-  if (button.classList.contains('active') && !workspace.hidden) {
-    workspace.hidden = true;
-    button.setAttribute('aria-expanded', 'false');
-    return;
-  }
-  setWorkspaceView(button.dataset.workspace);
-}));
-
-const workspaceHeader = document.getElementById('workspace-header');
-workspaceHeader.dataset.panelDragHandle = '';
+const workspaceManager = new WorkspaceManager();
 const editorState = new EditorStateStore();
 const toolRegistry = new ToolRegistry();
-const workspaceManager = new WorkspaceManager();
-workspaceManager.register('main-tools', workspace, { handle: workspaceHeader, defaultRect: { x: Math.max(12, innerWidth - 420), y: 96, width: 340, height: Math.min(620, innerHeight - 120) } });
+const workspacePanels = new Map();
+let activeWorkspacePanel = null;
+
 const editorTools = [
   { id: 'scene', label: 'Scene', icon: 'layers-outline', order: 1 },
   { id: 'objects', label: 'Objects / Outliner', icon: 'cube-outline', order: 2 },
@@ -430,6 +422,89 @@ const editorTools = [
   { id: 'extensions', label: 'Extensions', icon: 'grid-outline', order: 6 },
 ];
 editorTools.forEach((tool) => toolRegistry.register(tool));
+
+workspaceViews.forEach((view, index) => {
+  const name = view.dataset.view;
+  const panel = document.createElement('section');
+  panel.className = 'editor-panel';
+  panel.id = `workspace-panel-${name}`;
+  panel.setAttribute('role', 'region');
+  panel.setAttribute('aria-label', `${name[0].toUpperCase() + name.slice(1)} editor panel`);
+
+  const header = document.createElement('header');
+  header.className = 'editor-panel-header';
+  header.dataset.panelDragHandle = '';
+  const title = document.createElement('h2');
+  title.textContent = name[0].toUpperCase() + name.slice(1);
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'editor-panel-close';
+  close.textContent = '×';
+  close.setAttribute('aria-label', `Close ${name} panel`);
+  close.title = `Close ${name} panel`;
+  header.append(title, close);
+
+  const content = document.createElement('div');
+  content.className = 'editor-panel-content';
+  view.hidden = false;
+  content.append(view);
+  panel.append(header, content);
+  document.body.append(panel);
+
+  workspaceManager.register(name, panel, {
+    handle: header,
+    defaultRect: {
+      x: Math.max(12, innerWidth - 420 - (index % 3) * 24),
+      y: 92 + (index % 3) * 34,
+      width: 340,
+      height: Math.min(560, innerHeight - 116),
+    },
+  });
+  panel.hidden = true;
+  workspacePanels.set(name, panel);
+  close.addEventListener('click', () => {
+    workspaceManager.close(name);
+    const button = workspaceButtons.find((item) => item.dataset.workspace === name);
+    button?.setAttribute('aria-expanded', 'false');
+    button?.classList.remove('active');
+    if (activeWorkspacePanel === panel) activeWorkspacePanel = null;
+  });
+});
+workspaceShell.remove();
+
+function syncWorkspaceRail() {
+  workspaceButtons.forEach((button) => {
+    const panel = workspacePanels.get(button.dataset.workspace);
+    const open = Boolean(panel && !panel.hidden);
+    button.setAttribute('aria-expanded', String(open));
+    button.classList.toggle('active', activeWorkspacePanel === panel && open);
+  });
+}
+function setWorkspaceView(name) {
+  const panel = workspacePanels.get(name);
+  if (!panel) return;
+  activeWorkspacePanel = panel;
+  workspaceManager.open(name);
+  editorState.patch('activeTool', name, 'tool:activate');
+  workspaceButtons.forEach((button) => {
+    const active = button.dataset.workspace === name;
+    button.setAttribute('aria-pressed', String(active));
+    button.classList.toggle('active', active);
+  });
+  localStorage.setItem('glb-workspace-view', name);
+  syncWorkspaceRail();
+}
+workspaceButtons.forEach((button) => button.addEventListener('click', () => {
+  const panel = workspacePanels.get(button.dataset.workspace);
+  if (panel && !panel.hidden) {
+    workspaceManager.close(button.dataset.workspace);
+    if (activeWorkspacePanel === panel) activeWorkspacePanel = null;
+    syncWorkspaceRail();
+    return;
+  }
+  setWorkspaceView(button.dataset.workspace);
+}));
+
 toolRegistry.subscribe(({ tools }) => {
   const byId = new Map(workspaceButtons.map((button) => [button.dataset.workspace, button]));
   tools.forEach((tool) => {
@@ -444,13 +519,15 @@ toolRegistry.subscribe(({ tools }) => {
 editorState.subscribe(({ state: next }) => {
   document.documentElement.dataset.activeTool = next.activeTool || '';
 });
-
-collapseButton.addEventListener('click', () => { workspaceManager.close('main-tools'); workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); });
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !workspace.hidden) { workspaceManager.close('main-tools'); workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); }
+  if (event.key !== 'Escape' || !activeWorkspacePanel) return;
+  const name = activeWorkspacePanel.id.replace('workspace-panel-', '');
+  workspaceManager.close(name);
+  activeWorkspacePanel = null;
+  syncWorkspaceRail();
 });
 const savedWorkspace = localStorage.getItem('glb-workspace-view');
-if (workspaceViews.some((view) => view.dataset.view === savedWorkspace)) setWorkspaceView(savedWorkspace);
+if (workspacePanels.has(savedWorkspace)) setWorkspaceView(savedWorkspace);
 else setWorkspaceView('scene');
 
 // Lighting controls update the actual scene lights, not just their labels.
@@ -776,10 +853,16 @@ if (new URLSearchParams(window.location.search).has('test')) {
     get editorState() { return editorState; },
     get toolRegistry() { return toolRegistry; },
     get workspaceManager() { return workspaceManager; },
+    get workspacePanels() { return workspacePanels; },
     get sceneRuntime() { return sceneRuntime; },
     get viewportInteraction() { return viewportInteraction; },
-    setWorkspaceCollapsed(collapsed) { workspace.hidden = Boolean(collapsed); },
-    get workspace() { return workspace; },
+    setWorkspaceCollapsed(collapsed) {
+      if (!activeWorkspacePanel) return;
+      const name = activeWorkspacePanel.id.replace('workspace-panel-', '');
+      if (collapsed) workspaceManager.close(name); else workspaceManager.open(name);
+      syncWorkspaceRail();
+    },
+    get workspace() { return activeWorkspacePanel; },
     get controls() { return controls; },
     get lights() { return { ambient, key: dirLight, fill: fillLight }; },
     get workspaceButtons() { return workspaceButtons; },
