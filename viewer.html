@@ -1059,7 +1059,7 @@ function animate() {
   performanceMonitor.recordFrame(dt);
   if (mixer) mixer.update(dt);
   controls.update();
-  orbitPreview.update(delta);
+  orbitPreview.update(dt);
   renderer.render(scene, camera);
 }
 animate();
