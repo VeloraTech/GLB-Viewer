@@ -115,6 +115,33 @@
   body.light [data-tooltip]::after { background:#fff; color:#222; border-color:rgba(0,0,0,.14); }
   @media (max-width:700px) { #workspace-main { top:64px; right:62px; width:min(340px,calc(100vw - 78px)); height:calc(100vh - 88px); max-width:calc(100vw - 70px); } #toolbar { left:8px; top:8px; gap:5px; flex-wrap:wrap; max-width:calc(100vw - 70px); } #toolbar button { padding:7px 9px; font-size:11px; } #scene-panel { right:8px; } }
 
+
+  /* P1 command mode */
+  #command-overlay { position:fixed; inset:0; z-index:120; display:flex; align-items:flex-start; justify-content:center; padding:12vh 16px 16px; background:rgba(0,0,0,.28); pointer-events:auto; }
+  #command-overlay[hidden] { display:none; }
+  #command-box { width:min(560px,calc(100vw - 32px)); overflow:hidden; border:1px solid rgba(255,255,255,.18); border-radius:12px; background:rgba(27,29,34,.98); color:#f2f3f5; box-shadow:0 24px 80px rgba(0,0,0,.5); backdrop-filter:blur(18px); }
+  #command-input { width:100%; height:54px; padding:0 18px; border:0; border-bottom:1px solid rgba(255,255,255,.12); outline:none; background:transparent; color:inherit; font:500 16px/1.2 system-ui,sans-serif; }
+  #command-results { max-height:min(420px,55vh); overflow:auto; padding:7px; }
+  .command-result { width:100%; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:11px 12px; border:0; border-radius:7px; background:transparent; color:inherit; text-align:left; cursor:pointer; }
+  .command-result[aria-selected="true"],.command-result:hover { background:rgba(229,155,82,.16); }
+  .command-result span { font-size:13px; font-weight:650; letter-spacing:.025em; }
+  .command-result small { color:#9ca5b2; font-size:11px; }
+  .command-empty { padding:18px 12px; color:#9ca5b2; font-size:12px; }
+  #command-hint { padding:9px 12px; border-top:1px solid rgba(255,255,255,.1); color:#8993a0; font-size:10px; }
+  body.light #command-box { background:rgba(250,251,253,.99); color:#222; border-color:rgba(0,0,0,.16); }
+  body.light #command-input { border-color:rgba(0,0,0,.12); }
+  body.light .command-result[aria-selected="true"],body.light .command-result:hover { background:rgba(170,105,42,.12); }
+  body.light .command-result small,body.light .command-empty,body.light #command-hint { color:#68717e; }
+  #orbit-controls { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:25; display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid rgba(255,255,255,.16); border-radius:10px; background:rgba(28,30,34,.94); color:#eee; pointer-events:auto; box-shadow:0 12px 34px rgba(0,0,0,.3); }
+  #orbit-controls[hidden] { display:none; }
+  #orbit-controls button { border:1px solid rgba(255,255,255,.18); border-radius:6px; padding:6px 9px; background:rgba(255,255,255,.08); color:inherit; cursor:pointer; }
+  #orbit-controls label { display:flex; align-items:center; gap:8px; color:#b8c0ca; font-size:11px; }
+  #orbit-speed { width:100px; accent-color:#e59b52; }
+  #orbit-status { min-width:52px; color:#9ca5b2; font-size:10px; }
+  body.light #orbit-controls { background:rgba(250,251,253,.98); color:#222; border-color:rgba(0,0,0,.16); }
+  body.light #orbit-controls button { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
+  @media (max-width:600px) { #orbit-controls { bottom:58px; width:calc(100vw - 90px); justify-content:center; flex-wrap:wrap; } }
+
   /* Light theme override */
   body.light { background: #f5f5f5; color: #222; }
   body.light #loading { background: #f5f5f5; }
@@ -135,7 +162,18 @@
     <button id="screenshot" title="Screenshot">Screenshot</button>
     <button id="file-picker-btn" title="Open file">Open GLB</button>
     <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
+    <button id="orbit-preview-btn" title="Rotate the model automatically">Orbit Preview</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
+  </div>
+
+  <div id="command-overlay" hidden role="dialog" aria-modal="true" aria-label="Command search">
+    <div id="command-box"><input id="command-input" type="text" autocomplete="off" spellcheck="false" placeholder="Type a command… (e.g. LIG)" aria-label="Search editor commands"><div id="command-results" data-command-results role="listbox"></div><div id="command-hint">↑ ↓ Navigate · Enter Run · Tab Complete · Esc Close · F3 Open</div></div>
+  </div>
+  <div id="orbit-controls" hidden aria-label="Orbit preview controls">
+    <button id="orbit-pause" type="button">Pause</button>
+    <label>Speed <input id="orbit-speed" type="range" min="0.1" max="1.5" step="0.05" value="0.45"></label>
+    <span id="orbit-status" aria-live="polite">Rotating</span>
+    <button id="orbit-stop" type="button">Exit preview</button>
   </div>
   <aside id="scene-panel" aria-label="Editor tools">
     <nav id="workspace-rail" aria-label="Workspace tools">
@@ -233,6 +271,8 @@ import { ToolRegistry } from './src/editor/ToolRegistry.js';
 import { WorkspaceManager } from './src/editor/WorkspaceManager.js';
 import { ViewportInteraction } from './src/editor/ViewportInteraction.js';
 import { SceneRuntime } from './src/editor/SceneRuntime.js';
+import { CommandPalette } from './src/editor/CommandPalette.js';
+import { OrbitPreview } from './src/editor/OrbitPreview.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
 const performanceMonitor = new PerformanceMonitor();
@@ -690,6 +730,7 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
 
       const nextModel = gltf.scene;
       const previousModel = currentModel;
+      if (orbitPreview.active) stopOrbitPreview();
       if (previousModel) {
         commandHistory.clear();
         clearCurrentAnimation();
@@ -866,6 +907,8 @@ if (new URLSearchParams(window.location.search).has('test')) {
     get workspacePanels() { return workspacePanels; },
     get sceneRuntime() { return sceneRuntime; },
     get viewportInteraction() { return viewportInteraction; },
+    get commandPalette() { return commandPalette; },
+    get orbitPreview() { return orbitPreview; },
     setWorkspaceCollapsed(collapsed) {
       if (!activeWorkspacePanel) return;
       const name = activeWorkspacePanel.id.replace('workspace-panel-', '');
@@ -1016,6 +1059,7 @@ function animate() {
   performanceMonitor.recordFrame(dt);
   if (mixer) mixer.update(dt);
   controls.update();
+  orbitPreview.update(delta);
   renderer.render(scene, camera);
 }
 animate();
