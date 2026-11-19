@@ -126,6 +126,8 @@
   .command-result[aria-selected="true"],.command-result:hover { background:rgba(229,155,82,.16); }
   .command-result span { font-size:13px; font-weight:650; letter-spacing:.025em; }
   .command-result small { color:#9ca5b2; font-size:11px; }
+  .command-result.is-disabled { opacity:.38; cursor:not-allowed; }
+  .command-result.is-disabled small { color:#d39a70; }
   .command-empty { padding:18px 12px; color:#9ca5b2; font-size:12px; }
   #command-hint { padding:9px 12px; border-top:1px solid rgba(255,255,255,.1); color:#8993a0; font-size:10px; }
   body.light #command-box { background:rgba(250,251,253,.99); color:#222; border-color:rgba(0,0,0,.16); }
@@ -623,6 +625,55 @@ document.getElementById('lighting-reset').addEventListener('click', () => {
 
 // ---------- Model loading ----------
 let currentModel = null;
+let commandPalette;
+let orbitPreview;
+let orbitUiSync = () => {};
+function syncOrbitUi() {
+  const active = Boolean(orbitPreview?.active);
+  const paused = Boolean(orbitPreview?.paused);
+  document.getElementById('orbit-controls').hidden = !active;
+  document.getElementById('orbit-pause').textContent = paused ? 'Resume' : 'Pause';
+  document.getElementById('orbit-status').textContent = paused ? 'Paused' : 'Rotating';
+  document.getElementById('orbit-preview-btn').textContent = active ? 'Orbit Active' : 'Orbit Preview';
+  commandPalette?.refresh();
+}
+function startOrbitPreview() {
+  if (!currentModel) return false;
+  const started = orbitPreview.start();
+  syncOrbitUi();
+  return started;
+}
+function stopOrbitPreview() { orbitPreview.stop(); syncOrbitUi(); }
+function toggleOrbitPause() {
+  if (!orbitPreview.active) return;
+  if (orbitPreview.paused) orbitPreview.resume(); else orbitPreview.pause();
+  syncOrbitUi();
+}
+orbitPreview = new OrbitPreview({ THREE, camera, controls, getModel: () => currentModel });
+controls.addEventListener('start', () => { if (orbitPreview.active) syncOrbitUi(); });
+commandPalette = new CommandPalette({
+  root: document,
+  input: document.getElementById('command-input'),
+  overlay: document.getElementById('command-overlay'),
+  registry: toolRegistry,
+  onExecute: (_command, error) => { if (error) console.error('Command failed:', error); }
+});
+const registerWorkspaceCommand = (id,label,description,workspace) => commandPalette.register({
+  id,label,description,aliases:[workspace],execute:()=>setWorkspaceView(workspace)
+});
+registerWorkspaceCommand('lighting','LIGHT','Open lighting controls','lighting');
+registerWorkspaceCommand('outliner','OUTLINER','Open the scene object list','objects');
+registerWorkspaceCommand('transform','TRANSFORM','Open transform controls','transform');
+registerWorkspaceCommand('scene','SCENE','Open scene settings','scene');
+commandPalette.register({id:'orbit-preview',label:'ORBIT PREVIEW',description:'Start automatic camera turntable',aliases:['orbit','turntable'],enabled:()=>Boolean(currentModel)&&!orbitPreview.active,disabledReason:()=>!currentModel?'Load a model first':'Orbit Preview is already active',execute:startOrbitPreview});
+commandPalette.register({id:'stop-orbit',label:'STOP ORBIT',description:'Exit automatic camera turntable',enabled:()=>orbitPreview.active,disabledReason:()=>'Orbit Preview is not active',execute:stopOrbitPreview});
+commandPalette.register({id:'open-glb',label:'OPEN GLB',description:'Choose a GLB or glTF file',aliases:['open','load model'],execute:()=>document.getElementById('file-picker-btn').click(),exclusiveGroup:'file'});
+commandPalette.register({id:'screenshot',label:'SCREENSHOT',description:'Save a viewport screenshot',execute:()=>document.getElementById('screenshot').click()});
+document.getElementById('orbit-preview-btn').addEventListener('click',()=>orbitPreview.active?stopOrbitPreview():startOrbitPreview());
+document.getElementById('orbit-pause').addEventListener('click',toggleOrbitPause);
+document.getElementById('orbit-stop').addEventListener('click',stopOrbitPreview);
+document.getElementById('orbit-speed').addEventListener('input',event=>orbitPreview.setSpeed(Number(event.target.value)));
+
 let mixer = null;
 let loadRequestId = 0;
 
@@ -742,6 +793,7 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       mixer = new THREE.AnimationMixer(currentModel);
       gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
 
+      commandPalette.refresh();
       state.fileName = fileName;
       state.fileSize = fileSize;
       const stats = countStats(currentModel);
