@@ -38,7 +38,7 @@ test('WorkspaceManager restores, moves, opens and closes a panel', () => {
   const handle = { addEventListener(type, fn) { handleListeners.set(type, fn); }, setPointerCapture() {} };
   const elementListeners = new Map();
   const element = {
-    hidden: false, style: {}, querySelector: () => handle,
+    hidden: false, style: {}, dataset: {}, querySelector: () => handle,
     addEventListener(type, fn) { elementListeners.set(type, fn); }
   };
   const manager = new WorkspaceManager({ root, storage });
