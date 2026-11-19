@@ -37,7 +37,17 @@ export class ViewportWorkspace {
   }
   restoreMaterials(model=this.getModel()){
     if(!model)return;
-    for(const [object,material] of this.originalMaterials){if(object.parent)object.material=material;}
+    for(const [object,original] of this.originalMaterials){
+      const temporary=object.material;
+      const temporaryMaterials=Array.isArray(temporary)?temporary:[temporary];
+      const originalMaterials=Array.isArray(original)?original:[original];
+      // Dispose only the temporary viewport materials created by setShading.
+      // Original GLB materials and their textures remain owned by the model.
+      temporaryMaterials.forEach(material=>{
+        if(material&&!originalMaterials.includes(material))material.dispose?.();
+      });
+      if(object.parent||object===model||model.getObjectById?.(object.id))object.material=original;
+    }
     this.originalMaterials.clear();
   }
   frame(object=this.getSelection()||this.getModel()){
