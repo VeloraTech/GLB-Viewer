@@ -620,7 +620,7 @@ function restoreEditorPreferences(){
   if(values.background)setBackground(values.background);
   ['ambient-intensity','key-intensity','fill-intensity','light-azimuth','light-elevation','rim-intensity','shadow-opacity'].forEach(id=>document.getElementById(id)?.dispatchEvent(new Event('input')));
   document.getElementById('key-color')?.dispatchEvent(new Event('input'));document.getElementById('fill-color')?.dispatchEvent(new Event('input'));
-  if(typeof values.shadows==='boolean'){groundShadow.visible=values.shadows;dirLight.castShadow=values.shadows;}
+  if(typeof values.shadows==='boolean'){groundShadow.visible=values.shadows;dirLight.castShadow=values.shadows;userLights.forEach(entry=>{if(entry.light.castShadow!==undefined)entry.light.castShadow=values.shadows;});}
   viewportWorkspace.setGrid(document.getElementById('grid-toggle').checked);viewportWorkspace.setAxes(document.getElementById('axes-toggle').checked);viewportWorkspace.setShading(document.getElementById('shading-mode').value);
   syncModelLighting();
 }
@@ -650,7 +650,7 @@ document.getElementById('key-color').addEventListener('input',e=>{dirLight.color
 document.getElementById('fill-color').addEventListener('input',e=>{fillLight.color.set(e.target.value);markDirty();saveEditorPreferences();});
 document.getElementById('rim-intensity').addEventListener('input',e=>{rimLight.intensity=Number(e.target.value);markDirty();saveEditorPreferences();});
 document.getElementById('shadow-opacity').addEventListener('input',e=>{groundShadow.material.opacity=Number(e.target.value);markDirty();saveEditorPreferences();});
-document.getElementById('shadows-toggle').addEventListener('change',e=>{groundShadow.visible=e.target.checked;dirLight.castShadow=e.target.checked;markDirty();saveEditorPreferences();});
+document.getElementById('shadows-toggle').addEventListener('change',e=>{groundShadow.visible=e.target.checked;dirLight.castShadow=e.target.checked;userLights.forEach(entry=>{if(entry.light.castShadow!==undefined)entry.light.castShadow=e.target.checked;});markDirty();saveEditorPreferences();});
 document.getElementById('lighting-preset').addEventListener('change',e=>{applyLightingPreset(e.target.value);saveEditorPreferences();});
 document.getElementById('lighting-reset').addEventListener('click', () => {
   document.getElementById('ambient-intensity').value = '1.1';
@@ -1170,7 +1170,7 @@ const raycaster = new THREE.Raycaster();
 const viewportInteraction = new ViewportInteraction({
   element: renderer.domElement, camera, scene: { children: [] }, raycaster,
   onSelect(object) {
-    if (panMode || !object || !currentModel) return;
+    if (panMode || !object || object.userData?.editorHelper || !currentModel) return;
     let target = object;
     while (target.parent && target.parent !== currentModel) target = target.parent;
     selectObject(target);
