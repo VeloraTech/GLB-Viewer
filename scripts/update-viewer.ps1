@@ -33,7 +33,14 @@ try {
     'src/editor/ToolRegistry.js',
     'src/editor/WorkspaceManager.js',
     'src/editor/ViewportInteraction.js',
-    'src/editor/SceneRuntime.js'
+    'src/editor/SceneRuntime.js',
+    'src/core/ResourceDisposer.js',
+    'src/core/PerformanceMonitor.js',
+    'src/core/HardwareProviders.js',
+    'src/core/AdaptiveQualityPolicy.js',
+    'src/core/SceneStore.js',
+    'src/core/CommandHistory.js',
+    'src/core/SceneCommands.js'
   )
   $stageRoot = Join-Path $InstallRoot ('.viewer-update-' + [guid]::NewGuid().ToString('N'))
   $backupRoot = Join-Path $stageRoot 'backup'
