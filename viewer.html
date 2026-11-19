@@ -445,6 +445,7 @@ dirLight.shadow.camera.near = 0.1;
 dirLight.shadow.camera.far = 100;
 dirLight.shadow.bias = -0.00015;
 scene.add(dirLight);
+scene.add(dirLight.target);
 const fillLight = new THREE.DirectionalLight(0xc8dcff, 1.0);
 fillLight.position.set(-5, 2, -4);
 scene.add(fillLight);
@@ -614,14 +615,7 @@ function restoreEditorPreferences(){
   syncModelLighting();
 }
 function setKeyLightDirection() {
-  const azimuth = THREE.MathUtils.degToRad(Number(document.getElementById('light-azimuth').value));
-  const elevation = THREE.MathUtils.degToRad(Number(document.getElementById('light-elevation').value));
-  const radius = 9;
-  dirLight.position.set(
-    radius * Math.cos(elevation) * Math.sin(azimuth),
-    radius * Math.sin(elevation),
-    radius * Math.cos(elevation) * Math.cos(azimuth)
-  );
+  syncModelLighting();
 }
 function bindLightRange(id, light, outputId) {
   const input = document.getElementById(id);
@@ -635,7 +629,7 @@ bindLightRange('key-intensity', dirLight, 'key-value');
 bindLightRange('fill-intensity', fillLight, 'fill-value');
 document.getElementById('light-azimuth').addEventListener('input', () => {
   document.getElementById('azimuth-value').value = document.getElementById('light-azimuth').value + '°';
-  setKeyLightDirection(); markDirty();
+  setKeyLightDirection(); markDirty(); saveEditorPreferences();
 });
 document.getElementById('light-elevation').addEventListener('input', () => {
   document.getElementById('elevation-value').value = document.getElementById('light-elevation').value + '°';
@@ -657,7 +651,7 @@ document.getElementById('lighting-reset').addEventListener('click', () => {
   ['ambient-intensity','key-intensity','fill-intensity'].forEach((id) => document.getElementById(id).dispatchEvent(new Event('input')));
   setKeyLightDirection();
   dirLight.color.set('#ffffff');fillLight.color.set('#c8dcff');rimLight.intensity=.65;groundShadow.material.opacity=.28;groundShadow.visible=true;dirLight.castShadow=true;
-  document.getElementById('key-color').value='#ffffff';document.getElementById('fill-color').value='#c8dcff';document.getElementById('rim-intensity').value='.65';document.getElementById('shadow-opacity').value='.28';document.getElementById('shadows-toggle').checked=true;document.getElementById('lighting-preset').value='studio';markDirty();
+  document.getElementById('key-color').value='#ffffff';document.getElementById('fill-color').value='#c8dcff';document.getElementById('rim-intensity').value='.65';document.getElementById('shadow-opacity').value='.28';document.getElementById('shadows-toggle').checked=true;document.getElementById('lighting-preset').value='studio';markDirty();saveEditorPreferences();
 });
 
 
@@ -1116,7 +1110,7 @@ const raycaster = new THREE.Raycaster();
 const viewportInteraction = new ViewportInteraction({
   element: renderer.domElement, camera, scene: { children: [] }, raycaster,
   onSelect(object) {
-    if (!object || !currentModel) return;
+    if (panMode || !object || !currentModel) return;
     let target = object;
     while (target.parent && target.parent !== currentModel) target = target.parent;
     selectObject(target);
