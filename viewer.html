@@ -612,7 +612,7 @@ function saveEditorPreferences(){
 function restoreEditorPreferences(){
   let values={};try{values=JSON.parse(localStorage.getItem('glb-editor-preferences-v1')||'{}');}catch{}
   Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&typeof value!=='object')el.value=String(value);});
-  if(Array.isArray(values.userLights))values.userLights.forEach(saved=>{const center=modelWorldCenter(),id='user-light-'+nextUserLightId++;let light;if(saved.type==='spot'){light=new THREE.SpotLight(saved.color,saved.intensity);light.castShadow=true;}else if(saved.type==='directional'){light=new THREE.DirectionalLight(saved.color,saved.intensity);scene.add(light.target);}else light=new THREE.PointLight(saved.color,saved.intensity,0,2);const offset=new THREE.Vector3(...saved.offset);light.position.copy(center).add(offset);light.userData.editorHelper=true;scene.add(light);userLights.set(id,{id,name:saved.name,type:saved.type,light,offset});});
+  if(Array.isArray(values.userLights))values.userLights.forEach(saved=>{const center=modelWorldCenter(),id='user-light-'+nextUserLightId++;let light;if(saved.type==='spot'){light=new THREE.SpotLight(saved.color,saved.intensity);light.castShadow=true;scene.add(light.target);}else if(saved.type==='directional'){light=new THREE.DirectionalLight(saved.color,saved.intensity);scene.add(light.target);}else light=new THREE.PointLight(saved.color,saved.intensity,0,2);const offset=new THREE.Vector3(...saved.offset);light.position.copy(center).add(offset);light.userData.editorHelper=true;scene.add(light);userLights.set(id,{id,name:saved.name,type:saved.type,light,offset});});
   refreshUserLightList();
   if(typeof values.grid==='boolean')document.getElementById('grid-toggle').checked=values.grid;
   if(typeof values.axes==='boolean')document.getElementById('axes-toggle').checked=values.axes;
@@ -732,7 +732,7 @@ function syncUserLightControls(){
 function addUserLight(type){
   const center=modelWorldCenter(),id='user-light-'+nextUserLightId++;
   let light;
-  if(type==='spot'){light=new THREE.SpotLight(0xffffff,1);light.angle=Math.PI/5;light.penumbra=.25;light.castShadow=true;}
+  if(type==='spot'){light=new THREE.SpotLight(0xffffff,1);light.angle=Math.PI/5;light.penumbra=.25;light.castShadow=true;scene.add(light.target);}
   else if(type==='directional'){light=new THREE.DirectionalLight(0xffffff,1);light.castShadow=true;scene.add(light.target);}
   else light=new THREE.PointLight(0xffffff,1,0,2);
   const offset=new THREE.Vector3(2,3,2);light.position.copy(center).add(offset);light.userData.editorHelper=true;scene.add(light);
