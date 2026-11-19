@@ -64,13 +64,13 @@ export class CommandPalette {
     catch(error){this.onExecute(command,error);release();throw error;}
     if(result&&typeof result.then==="function"){
       return Promise.resolve(result)
-        .then(value=>{this.onExecute(command);return value===undefined?true:value;})
+        .then(()=>{this.onExecute(command);return true;})
         .catch(error=>{this.onExecute(command,error);throw error;})
         .finally(release);
     }
     this.onExecute(command);
     release();
-    return result===undefined?true:result;
+    return true;
   }
   render(){
     const items=this.list(),list=this.overlay.querySelector("[data-command-results]");list.replaceChildren();
