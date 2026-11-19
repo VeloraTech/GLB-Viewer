@@ -5,6 +5,7 @@ import { OrbitPreview } from '../src/editor/OrbitPreview.js';
 class Vector3 {
   constructor(x=0,y=0,z=0) { Object.assign(this,{x,y,z}); }
   clone() { return new Vector3(this.x,this.y,this.z); }
+  set(x,y,z) { Object.assign(this,{x,y,z}); return this; }
   sub(v) { this.x-=v.x; this.y-=v.y; this.z-=v.z; return this; }
   add(v) { this.x+=v.x; this.y+=v.y; this.z+=v.z; return this; }
   length() { return Math.hypot(this.x,this.y,this.z); }
