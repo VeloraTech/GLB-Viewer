@@ -52,15 +52,25 @@ export class CommandPalette {
     if(event.key==="F3"||(event.key===" "&&event.shiftKey)){event.preventDefault();this.open();return;}
     if(event.key.length===1&&!event.repeat){event.preventDefault();this.open(event.key);}
   }
-  async execute(id){
+  execute(id){
     const command=this.commands.get(id);if(!command)return false;
     const status=this.state(command);if(!status.enabled)return false;
     this.close();
     const group=command.exclusiveGroup;if(group)this.runningGroups.add(group);
     this.refresh();
-    try{const result=await command.execute();this.onExecute(command);return result===undefined?true:result;}
-    catch(error){this.onExecute(command,error);throw error;}
-    finally{if(group)this.runningGroups.delete(group);this.refresh();}
+    const release=()=>{if(group)this.runningGroups.delete(group);this.refresh();};
+    let result;
+    try{result=command.execute();}
+    catch(error){this.onExecute(command,error);release();throw error;}
+    if(result&&typeof result.then==="function"){
+      return Promise.resolve(result)
+        .then(value=>{this.onExecute(command);return value===undefined?true:value;})
+        .catch(error=>{this.onExecute(command,error);throw error;})
+        .finally(release);
+    }
+    this.onExecute(command);
+    release();
+    return result===undefined?true:result;
   }
   render(){
     const items=this.list(),list=this.overlay.querySelector("[data-command-results]");list.replaceChildren();
