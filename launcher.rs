@@ -25,6 +25,7 @@ fn main() -> io::Result<()> {
     if env::var_os("GLB_VIEWER_TEST").is_none() {
         refresh_viewer_bundle(&root);
     }
+    let update_root = active_viewer_update_root();
     let model = model.map(fs::canonicalize).transpose()?;
     let listener = TcpListener::bind(("127.0.0.1", 0))?;
     listener.set_nonblocking(true)?;
@@ -63,10 +64,11 @@ fn main() -> io::Result<()> {
         match listener.accept() {
             Ok((stream, _)) => {
                 let root = root.clone();
+                let update_root = update_root.clone();
                 let model = model.clone();
                 let activity = Arc::clone(&last_activity);
                 thread::spawn(move || {
-                    let _ = handle_request(stream, &root, model.as_deref(), &activity, port);
+                    let _ = handle_request(stream, &root, update_root.as_deref(), model.as_deref(), &activity, port);
                 });
             }
             Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
@@ -110,9 +112,22 @@ fn refresh_viewer_bundle(root: &Path) {
     }
 }
 
+fn active_viewer_update_root() -> Option<PathBuf> {
+    let local_app_data = env::var_os("LOCALAPPDATA")?;
+    let update_root = PathBuf::from(local_app_data).join("GLBViewer").join("updates");
+    let commit = fs::read_to_string(update_root.join("active-update.txt")).ok()?;
+    let commit = commit.trim();
+    if commit.len() != 40 || !commit.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+        return None;
+    }
+    let bundle = update_root.join(commit);
+    bundle.is_dir().then_some(bundle)
+}
+
 fn handle_request(
     mut stream: TcpStream,
     root: &Path,
+    update_root: Option<&Path>,
     model: Option<&Path>,
     last_activity: &Mutex<Instant>,
     server_port: u16,
@@ -175,9 +190,18 @@ fn handle_request(
         if !safe && path != "/" {
             ("403 Forbidden", "text/plain", b"Forbidden".to_vec())
         } else {
-            match fs::read(&target) {
-                Ok(bytes) => ("200 OK", mime_type(&target), bytes),
-                Err(_) => ("404 Not Found", "text/plain", b"Not Found".to_vec()),
+            let overlay_target = update_root.map(|overlay| {
+                if path == "/" { overlay.join("viewer.html") } else { overlay.join(relative) }
+            });
+            let bytes = overlay_target.as_ref()
+                .and_then(|overlay| fs::read(overlay).ok())
+                .or_else(|| fs::read(&target).ok());
+            match bytes {
+                Some(bytes) => {
+                    let mime_path = overlay_target.as_ref().filter(|overlay| overlay.is_file()).unwrap_or(&target);
+                    ("200 OK", mime_type(mime_path), bytes)
+                }
+                None => ("404 Not Found", "text/plain", b"Not Found".to_vec()),
             }
         }
     };
