@@ -8,6 +8,8 @@ import {
   ReparentObjectCommand,
   SetTransformCommand,
   SetVisibilityCommand,
+  RenameObjectCommand,
+  SetMaterialPropertiesCommand,
 } from '../src/core/SceneCommands.js';
 
 function vector(x, y, z, extra = {}) {
@@ -213,4 +215,61 @@ test('scene graph rejects cycles and unregistered destination parents', () => {
   assert.throws(() => store.reparentObject('child', outsider), /destination parent/);
   assert.equal(parent.parent, root);
   assert.equal(child.parent, parent);
+});
+
+
+test('rename command is undoable and emits scene change events', () => {
+  const { object, store, history } = setup();
+  const events = [];
+  store.on('object:changed', (event) => events.push(event.action));
+  history.execute(new RenameObjectCommand(store, 'mesh', 'Renamed mesh'));
+  assert.equal(object.name, 'Renamed mesh');
+  history.undo();
+  assert.equal(object.name, '');
+  history.redo();
+  assert.equal(object.name, 'Renamed mesh');
+  assert.deepEqual(events, ['rename', 'rename', 'rename']);
+});
+
+test('rename command rejects blank names and unknown objects', () => {
+  const { store, history } = setup();
+  assert.throws(() => new RenameObjectCommand(store, 'mesh', '   '), /cannot be empty/i);
+  assert.throws(() => history.execute(new RenameObjectCommand(store, 'missing', 'Name')), /Unknown scene object/);
+});
+
+
+test('material property command restores scalar values, cloned colors and texture references', () => {
+  const color = {
+    value: '#ffffff',
+    clone() { return { value: this.value, copy(other) { this.value = other.value; return this; } }; },
+    copy(other) { this.value = other.value; return this; },
+  };
+  const originalTexture = { id: 'original' };
+  const replacementTexture = { id: 'replacement' };
+  const material = { color, roughness: 0.8, map: originalTexture, needsUpdate: false };
+  const history = new CommandHistory();
+  const targetColor = { value: '#ff0000', clone() { return { value: this.value }; } };
+
+  history.execute(new SetMaterialPropertiesCommand(material, {
+    color: targetColor, roughness: 0.25, map: replacementTexture,
+  }));
+  assert.equal(material.color.value, '#ff0000');
+  assert.equal(material.roughness, 0.25);
+  assert.equal(material.map, replacementTexture);
+  assert.equal(material.needsUpdate, true);
+
+  history.undo();
+  assert.equal(material.color.value, '#ffffff');
+  assert.equal(material.roughness, 0.8);
+  assert.equal(material.map, originalTexture);
+
+  history.redo();
+  assert.equal(material.color.value, '#ff0000');
+  assert.equal(material.roughness, 0.25);
+  assert.equal(material.map, replacementTexture);
+});
+
+test('material property command rejects empty or invalid targets', () => {
+  assert.throws(() => new SetMaterialPropertiesCommand(null, { roughness: 0.2 }), /material object/i);
+  assert.throws(() => new SetMaterialPropertiesCommand({}, {}), /at least one material property/i);
 });

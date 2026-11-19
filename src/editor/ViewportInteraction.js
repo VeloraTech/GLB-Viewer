@@ -15,7 +15,7 @@ export class ViewportInteraction {
       const pointer = { x: ((e.clientX-rect.left)/rect.width)*2-1, y: -((e.clientY-rect.top)/rect.height)*2+1 };
       this.raycaster.setFromCamera(pointer, this.camera);
       const hits = this.raycaster.intersectObjects(this.scene.children, true);
-      this.onSelect(hits.find(hit => hit.object?.isMesh)?.object || null, hits);
+      this.onSelect(hits.find(hit => hit.object?.isMesh)?.object || null, hits, e);
     };
     element.addEventListener("pointerdown", this.handleDown);
     element.addEventListener("pointerup", this.handleUp);

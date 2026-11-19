@@ -66,6 +66,8 @@
   .editor-panel button:focus-visible,.editor-panel input:focus-visible { outline:2px solid #e59b52; outline-offset:2px; }
   .editor-panel h3 { font-size:11px; color:#a7afbb; margin:14px 0 7px; text-transform:uppercase; letter-spacing:.08em; }
   .editor-panel button,.editor-panel input { font:inherit; }
+  .material-texture-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; margin:7px 0; }
+  .material-texture-row button { padding:5px 8px; border:1px solid rgba(255,255,255,.18); border-radius:5px; background:rgba(255,255,255,.07); color:inherit; cursor:pointer; }
   body.light .editor-panel { background:rgba(249,250,252,.98); color:#222; border-color:rgba(0,0,0,.16); }
   body.light .editor-panel-header { border-color:rgba(0,0,0,.1); background:rgba(0,0,0,.025); }
   body.light .editor-panel-close { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
@@ -115,6 +117,35 @@
   body.light [data-tooltip]::after { background:#fff; color:#222; border-color:rgba(0,0,0,.14); }
   @media (max-width:700px) { #workspace-main { top:64px; right:62px; width:min(340px,calc(100vw - 78px)); height:calc(100vh - 88px); max-width:calc(100vw - 70px); } #toolbar { left:8px; top:8px; gap:5px; flex-wrap:wrap; max-width:calc(100vw - 70px); } #toolbar button { padding:7px 9px; font-size:11px; } #scene-panel { right:8px; } }
 
+
+  /* P1 command mode */
+  #command-overlay { position:fixed; inset:0; z-index:120; display:flex; align-items:flex-start; justify-content:center; padding:12vh 16px 16px; background:rgba(0,0,0,.28); pointer-events:auto; }
+  #command-overlay[hidden] { display:none; }
+  #command-box { width:min(560px,calc(100vw - 32px)); overflow:hidden; border:1px solid rgba(255,255,255,.18); border-radius:12px; background:rgba(27,29,34,.98); color:#f2f3f5; box-shadow:0 24px 80px rgba(0,0,0,.5); backdrop-filter:blur(18px); }
+  #command-input { width:100%; height:54px; padding:0 18px; border:0; border-bottom:1px solid rgba(255,255,255,.12); outline:none; background:transparent; color:inherit; font:500 16px/1.2 system-ui,sans-serif; }
+  #command-results { max-height:min(420px,55vh); overflow:auto; padding:7px; }
+  .command-result { width:100%; display:flex; align-items:center; justify-content:space-between; gap:16px; padding:11px 12px; border:0; border-radius:7px; background:transparent; color:inherit; text-align:left; cursor:pointer; }
+  .command-result[aria-selected="true"],.command-result:hover { background:rgba(229,155,82,.16); }
+  .command-result span { font-size:13px; font-weight:650; letter-spacing:.025em; }
+  .command-result small { color:#9ca5b2; font-size:11px; }
+  .command-result.is-disabled { opacity:.38; cursor:not-allowed; }
+  .command-result.is-disabled small { color:#d39a70; }
+  .command-empty { padding:18px 12px; color:#9ca5b2; font-size:12px; }
+  #command-hint { padding:9px 12px; border-top:1px solid rgba(255,255,255,.1); color:#8993a0; font-size:10px; }
+  body.light #command-box { background:rgba(250,251,253,.99); color:#222; border-color:rgba(0,0,0,.16); }
+  body.light #command-input { border-color:rgba(0,0,0,.12); }
+  body.light .command-result[aria-selected="true"],body.light .command-result:hover { background:rgba(170,105,42,.12); }
+  body.light .command-result small,body.light .command-empty,body.light #command-hint { color:#68717e; }
+  #orbit-controls { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:25; display:flex; align-items:center; gap:12px; padding:10px 14px; border:1px solid rgba(255,255,255,.16); border-radius:10px; background:rgba(28,30,34,.94); color:#eee; pointer-events:auto; box-shadow:0 12px 34px rgba(0,0,0,.3); }
+  #orbit-controls[hidden] { display:none; }
+  #orbit-controls button { border:1px solid rgba(255,255,255,.18); border-radius:6px; padding:6px 9px; background:rgba(255,255,255,.08); color:inherit; cursor:pointer; }
+  #orbit-controls label { display:flex; align-items:center; gap:8px; color:#b8c0ca; font-size:11px; }
+  #orbit-speed { width:100px; accent-color:#e59b52; }
+  #orbit-status { min-width:52px; color:#9ca5b2; font-size:10px; }
+  body.light #orbit-controls { background:rgba(250,251,253,.98); color:#222; border-color:rgba(0,0,0,.16); }
+  body.light #orbit-controls button { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
+  @media (max-width:600px) { #orbit-controls { bottom:58px; width:calc(100vw - 90px); justify-content:center; flex-wrap:wrap; } }
+
   /* Light theme override */
   body.light { background: #f5f5f5; color: #222; }
   body.light #loading { background: #f5f5f5; }
@@ -134,15 +165,26 @@
     <button id="bg-toggle" title="Toggle dark/light background">Dark</button>
     <button id="screenshot" title="Screenshot">Screenshot</button>
     <button id="file-picker-btn" title="Open file">Open GLB</button>
-    <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
+    <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button><button id="export-glb-btn" title="Export a new GLB copy">Export GLB</button><button id="projection-toggle" title="Switch camera projection">Perspective</button>
+    <button id="orbit-preview-btn" title="Rotate the model automatically">Orbit Preview</button><button id="pan-mode-btn" title="Drag the model to reposition it">Pan</button><button id="reset-model-position-btn" title="Reset model position">Reset position</button><button id="frame-all-btn">Frame All</button><button id="view-front-btn">Front</button><button id="view-right-btn">Right</button><button id="view-top-btn">Top</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
+  </div>
+
+  <div id="command-overlay" hidden role="dialog" aria-modal="true" aria-label="Command search">
+    <div id="command-box"><input id="command-input" type="text" autocomplete="off" spellcheck="false" placeholder="Type a command… (e.g. LIG)" aria-label="Search editor commands"><div id="command-results" data-command-results role="listbox"></div><div id="command-hint">↑ ↓ Navigate · Enter Run · Tab Complete · Esc Close · F3 Open</div></div>
+  </div>
+  <div id="orbit-controls" hidden aria-label="Orbit preview controls">
+    <button id="orbit-pause" type="button">Pause</button>
+    <label>Speed <input id="orbit-speed" type="range" min="0.1" max="1.5" step="0.05" value="0.45"></label>
+    <span id="orbit-status" aria-live="polite">Rotating</span>
+    <button id="orbit-stop" type="button">Exit preview</button>
   </div>
   <aside id="scene-panel" aria-label="Editor tools">
     <nav id="workspace-rail" aria-label="Workspace tools">
       <button type="button" class="active" data-workspace="scene" data-tooltip="Scene" aria-label="Scene" aria-controls="workspace-main" aria-pressed="true"><ion-icon name="layers-outline" aria-hidden="true"></ion-icon></button>
       <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="cube-outline" aria-hidden="true"></ion-icon></button>
       <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="move-outline" aria-hidden="true"></ion-icon></button>
-      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="sunny-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="sunny-outline" aria-hidden="true"></ion-icon></button><button type="button" data-workspace="materials" data-tooltip="Materials" aria-label="Materials" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="color-palette-outline"></ion-icon></button><button type="button" data-workspace="inspect" data-tooltip="Inspect" aria-label="Inspect" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="analytics-outline"></ion-icon></button>
       <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="puzzle-outline" aria-hidden="true"></ion-icon></button>
       <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="grid-outline" aria-hidden="true"></ion-icon></button>
     </nav>
@@ -152,22 +194,24 @@
     <div id="workspace-content">
       <section class="workspace-view" data-view="scene">
         <div id="history-controls"><button id="undo-btn" type="button" disabled>Undo</button><button id="redo-btn" type="button" disabled>Redo</button></div>
-        <h3>Scene overview</h3><p class="workspace-note">Inspect the active model and manage your current editing session.</p>
+        <h3>Viewport</h3><label><input id="grid-toggle" type="checkbox" checked> Grid</label> <label><input id="axes-toggle" type="checkbox" checked> XYZ axes</label><label class="light-control">Shading <select id="shading-mode"><option value="material">Material</option><option value="wireframe">Wireframe</option><option value="normal">Normals</option></select></label><div id="history-controls"><button id="frame-selected-btn" type="button">Frame selected</button><button id="reset-view-btn" type="button">Reset view</button></div><h3>Scene overview</h3><p class="workspace-note">Inspect the active model and manage your current editing session.</p>
         <div id="selected-name">Nothing selected</div>
       </section>
       <section class="workspace-view" data-view="objects" hidden>
-        <h3>Hierarchy</h3><div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
+        <h3>Hierarchy</h3><div id="outliner-actions"><button id="rename-object-btn" type="button">Rename</button><button id="delete-object-btn" type="button">Delete</button></div><input id="outliner-search" type="search" placeholder="Filter objects…" aria-label="Filter objects" style="width:100%;padding:8px;margin-bottom:8px"><div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
         <p id="scene-hint">Select an object in the list or click it directly in the viewport.</p>
       </section>
       <section class="workspace-view" data-view="transform" hidden>
         <h3>Transform</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px"><button type="button" id="gizmo-translate">Move</button><button type="button" id="gizmo-rotate">Rotate</button><button type="button" id="gizmo-scale">Scale</button><select id="gizmo-space"><option value="local">Local</option><option value="world">World</option></select></div>
+        <div style="display:flex;gap:12px;margin-bottom:9px"><label><input type="checkbox" id="lock-axis-x"> Lock X</label><label><input type="checkbox" id="lock-axis-y"> Lock Y</label><label><input type="checkbox" id="lock-axis-z"> Lock Z</label></div>
         <form id="transform-form">
           <label>X <input name="x" type="number" step="any" value="0"></label><label>Y <input name="y" type="number" step="any" value="0"></label><label>Z <input name="z" type="number" step="any" value="0"></label>
           <label>Rotate X° <input name="rx" type="number" step="any" value="0"></label><label>Rotate Y° <input name="ry" type="number" step="any" value="0"></label><label>Rotate Z° <input name="rz" type="number" step="any" value="0"></label>
           <label>Scale X <input name="sx" type="number" step="any" value="1"></label><label>Scale Y <input name="sy" type="number" step="any" value="1"></label><label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
-          <button type="submit">Apply transform</button>
+          <button type="submit">Apply to selected objects</button><button type="button" id="reset-transform-btn">Reset transform</button>
         </form>
-        <p class="workspace-note">Position, rotation and scale are independently editable on all three axes.</p>
+        <p class="workspace-note">The gizmo edits one object or transforms the selected group around a shared pivot. Numeric edits apply the active object's transform delta to all selected, unlocked objects. For a single object, axis locks preserve its local position, rotation or scale components. For a selected group, locks constrain the shared-pivot gizmo in the chosen Local or World coordinate space.</p>
       </section>
       <section class="workspace-view" data-view="lighting" hidden>
         <h3>Viewport lighting</h3>
@@ -176,8 +220,22 @@
         <label class="light-control"><span class="range-line"><span>Fill light</span><output id="fill-value">1.0</output></span><input id="fill-intensity" type="range" min="0" max="3" step=".05" value="1"></label>
         <label class="light-control"><span class="range-line"><span>Key azimuth</span><output id="azimuth-value">35°</output></span><input id="light-azimuth" type="range" min="-180" max="180" step="1" value="35"></label>
         <label class="light-control"><span class="range-line"><span>Key elevation</span><output id="elevation-value">48°</output></span><input id="light-elevation" type="range" min="5" max="85" step="1" value="48"></label>
+        <label class="light-control">Key light color <input id="key-color" type="color" value="#ffffff"></label><label class="light-control">Fill light color <input id="fill-color" type="color" value="#c8dcff"></label><label class="light-control">Rim intensity <input id="rim-intensity" type="range" min="0" max="3" step=".05" value=".65"></label><label class="light-control">Shadow strength <input id="shadow-opacity" type="range" min="0" max="1" step=".05" value=".28"></label><label><input id="shadows-toggle" type="checkbox" checked> Ground shadow</label><label class="light-control">Preset <select id="lighting-preset"><option value="studio">Studio</option><option value="soft">Soft</option><option value="dramatic">Dramatic</option><option value="neutral">Neutral</option></select></label><h3>Additional lights</h3>
+        <div style="display:flex;gap:6px"><select id="new-light-type"><option value="point">Point</option><option value="spot">Spot</option><option value="directional">Directional</option></select><button id="add-light-btn" type="button">Add light</button></div>
+        <select id="user-light-list" aria-label="Additional lights" style="width:100%;margin-top:8px;padding:7px"><option value="">No additional lights</option></select>
+        <label class="light-control">Selected light color <input id="user-light-color" type="color" value="#ffffff" disabled></label>
+        <label class="light-control">Intensity <input id="user-light-intensity" type="range" min="0" max="10" step=".05" value="1" disabled></label>
+        <div id="user-light-position" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"><label>X <input id="user-light-x" type="number" step=".1" value="2" disabled></label><label>Y <input id="user-light-y" type="number" step=".1" value="3" disabled></label><label>Z <input id="user-light-z" type="number" step=".1" value="2" disabled></label></div>
+        <button id="remove-light-btn" type="button" disabled>Remove selected light</button>
         <button id="lighting-reset" type="button">Reset lighting</button>
       </section>
+      <section class="workspace-view" data-view="materials" hidden><h3>Selected material</h3><p id="material-target">Select a mesh to edit its material.</p><label class="light-control">Material slot <select id="material-slot" disabled></select></label><label class="light-control">Base color <input id="material-color" type="color" value="#cccccc" disabled></label><label class="light-control">Metalness <input id="material-metalness" type="range" min="0" max="1" step="0.01" value="0" disabled></label><label class="light-control">Roughness <input id="material-roughness" type="range" min="0" max="1" step="0.01" value="0.7" disabled></label><label class="light-control">Opacity <input id="material-opacity" type="range" min="0" max="1" step="0.01" value="1" disabled></label><h3>Texture channels</h3>
+          <div class="material-texture-row"><label class="light-control">Base color <input id="material-texture" type="file" accept="image/*" disabled></label><button id="clear-material-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Metalness <input id="material-metalness-texture" type="file" accept="image/*" disabled></label><button id="clear-material-metalness-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Roughness <input id="material-roughness-texture" type="file" accept="image/*" disabled></label><button id="clear-material-roughness-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Normal <input id="material-normal-texture" type="file" accept="image/*" disabled></label><button id="clear-material-normal-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Ambient occlusion <input id="material-ao-texture" type="file" accept="image/*" disabled></label><button id="clear-material-ao-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Emissive <input id="material-emissive-texture" type="file" accept="image/*" disabled></label><button id="clear-material-emissive-texture" type="button" disabled>Clear</button></div></section><section class="workspace-view" data-view="inspect" hidden><h3>Model inspection</h3><dl id="model-inspection">Open a model to inspect it.</dl></section>
       <section class="workspace-view" data-view="plugins" hidden><h3>Plugins</h3><div class="workspace-placeholder">Plugin management will appear here when the plugin API is available.</div></section>
       <section class="workspace-view" data-view="extensions" hidden><h3>Extensions</h3><div class="workspace-placeholder">Extension management will appear here when extension loading is implemented.</div></section>
     </div>
@@ -219,20 +277,27 @@
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { disposeObjectResources } from './src/core/ResourceDisposer.js';
 import { PerformanceMonitor } from './src/core/PerformanceMonitor.js';
 import { NativeRelayHardwareProvider, BrowserCapabilityProvider } from './src/core/HardwareProviders.js';
 import { evaluateAdaptiveQuality } from './src/core/AdaptiveQualityPolicy.js';
+import { inspectModel } from './src/core/ModelInspector.js';
 import { SceneStore } from './src/core/SceneStore.js';
 import { CommandHistory } from './src/core/CommandHistory.js';
-import { SetTransformCommand, SetVisibilityCommand } from './src/core/SceneCommands.js';
+import { SetTransformCommand, SetVisibilityCommand, RenameObjectCommand, RemoveObjectCommand, SetMaterialPropertiesCommand } from './src/core/SceneCommands.js';
 import { EditorStateStore } from './src/editor/EditorStateStore.js';
 import { ToolRegistry } from './src/editor/ToolRegistry.js';
 import { WorkspaceManager } from './src/editor/WorkspaceManager.js';
 import { ViewportInteraction } from './src/editor/ViewportInteraction.js';
 import { SceneRuntime } from './src/editor/SceneRuntime.js';
+import { CommandPalette } from './src/editor/CommandPalette.js';
+import { OrbitPreview } from './src/editor/OrbitPreview.js';
+import { ViewportWorkspace } from './src/editor/ViewportWorkspace.js';
+import { MultiObjectTransform } from './src/editor/MultiObjectTransform.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
 const performanceMonitor = new PerformanceMonitor();
@@ -348,6 +413,8 @@ const canvas = document.getElementById('canvas');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const nativeRelayProvider = new NativeRelayHardwareProvider();
 const browserCapabilityProvider = new BrowserCapabilityProvider();
@@ -393,7 +460,12 @@ scene.add(ambient);
 const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
 dirLight.position.set(5, 7, 6);
 dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(1024, 1024);
+dirLight.shadow.camera.near = 0.1;
+dirLight.shadow.camera.far = 100;
+dirLight.shadow.bias = -0.00015;
 scene.add(dirLight);
+scene.add(dirLight.target);
 const fillLight = new THREE.DirectionalLight(0xc8dcff, 1.0);
 fillLight.position.set(-5, 2, -4);
 scene.add(fillLight);
@@ -405,6 +477,10 @@ scene.add(rimLight);
 const sceneStore = new SceneStore(scene);
 const sceneRuntime = new SceneRuntime({ scene, sceneStore, disposeResources: disposeObjectResources });
 const commandHistory = new CommandHistory({ limit: 100 });
+const transformGizmo = new TransformControls(camera, renderer.domElement);
+scene.add(transformGizmo.getHelper());
+const multiObjectTransform = new MultiObjectTransform({ THREE, scene, controls: transformGizmo });
+let gizmoDragSnapshot=null, materialSlotIndex=0;
  
 // ---------- Editor workspace navigation and persisted layout ----------
 const workspaceShell = document.getElementById('workspace-main');
@@ -421,6 +497,8 @@ const editorTools = [
   { id: 'objects', label: 'Objects / Outliner', icon: 'cube-outline', order: 2 },
   { id: 'transform', label: 'Transform', icon: 'move-outline', order: 3 },
   { id: 'lighting', label: 'Lighting', icon: 'sunny-outline', order: 4 },
+  { id: 'materials', label: 'Materials', icon: 'color-palette-outline', order: 5 },
+  { id: 'inspect', label: 'Inspect', icon: 'analytics-outline', order: 6 },
   { id: 'plugins', label: 'Plugins', icon: 'puzzle-outline', order: 5 },
   { id: 'extensions', label: 'Extensions', icon: 'grid-outline', order: 6 },
 ];
@@ -541,21 +619,36 @@ if (workspacePanels.has(savedWorkspace)) setWorkspaceView(savedWorkspace);
 else setWorkspaceView('scene');
 
 // Lighting controls update the actual scene lights, not just their labels.
+function saveEditorPreferences(){
+  const ids=['ambient-intensity','key-intensity','fill-intensity','light-azimuth','light-elevation','key-color','fill-color','rim-intensity','shadow-opacity','lighting-preset','shading-mode'];
+  const values={};ids.forEach(id=>{const el=document.getElementById(id);if(el)values[id]=el.value;});
+  values.userLights=[...userLights.values()].map(entry=>({id:entry.id,name:entry.name,type:entry.type,color:'#'+entry.light.color.getHexString(),intensity:entry.light.intensity,offset:entry.offset.toArray()}));
+  values.grid=document.getElementById('grid-toggle').checked;values.axes=document.getElementById('axes-toggle').checked;values.shadows=document.getElementById('shadows-toggle').checked;values.background=state.background;
+  try{localStorage.setItem('glb-editor-preferences-v1',JSON.stringify(values));}catch{}
+}
+function restoreEditorPreferences(){
+  let values={};try{values=JSON.parse(localStorage.getItem('glb-editor-preferences-v1')||'{}');}catch{}
+  Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&typeof value!=='object')el.value=String(value);});
+  if(Array.isArray(values.userLights))values.userLights.forEach(saved=>{const center=modelWorldCenter(),id='user-light-'+nextUserLightId++;let light;if(saved.type==='spot'){light=new THREE.SpotLight(saved.color,saved.intensity);light.castShadow=true;scene.add(light.target);}else if(saved.type==='directional'){light=new THREE.DirectionalLight(saved.color,saved.intensity);scene.add(light.target);}else light=new THREE.PointLight(saved.color,saved.intensity,0,2);const offset=new THREE.Vector3(...saved.offset);light.position.copy(center).add(offset);light.userData.editorHelper=true;scene.add(light);userLights.set(id,{id,name:saved.name,type:saved.type,light,offset});});
+  refreshUserLightList();
+  if(typeof values.grid==='boolean')document.getElementById('grid-toggle').checked=values.grid;
+  if(typeof values.axes==='boolean')document.getElementById('axes-toggle').checked=values.axes;
+  if(typeof values.shadows==='boolean')document.getElementById('shadows-toggle').checked=values.shadows;
+  if(values.background)setBackground(values.background);
+  ['ambient-intensity','key-intensity','fill-intensity','light-azimuth','light-elevation','rim-intensity','shadow-opacity'].forEach(id=>document.getElementById(id)?.dispatchEvent(new Event('input')));
+  document.getElementById('key-color')?.dispatchEvent(new Event('input'));document.getElementById('fill-color')?.dispatchEvent(new Event('input'));
+  if(typeof values.shadows==='boolean'){groundShadow.visible=values.shadows;dirLight.castShadow=values.shadows;userLights.forEach(entry=>{if(entry.light.castShadow!==undefined)entry.light.castShadow=values.shadows;});}
+  viewportWorkspace.setGrid(document.getElementById('grid-toggle').checked);viewportWorkspace.setAxes(document.getElementById('axes-toggle').checked);viewportWorkspace.setShading(document.getElementById('shading-mode').value);
+  syncModelLighting();
+}
 function setKeyLightDirection() {
-  const azimuth = THREE.MathUtils.degToRad(Number(document.getElementById('light-azimuth').value));
-  const elevation = THREE.MathUtils.degToRad(Number(document.getElementById('light-elevation').value));
-  const radius = 9;
-  dirLight.position.set(
-    radius * Math.cos(elevation) * Math.sin(azimuth),
-    radius * Math.sin(elevation),
-    radius * Math.cos(elevation) * Math.cos(azimuth)
-  );
+  syncModelLighting();
 }
 function bindLightRange(id, light, outputId) {
   const input = document.getElementById(id);
   const output = document.getElementById(outputId);
   const update = () => { light.intensity = Number(input.value); output.value = Number(input.value).toFixed(2); };
-  input.addEventListener('input', update);
+  input.addEventListener('input', () => { update(); markDirty(); });
   update();
 }
 bindLightRange('ambient-intensity', ambient, 'ambient-value');
@@ -563,13 +656,19 @@ bindLightRange('key-intensity', dirLight, 'key-value');
 bindLightRange('fill-intensity', fillLight, 'fill-value');
 document.getElementById('light-azimuth').addEventListener('input', () => {
   document.getElementById('azimuth-value').value = document.getElementById('light-azimuth').value + '°';
-  setKeyLightDirection();
+  setKeyLightDirection(); markDirty(); saveEditorPreferences();
 });
 document.getElementById('light-elevation').addEventListener('input', () => {
   document.getElementById('elevation-value').value = document.getElementById('light-elevation').value + '°';
-  setKeyLightDirection();
+  setKeyLightDirection(); markDirty();
 });
 setKeyLightDirection();
+document.getElementById('key-color').addEventListener('input',e=>{dirLight.color.set(e.target.value);markDirty();saveEditorPreferences();});
+document.getElementById('fill-color').addEventListener('input',e=>{fillLight.color.set(e.target.value);markDirty();saveEditorPreferences();});
+document.getElementById('rim-intensity').addEventListener('input',e=>{rimLight.intensity=Number(e.target.value);markDirty();saveEditorPreferences();});
+document.getElementById('shadow-opacity').addEventListener('input',e=>{groundShadow.material.opacity=Number(e.target.value);markDirty();saveEditorPreferences();});
+document.getElementById('shadows-toggle').addEventListener('change',e=>{groundShadow.visible=e.target.checked;dirLight.castShadow=e.target.checked;userLights.forEach(entry=>{if(entry.light.castShadow!==undefined)entry.light.castShadow=e.target.checked;});markDirty();saveEditorPreferences();});
+document.getElementById('lighting-preset').addEventListener('change',e=>{applyLightingPreset(e.target.value);saveEditorPreferences();});
 document.getElementById('lighting-reset').addEventListener('click', () => {
   document.getElementById('ambient-intensity').value = '1.1';
   document.getElementById('key-intensity').value = '2';
@@ -578,11 +677,310 @@ document.getElementById('lighting-reset').addEventListener('click', () => {
   document.getElementById('light-elevation').value = '48';
   ['ambient-intensity','key-intensity','fill-intensity'].forEach((id) => document.getElementById(id).dispatchEvent(new Event('input')));
   setKeyLightDirection();
+  dirLight.color.set('#ffffff');fillLight.color.set('#c8dcff');rimLight.intensity=.65;groundShadow.material.opacity=.28;groundShadow.visible=true;dirLight.castShadow=true;
+  document.getElementById('key-color').value='#ffffff';document.getElementById('fill-color').value='#c8dcff';document.getElementById('rim-intensity').value='.65';document.getElementById('shadow-opacity').value='.28';document.getElementById('shadows-toggle').checked=true;document.getElementById('lighting-preset').value='studio';markDirty();saveEditorPreferences();
 });
 
 
 // ---------- Model loading ----------
 let currentModel = null;
+let currentAnimations = [];
+let isDirty = false;
+let dirtyRevision = 0;
+let panMode = false;
+const userLights = new Map();
+let selectedUserLightId = null;
+let nextUserLightId = 1;
+let panPointer = null;
+let modelHomePosition = null;
+let orthographicCamera = null;
+let useOrthographic = false;
+let selectedIds = new Set();
+const lockedObjectIds = new Set();
+let commandPalette;
+let orbitPreview;
+let orbitUiSync = () => {};
+function syncOrbitUi() {
+  const active = Boolean(orbitPreview?.active);
+  const paused = Boolean(orbitPreview?.paused);
+  document.getElementById('orbit-controls').hidden = !active;
+  document.getElementById('orbit-pause').textContent = paused ? 'Resume' : 'Pause';
+  document.getElementById('orbit-status').textContent = paused ? 'Paused' : 'Rotating';
+  document.getElementById('orbit-preview-btn').textContent = active ? 'Orbit Active' : 'Orbit Preview';
+  commandPalette?.refresh();
+}
+function startOrbitPreview() {
+  if (!currentModel) return false;
+  const started = orbitPreview.start();
+  syncOrbitUi();
+  return started;
+}
+function stopOrbitPreview() { orbitPreview.stop(); syncOrbitUi(); }
+function toggleOrbitPause() {
+  if (!orbitPreview.active) return;
+  if (orbitPreview.paused) orbitPreview.resume(); else orbitPreview.pause();
+  syncOrbitUi();
+}
+orbitPreview = new OrbitPreview({ THREE, camera, controls, getModel: () => currentModel });
+const viewportWorkspace = new ViewportWorkspace({ THREE, scene, camera, controls, renderer, getModel: () => currentModel, getSelection: () => sceneStore.getSelection() });
+function setPanMode(enabled) {
+  panMode=Boolean(enabled); controls.enabled=!panMode;
+  const button=document.getElementById('pan-mode-btn');
+  button.classList.toggle('active',panMode); button.textContent=panMode?'Pan: On':'Pan';
+}
+function modelWorldCenter(){
+  if(!currentModel)return new THREE.Vector3();
+  return new THREE.Box3().setFromObject(currentModel).getCenter(new THREE.Vector3());
+}
+function refreshUserLightList(){
+  const select=document.getElementById('user-light-list'),previous=selectedUserLightId;
+  select.replaceChildren();
+  if(!userLights.size){const option=document.createElement('option');option.value='';option.textContent='No additional lights';select.append(option);selectedUserLightId=null;}
+  else userLights.forEach((entry,id)=>{const option=document.createElement('option');option.value=id;option.textContent=entry.name;select.append(option);});
+  if(previous&&userLights.has(previous)){select.value=previous;selectedUserLightId=previous;}
+  syncUserLightControls();
+}
+function syncUserLightControls(){
+  const entry=userLights.get(selectedUserLightId),ids=['user-light-color','user-light-intensity','user-light-x','user-light-y','user-light-z','remove-light-btn'];
+  ids.forEach(id=>document.getElementById(id).disabled=!entry);
+  if(!entry)return;
+  document.getElementById('user-light-color').value='#'+entry.light.color.getHexString();
+  document.getElementById('user-light-intensity').value=String(entry.light.intensity);
+  ['x','y','z'].forEach(axis=>document.getElementById('user-light-'+axis).value=String(entry.offset[axis]));
+}
+function addUserLight(type){
+  const center=modelWorldCenter(),id='user-light-'+nextUserLightId++;
+  let light;
+  if(type==='spot'){light=new THREE.SpotLight(0xffffff,1);light.angle=Math.PI/5;light.penumbra=.25;light.castShadow=true;scene.add(light.target);}
+  else if(type==='directional'){light=new THREE.DirectionalLight(0xffffff,1);light.castShadow=true;scene.add(light.target);}
+  else light=new THREE.PointLight(0xffffff,1,0,2);
+  const offset=new THREE.Vector3(2,3,2);light.position.copy(center).add(offset);light.userData.editorHelper=true;scene.add(light);
+  const entry={id,name:type[0].toUpperCase()+type.slice(1)+' '+nextUserLightId, type,light,offset};
+  if(type==='spot'||type==='directional'){entry.targetOffset=new THREE.Vector3(0,0,0);light.target.position.copy(center);}
+  userLights.set(id,entry);selectedUserLightId=id;refreshUserLightList();markDirty();saveEditorPreferences();
+}
+function updateUserLight(){
+  const entry=userLights.get(selectedUserLightId);if(!entry)return;
+  entry.light.color.set(document.getElementById('user-light-color').value);
+  entry.light.intensity=Number(document.getElementById('user-light-intensity').value);
+  ['x','y','z'].forEach(axis=>{entry.offset[axis]=Number(document.getElementById('user-light-'+axis).value);});
+  syncModelLighting();markDirty();saveEditorPreferences();
+}
+document.getElementById('add-light-btn').addEventListener('click',()=>addUserLight(document.getElementById('new-light-type').value));
+document.getElementById('user-light-list').addEventListener('change',e=>{selectedUserLightId=e.target.value||null;syncUserLightControls();});
+['user-light-color','user-light-intensity','user-light-x','user-light-y','user-light-z'].forEach(id=>document.getElementById(id).addEventListener('input',updateUserLight));
+document.getElementById('remove-light-btn').addEventListener('click',()=>{
+  const entry=userLights.get(selectedUserLightId);if(!entry)return;
+  scene.remove(entry.light);if(entry.light.target?.parent)scene.remove(entry.light.target);
+  userLights.delete(selectedUserLightId);selectedUserLightId=null;refreshUserLightList();markDirty();saveEditorPreferences();
+});
+function syncModelLighting() {
+  if(!currentModel)return;
+  currentModel.updateWorldMatrix(true,true);
+  const box=new THREE.Box3().setFromObject(currentModel);
+  if(box.isEmpty())return;
+  const center=box.getCenter(new THREE.Vector3());
+  const radius=Math.max(box.getSize(new THREE.Vector3()).length(),3);
+  const az=THREE.MathUtils.degToRad(Number(document.getElementById('light-azimuth').value));
+  const el=THREE.MathUtils.degToRad(Number(document.getElementById('light-elevation').value));
+  dirLight.position.set(center.x+radius*Math.cos(el)*Math.sin(az),center.y+radius*Math.sin(el),center.z+radius*Math.cos(el)*Math.cos(az));
+  dirLight.target.position.copy(center);
+  fillLight.position.set(center.x-radius*.65,center.y+radius*.25,center.z-radius*.55);
+  rimLight.position.set(center.x,center.y+radius*.65,center.z-radius*.8);
+  groundShadow.position.set(center.x,box.min.y-.015,center.z);
+  userLights.forEach(entry=>{entry.light.position.copy(center).add(entry.offset);if(entry.light.target)entry.light.target.position.copy(center);});
+}
+function panModelByScreenDelta(dx,dy) {
+  if(!currentModel)return;
+  const distance=camera.position.distanceTo(controls.target);
+  const height=Math.max(renderer.domElement.clientHeight,1);
+  const worldPerPixel=useOrthographic?(camera.top-camera.bottom)/height:2*distance*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2)/height;
+  const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0);
+  const up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
+  currentModel.position.add(right.multiplyScalar(dx*worldPerPixel).add(up.multiplyScalar(-dy*worldPerPixel)));
+  syncModelLighting(); markDirty(); updateInspection();
+}
+renderer.domElement.addEventListener('pointerdown',event=>{
+  if(!panMode||event.button!==0||!currentModel)return;
+  panPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
+  renderer.domElement.setPointerCapture(event.pointerId);
+});
+renderer.domElement.addEventListener('pointermove',event=>{
+  if(!panPointer||panPointer.id!==event.pointerId)return;
+  const dx=event.clientX-panPointer.x,dy=event.clientY-panPointer.y;
+  panPointer.x=event.clientX;panPointer.y=event.clientY;panModelByScreenDelta(dx,dy);
+});
+function finishPan(event){if(panPointer&&panPointer.id===event.pointerId)panPointer=null;}
+renderer.domElement.addEventListener('pointerup',finishPan);
+renderer.domElement.addEventListener('pointercancel',finishPan);
+document.getElementById('pan-mode-btn').addEventListener('click',()=>setPanMode(!panMode));
+document.getElementById('reset-model-position-btn').addEventListener('click',()=>{
+  if(!currentModel)return;currentModel.position.copy(modelHomePosition||new THREE.Vector3());syncModelLighting();markDirty();updateInspection();
+});
+function applyLightingPreset(name){
+  const p={studio:[1.1,2,1,.65,35,48],soft:[1.65,1.1,1.25,.25,25,65],dramatic:[.35,3.4,.25,1.2,-55,32],neutral:[1.3,1.35,.8,.35,45,55]}[name]||[1.1,2,1,.65,35,48];
+  ['ambient-intensity','key-intensity','fill-intensity','rim-intensity','light-azimuth','light-elevation'].forEach((id,i)=>{document.getElementById(id).value=String(p[i]);document.getElementById(id).dispatchEvent(new Event('input'));});
+  syncModelLighting();markDirty();
+}
+function selectedMaterial() {
+  if(viewportWorkspace.mode!=='material')return null;
+  const object=sceneStore.getSelection();if(!object?.isMesh||!object.material)return null;
+  const slots=Array.isArray(object.material)?object.material:[object.material];return slots[materialSlotIndex]||null;
+}
+function syncMaterialControls() {
+  const object=sceneStore.getSelection(),slots=object?.isMesh&&object.material?(Array.isArray(object.material)?object.material:[object.material]):[];
+  const select=document.getElementById('material-slot');select.replaceChildren(...slots.map((m,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=m.name||'Material '+(i+1);return o;}));
+  materialSlotIndex=Math.min(materialSlotIndex,Math.max(0,slots.length-1));select.value=String(materialSlotIndex);
+  const material=selectedMaterial();document.getElementById('material-target').textContent=material?(object.name||object.type||'Selected mesh'):viewportWorkspace.mode!=='material'?'Switch viewport shading to Material to edit source materials.':'Select a mesh to edit its material.';
+  const textureChannels=[['map','material-texture','clear-material-texture'],['metalnessMap','material-metalness-texture','clear-material-metalness-texture'],['roughnessMap','material-roughness-texture','clear-material-roughness-texture'],['normalMap','material-normal-texture','clear-material-normal-texture'],['aoMap','material-ao-texture','clear-material-ao-texture'],['emissiveMap','material-emissive-texture','clear-material-emissive-texture']];
+  for(const id of ['material-slot','material-color','material-metalness','material-roughness','material-opacity',...textureChannels.flatMap(([,input,clear])=>[input,clear])])document.getElementById(id).disabled=!material;
+  if(!material)return;
+  if(material.color)document.getElementById('material-color').value='#'+material.color.getHexString();
+  document.getElementById('material-metalness').value=material.metalness??0;document.getElementById('material-roughness').value=material.roughness??1;document.getElementById('material-opacity').value=material.opacity??1;
+  textureChannels.forEach(([property,,clear])=>{document.getElementById(clear).disabled=!material[property];});
+}
+document.getElementById('material-slot').addEventListener('change',e=>{materialSlotIndex=Number(e.target.value)||0;syncMaterialControls();});
+let materialEditStart = null;
+function snapshotMaterialProperties(material, keys) {
+  const values = {};
+  for (const key of keys) {
+    const value = material[key];
+    values[key] = value && typeof value.clone === 'function' ? value.clone() : value;
+  }
+  return values;
+}
+function applyMaterialPreview(material, values) {
+  for (const [key, value] of Object.entries(values)) {
+    const current = material[key];
+    if (current && value && typeof current.copy === 'function' && typeof value === 'object') current.copy(value);
+    else material[key] = value;
+  }
+  material.needsUpdate = true;
+}
+function beginMaterialEdit(key) {
+  const material = selectedMaterial();
+  if (!material) return;
+  const keys = key === 'opacity' ? ['opacity', 'transparent', 'depthWrite'] : [key];
+  materialEditStart = { material, values: snapshotMaterialProperties(material, keys) };
+}
+function previewMaterialEdit(key, value) {
+  const material = selectedMaterial();
+  if (!material) return;
+  const values = key === 'color'
+    ? { color: new THREE.Color(value) }
+    : key === 'opacity'
+      ? { opacity: Number(value), transparent: Number(value) < 1, depthWrite: Number(value) >= 1 }
+      : { [key]: Number(value) };
+  applyMaterialPreview(material, values);
+}
+function commitMaterialEdit(key, value) {
+  const material = selectedMaterial();
+  if (!material) return;
+  const start = materialEditStart?.material === material ? materialEditStart : null;
+  if (start) applyMaterialPreview(material, start.values);
+  const properties = key === 'color'
+    ? { color: new THREE.Color(value) }
+    : key === 'opacity'
+      ? { opacity: Number(value), transparent: Number(value) < 1, depthWrite: Number(value) >= 1 }
+      : { [key]: Number(value) };
+  commandHistory.execute(new SetMaterialPropertiesCommand(material, properties));
+  materialEditStart = null;
+  markDirty();
+  updateHistoryControls();
+  syncMaterialControls();
+}
+for (const [id, key] of [['material-color','color'],['material-metalness','metalness'],['material-roughness','roughness'],['material-opacity','opacity']]) {
+  const input = document.getElementById(id);
+  input.addEventListener('focus', () => beginMaterialEdit(key));
+  input.addEventListener('pointerdown', () => beginMaterialEdit(key));
+  input.addEventListener('input', event => previewMaterialEdit(key, event.target.value));
+  input.addEventListener('change', event => commitMaterialEdit(key, event.target.value));
+}
+const materialTextureChannels=[
+  ['map','material-texture','clear-material-texture',true],
+  ['metalnessMap','material-metalness-texture','clear-material-metalness-texture',false],
+  ['roughnessMap','material-roughness-texture','clear-material-roughness-texture',false],
+  ['normalMap','material-normal-texture','clear-material-normal-texture',false],
+  ['aoMap','material-ao-texture','clear-material-ao-texture',false],
+  ['emissiveMap','material-emissive-texture','clear-material-emissive-texture',true]
+];
+for(const [property,inputId,clearId,isColor] of materialTextureChannels){
+  document.getElementById(inputId).addEventListener('change',event=>{
+    const file=event.target.files?.[0],material=selectedMaterial();event.target.value='';
+    if(!file||!material)return;
+    const url=URL.createObjectURL(file);
+    new THREE.TextureLoader().load(url,texture=>{
+      URL.revokeObjectURL(url);
+      // The user may have replaced the model while the image was decoding.
+      // Never attach a newly loaded GPU resource to a material from a disposed model.
+      let stillOwned=false;
+      currentModel?.traverse(object=>{
+        const slots=Array.isArray(object.material)?object.material:[object.material];
+        if(slots.includes(material))stillOwned=true;
+      });
+      if(!stillOwned){texture.dispose();return;}
+      if(isColor)texture.colorSpace=THREE.SRGBColorSpace;
+      texture.flipY=false;
+      commandHistory.execute(new SetMaterialPropertiesCommand(material,{[property]:texture}));
+      markDirty();updateHistoryControls();syncMaterialControls();
+    },undefined,error=>{URL.revokeObjectURL(url);console.error(error);window.alert('Could not load this texture image.');});
+  });
+  document.getElementById(clearId).addEventListener('click',()=>{
+    const material=selectedMaterial();if(!material?.[property])return;
+    commandHistory.execute(new SetMaterialPropertiesCommand(material,{[property]:null}));
+    markDirty();updateHistoryControls();syncMaterialControls();
+  });
+}
+document.getElementById('projection-toggle').addEventListener('click',()=>{
+  if(!orthographicCamera){const aspect=window.innerWidth/window.innerHeight;orthographicCamera=new THREE.OrthographicCamera(-2*aspect,2*aspect,2,-2,0.01,10000);orthographicCamera.position.copy(camera.position);orthographicCamera.quaternion.copy(camera.quaternion);}
+  const old=useOrthographic?orthographicCamera:camera,next=useOrthographic?camera:orthographicCamera;
+  next.position.copy(old.position);next.quaternion.copy(old.quaternion);next.up.copy(old.up);next.lookAt(controls.target);
+  controls.object=next;useOrthographic=!useOrthographic;
+  if(useOrthographic){const distance=next.position.distanceTo(controls.target);const span=Math.max(distance*.7,.1);const aspect=innerWidth/innerHeight;next.left=-span*aspect;next.right=span*aspect;next.top=span;next.bottom=-span;next.updateProjectionMatrix();}
+  else next.updateProjectionMatrix();
+  document.getElementById('projection-toggle').textContent=useOrthographic?'Orthographic':'Perspective';
+});
+document.getElementById('frame-all-btn').addEventListener('click',()=>viewportWorkspace.frame(currentModel));
+document.getElementById('grid-toggle').addEventListener('change',e=>{viewportWorkspace.setGrid(e.target.checked);saveEditorPreferences();});
+document.getElementById('axes-toggle').addEventListener('change',e=>{viewportWorkspace.setAxes(e.target.checked);saveEditorPreferences();});
+document.getElementById('shading-mode').addEventListener('change',e=>{viewportWorkspace.setShading(e.target.value);syncMaterialControls();saveEditorPreferences();});
+document.getElementById('frame-selected-btn').addEventListener('click',()=>viewportWorkspace.frame(sceneStore.getSelection()));
+document.getElementById('reset-view-btn').addEventListener('click',()=>viewportWorkspace.resetView());
+
+document.getElementById('view-front-btn').addEventListener('click',()=>viewportWorkspace.preset('front'));
+document.getElementById('view-right-btn').addEventListener('click',()=>viewportWorkspace.preset('right'));
+document.getElementById('view-top-btn').addEventListener('click',()=>viewportWorkspace.preset('top'));
+document.getElementById('rename-object-btn').addEventListener('click',()=>{const object=sceneStore.getSelection();if(object)renameObject(object);});
+document.getElementById('delete-object-btn').addEventListener('click',()=>{const object=sceneStore.getSelection();if(!object)return;if(!window.confirm('Delete '+(object.name||object.type)+'?'))return;commandHistory.execute(new RemoveObjectCommand(sceneStore,object.uuid));selectedIds.clear();selectObject(null);markDirty();refreshObjectList();updateHistoryControls();updateSelectionPanel();});
+document.getElementById('outliner-search').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.scene-row').forEach(row=>{row.hidden=!row.dataset.objectName.includes(q);});
+});
+
+controls.addEventListener('start', () => { if (orbitPreview.active) syncOrbitUi(); });
+commandPalette = new CommandPalette({
+  root: document,
+  input: document.getElementById('command-input'),
+  overlay: document.getElementById('command-overlay'),
+  registry: toolRegistry,
+  onExecute: (_command, error) => { if (error) console.error('Command failed:', error); }
+});
+const registerWorkspaceCommand = (id,label,description,workspace) => commandPalette.register({
+  id,label,description,aliases:[workspace],execute:()=>setWorkspaceView(workspace)
+});
+registerWorkspaceCommand('lighting','LIGHT','Open lighting controls','lighting');
+registerWorkspaceCommand('outliner','OUTLINER','Open the scene object list','objects');
+registerWorkspaceCommand('transform','TRANSFORM','Open transform controls','transform');
+registerWorkspaceCommand('scene','SCENE','Open scene settings','scene');
+commandPalette.register({id:'orbit-preview',label:'ORBIT PREVIEW',description:'Start automatic camera turntable',aliases:['orbit','turntable'],enabled:()=>Boolean(currentModel)&&!orbitPreview.active,disabledReason:()=>!currentModel?'Load a model first':'Orbit Preview is already active',execute:startOrbitPreview});
+commandPalette.register({id:'stop-orbit',label:'STOP ORBIT',description:'Exit automatic camera turntable',enabled:()=>orbitPreview.active,disabledReason:()=>'Orbit Preview is not active',execute:stopOrbitPreview});
+commandPalette.register({id:'open-glb',label:'OPEN GLB',description:'Choose a GLB or glTF file',aliases:['open','load model'],execute:()=>document.getElementById('file-picker-btn').click(),exclusiveGroup:'file'});
+commandPalette.register({id:'screenshot',label:'SCREENSHOT',description:'Save a viewport screenshot',execute:()=>document.getElementById('screenshot').click()});
+document.getElementById('orbit-preview-btn').addEventListener('click',()=>orbitPreview.active?stopOrbitPreview():startOrbitPreview());
+document.getElementById('orbit-pause').addEventListener('click',toggleOrbitPause);
+document.getElementById('orbit-stop').addEventListener('click',stopOrbitPreview);
+document.getElementById('orbit-speed').addEventListener('input',event=>orbitPreview.setSpeed(Number(event.target.value)));
+
 let mixer = null;
 let loadRequestId = 0;
 
@@ -619,6 +1017,27 @@ function countStats(object) {
   return { triangles: Math.round(triangles), vertices: Math.round(vertices), meshes };
 }
 
+function updateInspection() {
+  const panel=document.getElementById('model-inspection');
+  if(!currentModel){panel.textContent='Open a model to inspect it.';return;}
+  const stats=inspectModel(currentModel,THREE);
+  const {meshes,vertices,triangles,groups,materials,textures,warnings,size}=stats;
+  const rows=[
+    ['File',state.fileName||'Untitled'],['File size',formatBytes(state.fileSize)],
+    ['Meshes',meshes],['Triangles',Math.round(triangles).toLocaleString()],
+    ['Vertices',vertices.toLocaleString()],['Groups',groups],
+    ['Materials',materials],['Textures',textures],
+    ['Dimensions',size.toArray().map(v=>Number.isFinite(v)?v.toFixed(3):'—').join(' × ')],
+    ['Inspection notes',warnings.length?warnings.join(' '):'No basic geometry warnings detected.']
+  ];
+  panel.replaceChildren(...rows.flatMap(([k,v])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=k;dd.textContent=String(v);return[dt,dd];}));
+}
+function markDirty(){dirtyRevision++;isDirty=true;document.title='* GLB Viewer';}
+function renameObject(object){
+  const next=window.prompt('New object name:',object.name||'');
+  if(next===null||!next.trim()||next.trim()===(object.name||''))return;
+  commandHistory.execute(new RenameObjectCommand(sceneStore,object.uuid,next));markDirty();refreshObjectList();updateHistoryControls();updateSelectionPanel();
+}
 function formatBytes(bytes) {
   if (!bytes && bytes !== 0) return '—';
   if (bytes === 0) return '0 B';
@@ -690,6 +1109,13 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
 
       const nextModel = gltf.scene;
       const previousModel = currentModel;
+      // Restore real materials before the old model is disposed. Viewport-only
+      // wireframe/normal materials must never leak into a later model/export.
+      if (previousModel && viewportWorkspace.mode !== 'material') {
+        viewportWorkspace.restoreMaterials(previousModel);
+        viewportWorkspace.mode = 'material';
+      }
+      if (orbitPreview.active) stopOrbitPreview();
       if (previousModel) {
         commandHistory.clear();
         clearCurrentAnimation();
@@ -698,9 +1124,14 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       // SceneRuntime owns model replacement and GPU-resource disposal.
       sceneRuntime.replaceModel(nextModel);
       currentModel = nextModel;
+      currentAnimations = gltf.animations || [];
       mixer = new THREE.AnimationMixer(currentModel);
-      gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+      currentAnimations.forEach((clip) => mixer.clipAction(clip).play());
 
+      commandPalette.refresh();
+      isDirty = false; dirtyRevision = 0; document.title='GLB Viewer'; selectedIds.clear(); lockedObjectIds.clear();
+      modelHomePosition=currentModel.position.clone();
+      currentModel.traverse(object=>{if(object.isMesh){object.castShadow=true;object.receiveShadow=true;}});
       state.fileName = fileName;
       state.fileSize = fileSize;
       const stats = countStats(currentModel);
@@ -710,8 +1141,10 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       performanceMonitor.setSceneStats(stats);
       performanceMonitor.recordLoad({ fileName, durationMs: performance.now() - loadStartedAt, status: 'success' });
       updateInfoChip();
+      updateInspection();
 
       fitCamera(currentModel);
+      syncModelLighting();
       refreshObjectList();
       selectObject(null);
       showLoading(false);
@@ -751,43 +1184,59 @@ function refreshObjectList() {
     return;
   }
 
-  currentModel.traverse((object) => {
-    if (object === currentModel || (!object.isMesh && !object.isGroup && !object.isObject3D)) return;
-    const row = document.createElement('div');
-    row.className = 'scene-row';
-    row.dataset.objectId = object.uuid;
-
-    const selectButton = document.createElement('button');
-    selectButton.type = 'button';
-    selectButton.className = 'object-select';
-    selectButton.textContent = object.name || object.type || 'Object';
-    selectButton.title = object.name || object.uuid;
-    selectButton.addEventListener('click', () => selectObject(object));
-
-    const visibilityButton = document.createElement('button');
-    visibilityButton.type = 'button';
-    visibilityButton.className = 'visibility-toggle';
-    visibilityButton.textContent = object.visible ? 'Visible' : 'Hidden';
-    visibilityButton.setAttribute('aria-label', object.visible ? 'Hide object' : 'Show object');
-    visibilityButton.addEventListener('click', () => {
-      commandHistory.execute(new SetVisibilityCommand(sceneStore, object.uuid, !object.visible));
-      refreshObjectList();
-      updateHistoryControls();
-      if (sceneStore.getSelection() === object) updateSelectionPanel();
+  const appendTree = (parent, depth = 0) => {
+    parent.children.forEach((object) => {
+      if (object.userData?.editorHelper) return;
+      const row = document.createElement('div');
+      row.className = 'scene-row';
+      row.dataset.objectId = object.uuid;
+      row.dataset.objectName = (object.name || object.type || 'Object').toLowerCase();
+      row.style.paddingLeft = (4 + depth * 14) + 'px';
+      if (selectedIds.has(object.uuid) || sceneStore.getSelection() === object) row.classList.add('selected');
+      const selectButton = document.createElement('button');
+      selectButton.type = 'button'; selectButton.className = 'object-select';
+      selectButton.textContent = object.name || object.type || 'Object';
+      selectButton.title = object.name || object.uuid;
+      selectButton.addEventListener('click', (event) => {
+        if (event.shiftKey || event.ctrlKey || event.metaKey) {
+          if (selectedIds.has(object.uuid)) selectedIds.delete(object.uuid); else selectedIds.add(object.uuid);
+          selectObject(object, true);
+          document.querySelectorAll('.scene-row').forEach((item) => item.classList.toggle('selected', selectedIds.has(item.dataset.objectId)));
+        } else { selectedIds = new Set([object.uuid]); selectObject(object); }
+      });
+      const rename = document.createElement('button');
+      rename.type='button'; rename.textContent='Rename'; rename.title='Rename object';
+      rename.addEventListener('click',()=>renameObject(object));
+      const visibility = document.createElement('button');
+      visibility.type='button'; visibility.className='visibility-toggle'; visibility.textContent=object.visible?'Shown':'Hidden';
+      visibility.addEventListener('click',()=>{commandHistory.execute(new SetVisibilityCommand(sceneStore,object.uuid,!object.visible));markDirty();refreshObjectList();updateHistoryControls();});
+      const lock = document.createElement('button');
+      lock.type='button'; lock.textContent=lockedObjectIds.has(object.uuid)?'Locked':'Lock';
+      lock.addEventListener('click',()=>{if(lockedObjectIds.has(object.uuid))lockedObjectIds.delete(object.uuid);else{lockedObjectIds.add(object.uuid);selectedIds.delete(object.uuid);}selectObject(sceneStore.getSelection(),true);refreshObjectList();});
+      row.append(selectButton,rename,visibility,lock); list.appendChild(row);
+      appendTree(object, depth + 1);
     });
-
-    row.append(selectButton, visibilityButton);
-    list.appendChild(row);
-  });
+  };
+  appendTree(currentModel);
 }
 
-function selectObject(object) {
+function selectObject(object, keepMulti = false) {
   if (object && !sceneStore.getObject(object.uuid)) return;
-  sceneStore.select(object ? object.uuid : null);
+  if (!keepMulti) selectedIds = new Set(object ? [object.uuid] : []);
+  let activeObject = object;
+  if (keepMulti && object && !selectedIds.has(object.uuid)) {
+    const remaining = [...selectedIds].map(id => sceneStore.getObject(id)).filter(item => item && !lockedObjectIds.has(item.uuid));
+    activeObject = remaining[remaining.length - 1] || null;
+  }
+  if (activeObject && lockedObjectIds.has(activeObject.uuid)) activeObject = null;
+  sceneStore.select(activeObject ? activeObject.uuid : null);
+  const active = sceneStore.getSelection();
+  const selected = [...selectedIds].map(id => sceneStore.getObject(id)).filter(item => item && !lockedObjectIds.has(item.uuid));
+  const selectedSet = new Set(selected);
+  const roots = selected.filter(item => { for(let parent=item.parent;parent;parent=parent.parent) if(selectedSet.has(parent)) return false; return true; });
+  multiObjectTransform.setSelection(roots, active && roots.includes(active) ? active : roots[0] || null, document.getElementById('gizmo-space').value);
   updateSelectionPanel();
-  document.querySelectorAll('.scene-row').forEach((row) => {
-    row.classList.toggle('selected', row.dataset.objectId === (object?.uuid || ''));
-  });
+  document.querySelectorAll('.scene-row').forEach(row=>row.classList.toggle('selected',selectedIds.has(row.dataset.objectId)));
 }
 
 function updateSelectionPanel() {
@@ -805,7 +1254,9 @@ function updateSelectionPanel() {
   form.querySelector('[name="sx"]').value = object?.scale.x ?? 1;
   form.querySelector('[name="sy"]').value = object?.scale.y ?? 1;
   form.querySelector('[name="sz"]').value = object?.scale.z ?? 1;
-  form.querySelectorAll('input, button').forEach((input) => { input.disabled = !object; });
+  form.querySelectorAll('input, button').forEach(input=>{input.disabled=!object;});
+  document.getElementById('reset-transform-btn').disabled=!object;
+  transformGizmo.enabled=Boolean(object&&!lockedObjectIds.has(object.uuid));
 }
 
 function updateHistoryControls() {
@@ -814,11 +1265,8 @@ function updateHistoryControls() {
 }
 
 function applyHistoryAction(action) {
-  if (action === 'undo') commandHistory.undo();
-  else commandHistory.redo();
-  refreshObjectList();
-  updateHistoryControls();
-  updateSelectionPanel();
+  const changed=action==='undo'?commandHistory.undo():commandHistory.redo();if(!changed)return;
+  markDirty();syncModelLighting();refreshObjectList();updateHistoryControls();updateSelectionPanel();syncMaterialControls();
 }
 
 function fitCamera(object) {
@@ -840,32 +1288,73 @@ function fitCamera(object) {
 
 // ---------- Scene selection and command-backed editing ----------
 const raycaster = new THREE.Raycaster();
+transformGizmo.addEventListener('dragging-changed',event=>{
+  controls.enabled=!event.value&&!panMode;
+  if(event.value){
+    if(multiObjectTransform.objects.length>1) multiObjectTransform.begin(transformGizmo.getMode(),{x:document.getElementById('lock-axis-x').checked,y:document.getElementById('lock-axis-y').checked,z:document.getElementById('lock-axis-z').checked});
+    else {const object=sceneStore.getSelection();if(object)gizmoDragSnapshot={object,mode:transformGizmo.getMode(),position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()};}
+  } else if(multiObjectTransform.before){
+    const command=multiObjectTransform.finish();
+    if(command){commandHistory.execute(command);markDirty();syncModelLighting();updateHistoryControls();updateSelectionPanel();}
+  } else if(gizmoDragSnapshot){
+    const snap=gizmoDragSnapshot;gizmoDragSnapshot=null;const after={position:snap.object.position.clone(),rotation:snap.object.rotation.clone(),scale:snap.object.scale.clone()};
+    if(!snap.position.equals(after.position)||!snap.rotation.equals(after.rotation)||!snap.scale.equals(after.scale)){
+      const apply=value=>{snap.object.position.copy(value.position);snap.object.rotation.copy(value.rotation);snap.object.scale.copy(value.scale);snap.object.updateMatrixWorld(true);};
+      commandHistory.execute({do:()=>apply(after),undo:()=>apply(snap)});markDirty();syncModelLighting();updateHistoryControls();updateSelectionPanel();
+    }
+  }
+});
+transformGizmo.addEventListener('objectChange',()=>{
+  if(multiObjectTransform.before){multiObjectTransform.update();syncModelLighting();updateSelectionPanel();return;}
+  if(!gizmoDragSnapshot)return;const o=gizmoDragSnapshot.object,mode=gizmoDragSnapshot.mode;
+  for(const axis of ['x','y','z'])if(document.getElementById('lock-axis-'+axis).checked){if(mode==='translate')o.position[axis]=gizmoDragSnapshot.position[axis];else if(mode==='rotate')o.rotation[axis]=gizmoDragSnapshot.rotation[axis];else if(mode==='scale')o.scale[axis]=gizmoDragSnapshot.scale[axis];}
+  o.updateMatrixWorld(true);syncModelLighting();updateSelectionPanel();
+});
+document.getElementById('gizmo-translate').addEventListener('click',()=>transformGizmo.setMode('translate'));
+document.getElementById('gizmo-rotate').addEventListener('click',()=>transformGizmo.setMode('rotate'));
+document.getElementById('gizmo-scale').addEventListener('click',()=>transformGizmo.setMode('scale'));
+document.getElementById('gizmo-space').addEventListener('change',e=>{transformGizmo.setSpace(e.target.value);multiObjectTransform.setSpace(e.target.value);});
 const viewportInteraction = new ViewportInteraction({
   element: renderer.domElement, camera, scene: { children: [] }, raycaster,
-  onSelect(object) {
-    if (!object || !currentModel) return;
-    let target = object;
+  onSelect(object, hits, event) {
+    if (panMode || !currentModel) return;
+    const targetHit = (hits || []).find(hit => hit.object?.isMesh && !hit.object.userData?.editorHelper && currentModel.getObjectById(hit.object.id));
+    if (!targetHit) {
+      if (!event?.ctrlKey && !event?.metaKey && !event?.shiftKey) { selectedIds.clear(); selectObject(null); }
+      return;
+    }
+    let target = targetHit.object;
     while (target.parent && target.parent !== currentModel) target = target.parent;
-    selectObject(target);
+    if (event?.ctrlKey || event?.metaKey || event?.shiftKey) {
+      if (selectedIds.has(target.uuid)) selectedIds.delete(target.uuid); else selectedIds.add(target.uuid);
+      selectObject(target, true);
+    } else {
+      selectObject(target);
+    }
+    refreshObjectList();
   }
 });
 // Raycast only the active model; the scene wrapper is updated when a model loads.
 viewportInteraction.scene.children = scene.children;
 
 
-sceneStore.on('selection:changed', updateSelectionPanel);
-commandHistory.onChange = updateHistoryControls;
+sceneStore.on('selection:changed', () => { updateSelectionPanel(); syncMaterialControls(); });
+commandHistory.onChange=({action})=>{updateHistoryControls();if(action==='undo'||action==='redo'){markDirty();syncModelLighting();refreshObjectList();updateSelectionPanel();syncMaterialControls();}};
 
 // Opt-in test surface for browser automation. It is absent during normal use.
 if (new URLSearchParams(window.location.search).has('test')) {
   window.__GLB_VIEWER_TEST__ = Object.freeze({
     setWorkspaceView,
+    updateInspection,
+    get isDirty(){return isDirty;},
     get editorState() { return editorState; },
     get toolRegistry() { return toolRegistry; },
     get workspaceManager() { return workspaceManager; },
     get workspacePanels() { return workspacePanels; },
     get sceneRuntime() { return sceneRuntime; },
     get viewportInteraction() { return viewportInteraction; },
+    get commandPalette() { return commandPalette; },
+    get orbitPreview() { return orbitPreview; },
     setWorkspaceCollapsed(collapsed) {
       if (!activeWorkspacePanel) return;
       const name = activeWorkspacePanel.id.replace('workspace-panel-', '');
@@ -878,6 +1367,7 @@ if (new URLSearchParams(window.location.search).has('test')) {
     get workspaceButtons() { return workspaceButtons; },
     get sceneStore() { return sceneStore; },
     get commandHistory() { return commandHistory; },
+    get multiObjectTransform() { return multiObjectTransform; },
     get currentModel() { return currentModel; },
     selectObject,
     refreshObjectList,
@@ -889,30 +1379,29 @@ if (new URLSearchParams(window.location.search).has('test')) {
 document.getElementById('undo-btn').addEventListener('click', () => applyHistoryAction('undo'));
 document.getElementById('redo-btn').addEventListener('click', () => applyHistoryAction('redo'));
 
-document.getElementById('transform-form').addEventListener('submit', (event) => {
-  event.preventDefault();
-  const object = sceneStore.getSelection();
-  if (!object) return;
-  const form = event.currentTarget;
-  const number = (name) => Number(form.elements[name].value);
-  const transform = {
-    position: { x: number('x'), y: number('y'), z: number('z') },
-    rotation: {
-      x: THREE.MathUtils.degToRad(number('rx')),
-      y: THREE.MathUtils.degToRad(number('ry')),
-      z: THREE.MathUtils.degToRad(number('rz')),
-      order: object.rotation.order
-    },
-    scale: { x: number('sx'), y: number('sy'), z: number('sz') }
-  };
-  commandHistory.execute(new SetTransformCommand(sceneStore, object.uuid, transform));
-  updateHistoryControls();
-  updateSelectionPanel();
+document.getElementById('transform-form').addEventListener('submit',event=>{
+  event.preventDefault();const active=sceneStore.getSelection();if(!active)return;const form=event.currentTarget,n=name=>Number(form.elements[name].value);
+  const target={position:new THREE.Vector3(n('x'),n('y'),n('z')),rotation:new THREE.Euler(THREE.MathUtils.degToRad(n('rx')),THREE.MathUtils.degToRad(n('ry')),THREE.MathUtils.degToRad(n('rz')),active.rotation.order),scale:new THREE.Vector3(n('sx'),n('sy'),n('sz'))};
+  let objects=[...selectedIds].map(id=>sceneStore.getObject(id)).filter(o=>o&&!lockedObjectIds.has(o.uuid));if(!objects.includes(active)&&!lockedObjectIds.has(active.uuid))objects.push(active);if(!objects.length)return;
+  const selectedSet=new Set(objects);objects=objects.filter(object=>{for(let parent=object.parent;parent;parent=parent.parent)if(selectedSet.has(parent))return false;return true;});
+  const snapshots=objects.map(object=>({object,position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()}));
+  const dp=target.position.clone().sub(active.position),dr=[target.rotation.x-active.rotation.x,target.rotation.y-active.rotation.y,target.rotation.z-active.rotation.z],ds=target.scale.clone().sub(active.scale);
+  const restore=()=>snapshots.forEach(v=>{v.object.position.copy(v.position);v.object.rotation.copy(v.rotation);v.object.scale.copy(v.scale);v.object.updateMatrixWorld(true);});
+  const apply=()=>snapshots.forEach(v=>{v.object.position.copy(v.position).add(dp);v.object.rotation.set(v.rotation.x+dr[0],v.rotation.y+dr[1],v.rotation.z+dr[2],v.rotation.order);v.object.scale.copy(v.scale).add(ds);v.object.updateMatrixWorld(true);});
+  commandHistory.execute({do:apply,undo:restore});syncModelLighting();markDirty();updateHistoryControls();updateSelectionPanel();
+});
+document.getElementById('reset-transform-btn').addEventListener('click',()=>{
+  const objects=[...selectedIds].map(id=>sceneStore.getObject(id)).filter(o=>o&&!lockedObjectIds.has(o.uuid));if(!objects.length)return;
+  const before=objects.map(object=>({object,position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()}));
+  commandHistory.execute({do:()=>objects.forEach(o=>{o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.set(1,1,1);o.updateMatrixWorld(true);}),undo:()=>before.forEach(v=>{v.object.position.copy(v.position);v.object.rotation.copy(v.rotation);v.object.scale.copy(v.scale);v.object.updateMatrixWorld(true);})});
+  syncModelLighting();markDirty();updateHistoryControls();updateSelectionPanel();
 });
 
 updateSelectionPanel();
 updateHistoryControls();
+restoreEditorPreferences();
 
+window.addEventListener('beforeunload',(event)=>{if(!isDirty)return;event.preventDefault();event.returnValue='';});
 window.addEventListener('keydown', (event) => {
   if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
   const activeTag = document.activeElement?.tagName;
@@ -922,6 +1411,39 @@ window.addEventListener('keydown', (event) => {
   event.preventDefault();
   if (key === 'y' || (key === 'z' && event.shiftKey)) applyHistoryAction('redo');
   else applyHistoryAction('undo');
+});
+
+document.getElementById('export-glb-btn').addEventListener('click',()=>{
+  if(!currentModel){window.alert('Open a model before exporting.');return;}
+  const exportButton=document.getElementById('export-glb-btn');
+  if(exportButton.disabled)return;
+  exportButton.disabled=true;
+  const exportRevision=dirtyRevision;
+  const exporter=new GLTFExporter();
+  const displayMode=viewportWorkspace.mode;
+  // Export the source materials, not temporary viewport-only shading.
+  if(displayMode!=='material'){
+    viewportWorkspace.restoreMaterials(currentModel);
+    viewportWorkspace.mode='material';
+  }
+  const restoreDisplayMode=()=>{
+    if(displayMode!=='material')viewportWorkspace.setShading(displayMode);
+    exportButton.disabled=false;
+  };
+  exporter.parse(currentModel,(result)=>{
+    try{
+      const blob=new Blob([result],{type:'model/gltf-binary'}),url=URL.createObjectURL(blob);
+      const link=document.createElement('a');link.href=url;
+      const base=(state.fileName||'model').replace(/\.glb$/i,'');link.download=base+'-edited.glb';
+      document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      if(dirtyRevision===exportRevision){isDirty=false;document.title='GLB Viewer';}
+    }catch(error){console.error(error);window.alert('The GLB was generated but could not be downloaded.');}
+    finally{restoreDisplayMode();}
+  },(error)=>{
+    console.error(error);restoreDisplayMode();
+    window.alert('Export failed. See the developer console for details.');
+  },{binary:true,onlyVisible:false,animations:currentAnimations});
 });
 
 // ---------- Drag and drop ----------
@@ -1016,6 +1538,7 @@ function animate() {
   performanceMonitor.recordFrame(dt);
   if (mixer) mixer.update(dt);
   controls.update();
+  orbitPreview.update(dt);
   renderer.render(scene, camera);
 }
 animate();

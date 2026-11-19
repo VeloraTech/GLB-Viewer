@@ -30,13 +30,18 @@ try {
     'src/editor/WorkspaceManager.js',
     'src/editor/ViewportInteraction.js',
     'src/editor/SceneRuntime.js',
+    'src/editor/CommandPalette.js',
+    'src/editor/OrbitPreview.js',
+    'src/editor/ViewportWorkspace.js',
+    'src/editor/MultiObjectTransform.js',
     'src/core/ResourceDisposer.js',
     'src/core/PerformanceMonitor.js',
     'src/core/HardwareProviders.js',
     'src/core/AdaptiveQualityPolicy.js',
     'src/core/SceneStore.js',
     'src/core/CommandHistory.js',
-    'src/core/SceneCommands.js'
+    'src/core/SceneCommands.js',
+    'src/core/ModelInspector.js'
   )
   $stageRoot = Join-Path $UpdateRoot ('.staging-' + [guid]::NewGuid().ToString('N'))
   $bundleRoot = Join-Path $UpdateRoot $commitSha

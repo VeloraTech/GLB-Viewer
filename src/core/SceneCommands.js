@@ -171,3 +171,77 @@ export class ReparentObjectCommand {
     this.sceneStore.reparentObject(this.objectId, this.snapshot.oldParent, this.snapshot.oldIndex);
   }
 }
+
+export class RenameObjectCommand {
+  constructor(sceneStore, objectId, name) {
+    requireSceneMutationApi(sceneStore, 'requireObject');
+    this.sceneStore=sceneStore;this.objectId=String(objectId);this.name=String(name).trim();
+    if(!this.name)throw new TypeError('Object name cannot be empty.');
+    this.previousName=null;
+  }
+  do(){
+    const object=this.sceneStore.requireObject(this.objectId);
+    if(this.previousName===null)this.previousName=object.name||'';
+    object.name=this.name;
+    this.sceneStore.emit?.('object:changed',{action:'rename',object});
+    this.sceneStore.emit?.('scene:changed',{action:'rename',object});
+  }
+  undo(){
+    if(this.previousName===null)throw new Error('Cannot undo a rename before it executes.');
+    const object=this.sceneStore.requireObject(this.objectId);object.name=this.previousName;
+    this.sceneStore.emit?.('object:changed',{action:'rename',object});
+    this.sceneStore.emit?.('scene:changed',{action:'rename',object});
+  }
+}
+
+
+/**
+ * Reversible material-property edit. Values with clone()/copy() (for example
+ * THREE.Color) are snapshotted by value; textures and other resource objects
+ * are retained by reference so undo can restore the original resource.
+ */
+export class SetMaterialPropertiesCommand {
+  constructor(material, properties) {
+    if (!material || typeof material !== 'object') {
+      throw new TypeError('A material object is required.');
+    }
+    if (!properties || typeof properties !== 'object' || Array.isArray(properties) ||
+        Object.keys(properties).length === 0) {
+      throw new TypeError('At least one material property is required.');
+    }
+    this.material = material;
+    this.properties = { ...properties };
+    this.previous = null;
+  }
+
+  snapshot() {
+    const values = {};
+    for (const key of Object.keys(this.properties)) {
+      const value = this.material[key];
+      values[key] = value && !value.isTexture && typeof value.clone === 'function' ? value.clone() : value;
+    }
+    return values;
+  }
+
+  apply(values) {
+    for (const [key, value] of Object.entries(values)) {
+      const current = this.material[key];
+      if (current && value && !current.isTexture && !value.isTexture && typeof current.copy === 'function' && typeof value === 'object') {
+        current.copy(value);
+      } else {
+        this.material[key] = value;
+      }
+    }
+    this.material.needsUpdate = true;
+  }
+
+  do() {
+    if (this.previous === null) this.previous = this.snapshot();
+    this.apply(this.properties);
+  }
+
+  undo() {
+    if (this.previous === null) throw new Error('Cannot undo a material edit before it executes.');
+    this.apply(this.previous);
+  }
+}
