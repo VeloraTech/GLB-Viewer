@@ -51,9 +51,29 @@
   #workspace-rail button { position:relative; width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:7px; color:#aeb5c1; background:transparent; cursor:pointer; }
   #workspace-rail button:hover,#workspace-rail button.active { color:#fff; background:rgba(255,255,255,.13); }
   #workspace-rail button.active { box-shadow:inset 2px 0 #e59b52; }
-  .tool-icon { width:19px; height:19px; display:block; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
+  #workspace-rail ion-icon { width:20px; height:20px; pointer-events:none; }
   [data-tooltip]::after { content:attr(data-tooltip); position:absolute; right:calc(100% + 10px); top:50%; transform:translate(4px,-50%); padding:6px 9px; border:1px solid rgba(255,255,255,.14); border-radius:5px; background:#202329; color:#f5f5f5; font:500 11px/1.2 system-ui,sans-serif; white-space:nowrap; opacity:0; visibility:hidden; pointer-events:none; z-index:100; box-shadow:0 5px 18px rgba(0,0,0,.28); transition:opacity .12s ease,transform .12s ease,visibility .12s; }
   [data-tooltip]:hover::after,[data-tooltip]:focus-visible::after { opacity:1; visibility:visible; transform:translate(0,-50%); }
+  .editor-panel { position:fixed; top:96px; right:70px; width:340px; height:min(560px,calc(100vh - 116px)); min-width:280px; min-height:220px; max-width:calc(100vw - 90px); max-height:calc(100vh - 24px); display:flex; flex-direction:column; overflow:hidden; resize:both; border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(29,31,35,.97); color:#eee; pointer-events:auto; z-index:35; backdrop-filter:blur(16px); box-shadow:0 18px 48px rgba(0,0,0,.38); font-size:12px; }
+  .editor-panel[hidden] { display:none; }
+  .editor-panel-header { min-height:42px; flex:0 0 42px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.035); cursor:grab; touch-action:none; user-select:none; }
+  .editor-panel-header:active { cursor:grabbing; }
+  .editor-panel-header h2 { font-size:12px; font-weight:650; letter-spacing:.035em; }
+  .editor-panel-close { width:26px; height:26px; border:0; border-radius:5px; color:inherit; background:rgba(255,255,255,.08); cursor:pointer; }
+  .editor-panel-content { flex:1; min-height:0; overflow:auto; padding:14px; }
+  .editor-panel-content::-webkit-scrollbar { width:8px; }
+  .editor-panel-content::-webkit-scrollbar-thumb { background:rgba(255,255,255,.16); border-radius:8px; }
+  .editor-panel button:focus-visible,.editor-panel input:focus-visible { outline:2px solid #e59b52; outline-offset:2px; }
+  .editor-panel h3 { font-size:11px; color:#a7afbb; margin:14px 0 7px; text-transform:uppercase; letter-spacing:.08em; }
+  .editor-panel button,.editor-panel input { font:inherit; }
+  body.light .editor-panel { background:rgba(249,250,252,.98); color:#222; border-color:rgba(0,0,0,.16); }
+  body.light .editor-panel-header { border-color:rgba(0,0,0,.1); background:rgba(0,0,0,.025); }
+  body.light .editor-panel-close { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
+  body.light .editor-panel h3,body.light .editor-panel .workspace-note,body.light .editor-panel #selected-name,body.light .editor-panel #scene-hint,body.light .editor-panel .light-control { color:#626b78; }
+  body.light .editor-panel button { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
+  body.light .editor-panel input[type=number] { color:#222; border-color:rgba(0,0,0,.16); background:#fff; }
+  body.light .editor-panel input[type=range] { accent-color:#426fa8; }
+  @media (max-width:700px) { .editor-panel { top:64px; right:62px; width:min(340px,calc(100vw - 78px)); height:calc(100vh - 88px); max-width:calc(100vw - 70px); } }
   #workspace-main { position:fixed; top:96px; right:70px; width:340px; height:min(620px,calc(100vh - 120px)); min-width:280px; min-height:220px; max-width:calc(100vw - 90px); max-height:calc(100vh - 24px); display:flex; flex-direction:column; overflow:hidden; resize:both; border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(29,31,35,.97); color:#eee; pointer-events:auto; z-index:35; backdrop-filter:blur(16px); box-shadow:0 18px 48px rgba(0,0,0,.38); font-size:12px; }
   #workspace-main[hidden] { display:none; }
   #workspace-header { min-height:42px; flex:0 0 42px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.035); cursor:grab; touch-action:none; user-select:none; }
@@ -117,22 +137,14 @@
     <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
   </div>
-  <svg id="tool-icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
-    <symbol id="icon-scene" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 8 9 5 9-5M3 8v9l9 5 9-5V8M12 13v9"/></symbol>
-    <symbol id="icon-objects" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="7" cy="5" r="1.5"/><circle cx="7" cy="12" r="1.5"/><circle cx="7" cy="19" r="1.5"/></symbol>
-    <symbol id="icon-transform" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-3 3m3-3 3 3M21 12l-3-3m3 3-3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3"/></symbol>
-    <symbol id="icon-lighting" viewBox="0 0 24 24"><path d="M9 18h6m-5 3h4m-2-19a7 7 0 0 0-4 12.7c.8.6 1 1.1 1 2.3h6c0-1.2.2-1.7 1-2.3A7 7 0 0 0 12 2Z"/></symbol>
-    <symbol id="icon-plugins" viewBox="0 0 24 24"><path d="M9 3v4m6-4v4M8 7h8a2 2 0 0 1 2 2v3h3v4h-3v3H6v-3H3v-4h3V9a2 2 0 0 1 2-2Z"/></symbol>
-    <symbol id="icon-extensions" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
-  </svg>
   <aside id="scene-panel" aria-label="Editor tools">
     <nav id="workspace-rail" aria-label="Workspace tools">
-      <button type="button" class="active" data-workspace="scene" data-tooltip="Scene" aria-label="Scene" aria-controls="workspace-main" aria-pressed="true"><svg class="tool-icon" aria-hidden="true"><use href="#icon-scene"></use></svg></button>
-      <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-objects"></use></svg></button>
-      <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-transform"></use></svg></button>
-      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-lighting"></use></svg></button>
-      <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-plugins"></use></svg></button>
-      <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-extensions"></use></svg></button>
+      <button type="button" class="active" data-workspace="scene" data-tooltip="Scene" aria-label="Scene" aria-controls="workspace-main" aria-pressed="true"><ion-icon name="layers-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="cube-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="move-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="sunny-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="puzzle-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="grid-outline" aria-hidden="true"></ion-icon></button>
     </nav>
   </aside>
   <section id="workspace-main" role="region" aria-label="Scene tool panel">
@@ -193,6 +205,8 @@
 
 
 
+<script type="module" src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.js"></script>
 <script type="importmap">
 {
   "imports": {
@@ -214,6 +228,11 @@ import { evaluateAdaptiveQuality } from './src/core/AdaptiveQualityPolicy.js';
 import { SceneStore } from './src/core/SceneStore.js';
 import { CommandHistory } from './src/core/CommandHistory.js';
 import { SetTransformCommand, SetVisibilityCommand } from './src/core/SceneCommands.js';
+import { EditorStateStore } from './src/editor/EditorStateStore.js';
+import { ToolRegistry } from './src/editor/ToolRegistry.js';
+import { WorkspaceManager } from './src/editor/WorkspaceManager.js';
+import { ViewportInteraction } from './src/editor/ViewportInteraction.js';
+import { SceneRuntime } from './src/editor/SceneRuntime.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
 const performanceMonitor = new PerformanceMonitor();
@@ -384,73 +403,141 @@ scene.add(rimLight);
 
 // Register the fully initialized base scene before user models are loaded.
 const sceneStore = new SceneStore(scene);
+const sceneRuntime = new SceneRuntime({ scene, sceneStore, disposeResources: disposeObjectResources });
 const commandHistory = new CommandHistory({ limit: 100 });
  
 // ---------- Editor workspace navigation and persisted layout ----------
-const workspace = document.getElementById('workspace-main');
-const workspaceTitle = document.getElementById('workspace-title');
+const workspaceShell = document.getElementById('workspace-main');
 const workspaceViews = [...document.querySelectorAll('.workspace-view')];
 const workspaceButtons = [...document.querySelectorAll('[data-workspace]')];
-const collapseButton = document.getElementById('workspace-collapse');
+const workspaceManager = new WorkspaceManager();
+const editorState = new EditorStateStore();
+const toolRegistry = new ToolRegistry();
+const workspacePanels = new Map();
+let activeWorkspacePanel = null;
+
+const editorTools = [
+  { id: 'scene', label: 'Scene', icon: 'layers-outline', order: 1 },
+  { id: 'objects', label: 'Objects / Outliner', icon: 'cube-outline', order: 2 },
+  { id: 'transform', label: 'Transform', icon: 'move-outline', order: 3 },
+  { id: 'lighting', label: 'Lighting', icon: 'sunny-outline', order: 4 },
+  { id: 'plugins', label: 'Plugins', icon: 'puzzle-outline', order: 5 },
+  { id: 'extensions', label: 'Extensions', icon: 'grid-outline', order: 6 },
+];
+editorTools.forEach((tool) => toolRegistry.register(tool));
+
+workspaceViews.forEach((view, index) => {
+  const name = view.dataset.view;
+  const panel = document.createElement('section');
+  panel.className = 'editor-panel';
+  panel.id = `workspace-panel-${name}`;
+  panel.setAttribute('role', 'region');
+  panel.setAttribute('aria-label', `${name[0].toUpperCase() + name.slice(1)} editor panel`);
+
+  const header = document.createElement('header');
+  header.className = 'editor-panel-header';
+  header.dataset.panelDragHandle = '';
+  const title = document.createElement('h2');
+  title.textContent = name[0].toUpperCase() + name.slice(1);
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'editor-panel-close';
+  close.textContent = '×';
+  close.setAttribute('aria-label', `Close ${name} panel`);
+  close.title = `Close ${name} panel`;
+  header.append(title, close);
+
+  const content = document.createElement('div');
+  content.className = 'editor-panel-content';
+  view.hidden = false;
+  content.append(view);
+  panel.append(header, content);
+  document.body.append(panel);
+
+  workspaceManager.register(name, panel, {
+    handle: header,
+    defaultRect: {
+      x: Math.max(12, innerWidth - 420 - (index % 3) * 24),
+      y: 92 + (index % 3) * 34,
+      width: 340,
+      height: Math.min(560, innerHeight - 116),
+    },
+  });
+  panel.hidden = true;
+  panel.addEventListener('pointerdown', () => {
+    activeWorkspacePanel = panel;
+    syncWorkspaceRail();
+  });
+  workspacePanels.set(name, panel);
+  close.addEventListener('click', () => {
+    workspaceManager.close(name);
+    const button = workspaceButtons.find((item) => item.dataset.workspace === name);
+    button?.setAttribute('aria-expanded', 'false');
+    button?.classList.remove('active');
+    if (activeWorkspacePanel === panel) activeWorkspacePanel = null;
+    syncWorkspaceRail();
+  });
+});
+workspaceShell.remove();
+
+function syncWorkspaceRail() {
+  workspaceButtons.forEach((button) => {
+    const panel = workspacePanels.get(button.dataset.workspace);
+    const open = Boolean(panel && !panel.hidden);
+    button.setAttribute('aria-controls', panel?.id || '');
+    button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-pressed', String(open && activeWorkspacePanel === panel));
+    button.classList.toggle('active', activeWorkspacePanel === panel && open);
+  });
+}
 function setWorkspaceView(name) {
-  workspaceViews.forEach((view) => { view.hidden = view.dataset.view !== name; });
+  const panel = workspacePanels.get(name);
+  if (!panel) return;
+  activeWorkspacePanel = panel;
+  workspaceManager.open(name);
+  editorState.patch('activeTool', name, 'tool:activate');
   workspaceButtons.forEach((button) => {
     const active = button.dataset.workspace === name;
-    button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
+    button.classList.toggle('active', active);
   });
-  workspaceTitle.textContent = name[0].toUpperCase() + name.slice(1);
-  workspace.setAttribute('aria-label', name[0].toUpperCase() + name.slice(1) + ' tool panel');
-  workspace.hidden = false;
-  workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', String(button.dataset.workspace === name)));
   localStorage.setItem('glb-workspace-view', name);
+  syncWorkspaceRail();
 }
 workspaceButtons.forEach((button) => button.addEventListener('click', () => {
-  if (button.classList.contains('active') && !workspace.hidden) {
-    workspace.hidden = true;
-    button.setAttribute('aria-expanded', 'false');
+  const panel = workspacePanels.get(button.dataset.workspace);
+  if (panel && !panel.hidden) {
+    workspaceManager.close(button.dataset.workspace);
+    if (activeWorkspacePanel === panel) activeWorkspacePanel = null;
+    syncWorkspaceRail();
     return;
   }
   setWorkspaceView(button.dataset.workspace);
 }));
 
-const workspaceHeader = document.getElementById('workspace-header');
-let savedPosition = null;
-try { savedPosition = JSON.parse(localStorage.getItem('glb-workspace-position') || 'null'); } catch { savedPosition = null; }
-if (savedPosition && Number.isFinite(savedPosition.left) && Number.isFinite(savedPosition.top)) {
-  workspace.style.left = Math.max(8, Math.min(window.innerWidth - 120, savedPosition.left)) + 'px';
-  workspace.style.top = Math.max(8, Math.min(window.innerHeight - 100, savedPosition.top)) + 'px';
-  workspace.style.right = 'auto';
-}
-let workspaceDrag = null;
-workspaceHeader.addEventListener('pointerdown', (event) => {
-  if (event.target.closest('button')) return;
-  const rect = workspace.getBoundingClientRect();
-  workspaceDrag = { pointerId: event.pointerId, x: event.clientX - rect.left, y: event.clientY - rect.top };
-  workspaceHeader.setPointerCapture(event.pointerId);
+toolRegistry.subscribe(({ tools }) => {
+  const byId = new Map(workspaceButtons.map((button) => [button.dataset.workspace, button]));
+  tools.forEach((tool) => {
+    const button = byId.get(tool.id);
+    if (!button) return;
+    const icon = button.querySelector('ion-icon');
+    if (icon) icon.name = tool.icon;
+    button.setAttribute('aria-label', tool.label);
+    button.dataset.tooltip = tool.label;
+  });
 });
-workspaceHeader.addEventListener('pointermove', (event) => {
-  if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
-  const left = Math.max(0, Math.min(window.innerWidth - Math.min(workspace.offsetWidth, 80), event.clientX - workspaceDrag.x));
-  const top = Math.max(0, Math.min(window.innerHeight - 48, event.clientY - workspaceDrag.y));
-  workspace.style.left = left + 'px';
-  workspace.style.top = top + 'px';
-  workspace.style.right = 'auto';
+editorState.subscribe(({ state: next }) => {
+  document.documentElement.dataset.activeTool = next.activeTool || '';
 });
-function finishWorkspaceDrag(event) {
-  if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
-  workspaceDrag = null;
-  const rect = workspace.getBoundingClientRect();
-  try { localStorage.setItem('glb-workspace-position', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) })); } catch {}
-}
-workspaceHeader.addEventListener('pointerup', finishWorkspaceDrag);
-workspaceHeader.addEventListener('pointercancel', finishWorkspaceDrag);
-collapseButton.addEventListener('click', () => { workspace.hidden = true; workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); });
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !workspace.hidden) { workspace.hidden = true; workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); }
+  if (event.key !== 'Escape' || !activeWorkspacePanel) return;
+  const name = activeWorkspacePanel.id.replace('workspace-panel-', '');
+  workspaceManager.close(name);
+  activeWorkspacePanel = null;
+  syncWorkspaceRail();
 });
 const savedWorkspace = localStorage.getItem('glb-workspace-view');
-if (workspaceViews.some((view) => view.dataset.view === savedWorkspace)) setWorkspaceView(savedWorkspace);
+if (workspacePanels.has(savedWorkspace)) setWorkspaceView(savedWorkspace);
 else setWorkspaceView('scene');
 
 // Lighting controls update the actual scene lights, not just their labels.
@@ -604,14 +691,13 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       const nextModel = gltf.scene;
       const previousModel = currentModel;
       if (previousModel) {
-        sceneStore.removeObject(previousModel.uuid);
         commandHistory.clear();
         clearCurrentAnimation();
-        disposeObjectResources(previousModel);
       }
 
+      // SceneRuntime owns model replacement and GPU-resource disposal.
+      sceneRuntime.replaceModel(nextModel);
       currentModel = nextModel;
-      sceneStore.addObject(currentModel, scene);
       mixer = new THREE.AnimationMixer(currentModel);
       gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
 
@@ -754,27 +840,18 @@ function fitCamera(object) {
 
 // ---------- Scene selection and command-backed editing ----------
 const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-let pointerDown = null;
+const viewportInteraction = new ViewportInteraction({
+  element: renderer.domElement, camera, scene: { children: [] }, raycaster,
+  onSelect(object) {
+    if (!object || !currentModel) return;
+    let target = object;
+    while (target.parent && target.parent !== currentModel) target = target.parent;
+    selectObject(target);
+  }
+});
+// Raycast only the active model; the scene wrapper is updated when a model loads.
+viewportInteraction.scene.children = scene.children;
 
-renderer.domElement.addEventListener('pointerdown', (event) => {
-  pointerDown = { x: event.clientX, y: event.clientY, button: event.button };
-});
-renderer.domElement.addEventListener('pointerup', (event) => {
-  if (!pointerDown || pointerDown.button !== 0) return;
-  const moved = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y);
-  pointerDown = null;
-  if (moved > 5 || !currentModel) return;
-  const bounds = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-  pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-  raycaster.setFromCamera(pointer, camera);
-  const hit = raycaster.intersectObject(currentModel, true)[0];
-  if (!hit) return;
-  let target = hit.object;
-  while (target.parent && target.parent !== currentModel) target = target.parent;
-  selectObject(target);
-});
 
 sceneStore.on('selection:changed', updateSelectionPanel);
 commandHistory.onChange = updateHistoryControls;
@@ -783,8 +860,19 @@ commandHistory.onChange = updateHistoryControls;
 if (new URLSearchParams(window.location.search).has('test')) {
   window.__GLB_VIEWER_TEST__ = Object.freeze({
     setWorkspaceView,
-    setWorkspaceCollapsed(collapsed) { workspace.hidden = Boolean(collapsed); },
-    get workspace() { return workspace; },
+    get editorState() { return editorState; },
+    get toolRegistry() { return toolRegistry; },
+    get workspaceManager() { return workspaceManager; },
+    get workspacePanels() { return workspacePanels; },
+    get sceneRuntime() { return sceneRuntime; },
+    get viewportInteraction() { return viewportInteraction; },
+    setWorkspaceCollapsed(collapsed) {
+      if (!activeWorkspacePanel) return;
+      const name = activeWorkspacePanel.id.replace('workspace-panel-', '');
+      if (collapsed) workspaceManager.close(name); else workspaceManager.open(name);
+      syncWorkspaceRail();
+    },
+    get workspace() { return activeWorkspacePanel; },
     get controls() { return controls; },
     get lights() { return { ambient, key: dirLight, fill: fillLight }; },
     get workspaceButtons() { return workspaceButtons; },

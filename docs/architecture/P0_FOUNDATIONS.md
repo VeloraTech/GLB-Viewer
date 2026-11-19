@@ -92,3 +92,40 @@ The viewer exposes a read-only test surface as `window.__GLB_VIEWER_TEST__` only
 - Review privacy/data flows and ensure diagnostics remain local by default.
 
 Do not treat this branch as completion of P0. It is the first isolated implementation slice.
+
+
+## Editor foundation implementation slice (in progress)
+
+The P0 editor branch adds a framework-independent editor layer under `src/editor/`:
+
+- `EditorStateStore`: observable, serializable editor state with revisioned updates and nested patches.
+- `ToolRegistry`: validated registration, deterministic ordering, and change notifications for tools.
+- `WorkspaceManager`: panel registration, independent open/close/focus operations, pointer dragging, viewport clamping, and persisted panel rectangles.
+- `ViewportInteraction`: click-versus-drag filtering and raycast-based object selection; OrbitControls remains responsible for orbit, pan, and zoom.
+- `SceneRuntime`: a lifecycle boundary for replacing and disposing the active model through SceneStore.
+
+The actual `viewer.html` now imports these modules, registers the Scene / Objects / Transform / Lighting / Plugins / Extensions tools, and routes active tool state through EditorStateStore. The workspace window uses WorkspaceManager for persisted dragging and panel focus. Model replacement uses SceneRuntime rather than duplicating scene removal and GPU-resource disposal in the GLTF callback. The tool rail uses Ionicons web components and named Ionicons glyphs rather than hand-authored SVG symbols.
+
+### Startup viewer refresh
+
+The Windows launcher now checks `scripts/update-viewer.ps1` before starting its local HTTP server. The updater:
+
+- Resolves the current `main` commit once and downloads the viewer plus its editor/core module dependencies from that exact immutable commit.
+- Skips the download when the installed commit marker already matches.
+- Stages and validates the complete asset set before activation.
+- Installs immutable versioned bundles under the current user's LocalAppData directory, so normal launches do not need administrator permission to update Program Files.
+- Atomically switches a small active-commit pointer only after the complete bundle is ready; an interrupted download leaves the previous bundle active.
+- Treats network failures as non-fatal and keeps the currently installed viewer.
+- Does not upload model files or diagnostics.
+
+The launcher caps the update check at 25 seconds and continues with the installed viewer if the check cannot complete. The local HTTP server serves active per-user bundle files first and falls back to the installer directory for static assets such as Three.js. The updater log, active bundle pointer, and versioned update bundles are stored under the current Windows user's LocalAppData folder. This avoids requiring administrator rights to update files beneath Program Files. The Inno Setup installer now includes the editor modules and updater script.
+
+This is an update mechanism, not a signed software-update channel: transport relies on HTTPS/TLS to GitHub and the script performs content sanity checks, not publisher-signature verification. A future release should add a signed manifest or pinned release-key verification before treating updates as a stronger supply-chain trust boundary.
+
+### Still outstanding before P0 can be called complete
+
+- Floating tool panels are now independent, draggable, resizable, closable, and can remain open together. Docking/splitting, snapping, and richer workspace layout presets remain.
+- Scene setup, renderer configuration, camera configuration, lighting, loading, and animation are not yet fully separated into dedicated runtime services.
+- Transform gizmos, multi-selection, nested outliner hierarchy, viewport shading modes, grid/axes controls, and keyboard shortcut registration remain to be implemented.
+- Ionicons currently load from the official Ionicons CDN; they are not yet bundled locally, so first-time icon rendering requires internet access. This should be vendored for fully offline installations.
+- Browser interaction testing and a full Windows installer build are still required. Do not mark this slice as P0 complete until CI and runtime checks pass.
