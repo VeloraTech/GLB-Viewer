@@ -464,6 +464,10 @@ workspaceViews.forEach((view, index) => {
     },
   });
   panel.hidden = true;
+  panel.addEventListener('pointerdown', () => {
+    activeWorkspacePanel = panel;
+    syncWorkspaceRail();
+  });
   workspacePanels.set(name, panel);
   close.addEventListener('click', () => {
     workspaceManager.close(name);
