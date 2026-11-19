@@ -9,6 +9,19 @@ export class WorkspaceManager {
     this.root = root; this.storage = storage; this.storageKey = storageKey; this.viewport = viewport;
     this.panels = new Map(); this.drag = null;
     this.layout = this.readLayout();
+    this.resizeObserver = typeof ResizeObserver === "function"
+      ? new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            const id = entry.target.dataset.workspacePanelId;
+            const panel = this.panels.get(id);
+            if (!panel) continue;
+            panel.rect.width = Math.round(entry.contentRect.width);
+            panel.rect.height = Math.round(entry.contentRect.height);
+            this.layout[id] = { ...panel.rect };
+          }
+          this.save();
+        })
+      : null;
     this.onPointerMove = (event) => this.move(event);
     this.onPointerUp = () => this.stopDrag();
     root.addEventListener("pointermove", this.onPointerMove);
@@ -22,7 +35,9 @@ export class WorkspaceManager {
     const rect = this.layout[id] || defaultRect;
     const panel = { id, element, handle, rect: { x: rect.x ?? 40, y: rect.y ?? 80, width: rect.width ?? 340, height: rect.height ?? 480 } };
     this.panels.set(id, panel);
+    element.dataset.workspacePanelId = id;
     this.apply(panel);
+    this.resizeObserver?.observe(element);
     handle?.addEventListener("pointerdown", (event) => this.startDrag(event, panel));
     element.addEventListener("pointerdown", () => this.focus(id));
     return () => this.unregister(id);
@@ -56,11 +71,16 @@ export class WorkspaceManager {
   }
   stopDrag() { if (!this.drag) return; this.drag = null; this.save(); }
   require(id) { const p = this.panels.get(id); if (!p) throw new Error(`Unknown workspace panel "${id}".`); return p; }
-  unregister(id) { const p = this.panels.get(id); if (!p) return false; this.panels.delete(id); return true; }
+  unregister(id) {
+    const p = this.panels.get(id); if (!p) return false;
+    this.resizeObserver?.unobserve(p.element);
+    this.panels.delete(id); return true;
+  }
   dispose() {
     this.root.removeEventListener("pointermove", this.onPointerMove);
     this.root.removeEventListener("pointerup", this.onPointerUp);
     this.root.removeEventListener("pointercancel", this.onPointerUp);
+    this.resizeObserver?.disconnect();
     this.panels.clear();
   }
 }
