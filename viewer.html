@@ -1203,7 +1203,7 @@ function refreshObjectList() {
       visibility.addEventListener('click',()=>{commandHistory.execute(new SetVisibilityCommand(sceneStore,object.uuid,!object.visible));markDirty();refreshObjectList();updateHistoryControls();});
       const lock = document.createElement('button');
       lock.type='button'; lock.textContent=lockedObjectIds.has(object.uuid)?'Locked':'Lock';
-      lock.addEventListener('click',()=>{if(lockedObjectIds.has(object.uuid))lockedObjectIds.delete(object.uuid);else lockedObjectIds.add(object.uuid);refreshObjectList();});
+      lock.addEventListener('click',()=>{if(lockedObjectIds.has(object.uuid))lockedObjectIds.delete(object.uuid);else{lockedObjectIds.add(object.uuid);selectedIds.delete(object.uuid);}selectObject(sceneStore.getSelection(),true);refreshObjectList();});
       row.append(selectButton,rename,visibility,lock); list.appendChild(row);
       appendTree(object, depth + 1);
     });
