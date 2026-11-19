@@ -56,28 +56,6 @@ export class MultiObjectTransform {
     this.proxy.updateMatrixWorld(true);
   }
 
-  begin() {
-    if (this.objects.length < 2) return null;
-    this.scene.updateMatrixWorld(true);
-    this.proxy.updateMatrixWorld(true);
-    this.before = this.objects.map(object => ({
-      object,
-      position: object.position.clone(),
-      quaternion: object.quaternion.clone(),
-      rotation: object.rotation.clone(),
-      scale: object.scale.clone(),
-      world: object.matrixWorld.clone(),
-      parentWorldInverse: object.parent
-        ? object.parent.matrixWorld.clone().invert()
-        : new this.THREE.Matrix4()
-    }));
-    this.startPivot = this.proxy.matrixWorld.clone();
-    this.startPivotPosition = this.proxy.position.clone();
-    this.startPivotQuaternion = this.proxy.quaternion.clone();
-    this.startPivotScale = this.proxy.scale.clone();
-    return this.before;
-  }
-
   begin(mode = 'translate', axisLocks = {}) {
     if (this.objects.length < 2) return null;
     // Capture the mode and lock state once per drag so the constraint basis
