@@ -216,7 +216,14 @@
         <label class="light-control"><span class="range-line"><span>Fill light</span><output id="fill-value">1.0</output></span><input id="fill-intensity" type="range" min="0" max="3" step=".05" value="1"></label>
         <label class="light-control"><span class="range-line"><span>Key azimuth</span><output id="azimuth-value">35°</output></span><input id="light-azimuth" type="range" min="-180" max="180" step="1" value="35"></label>
         <label class="light-control"><span class="range-line"><span>Key elevation</span><output id="elevation-value">48°</output></span><input id="light-elevation" type="range" min="5" max="85" step="1" value="48"></label>
-        <label class="light-control">Key light color <input id="key-color" type="color" value="#ffffff"></label><label class="light-control">Fill light color <input id="fill-color" type="color" value="#c8dcff"></label><label class="light-control">Rim intensity <input id="rim-intensity" type="range" min="0" max="3" step=".05" value=".65"></label><label class="light-control">Shadow strength <input id="shadow-opacity" type="range" min="0" max="1" step=".05" value=".28"></label><label><input id="shadows-toggle" type="checkbox" checked> Ground shadow</label><label class="light-control">Preset <select id="lighting-preset"><option value="studio">Studio</option><option value="soft">Soft</option><option value="dramatic">Dramatic</option><option value="neutral">Neutral</option></select></label><button id="lighting-reset" type="button">Reset lighting</button>
+        <label class="light-control">Key light color <input id="key-color" type="color" value="#ffffff"></label><label class="light-control">Fill light color <input id="fill-color" type="color" value="#c8dcff"></label><label class="light-control">Rim intensity <input id="rim-intensity" type="range" min="0" max="3" step=".05" value=".65"></label><label class="light-control">Shadow strength <input id="shadow-opacity" type="range" min="0" max="1" step=".05" value=".28"></label><label><input id="shadows-toggle" type="checkbox" checked> Ground shadow</label><label class="light-control">Preset <select id="lighting-preset"><option value="studio">Studio</option><option value="soft">Soft</option><option value="dramatic">Dramatic</option><option value="neutral">Neutral</option></select></label><h3>Additional lights</h3>
+        <div style="display:flex;gap:6px"><select id="new-light-type"><option value="point">Point</option><option value="spot">Spot</option><option value="directional">Directional</option></select><button id="add-light-btn" type="button">Add light</button></div>
+        <select id="user-light-list" aria-label="Additional lights" style="width:100%;margin-top:8px;padding:7px"><option value="">No additional lights</option></select>
+        <label class="light-control">Selected light color <input id="user-light-color" type="color" value="#ffffff" disabled></label>
+        <label class="light-control">Intensity <input id="user-light-intensity" type="range" min="0" max="10" step=".05" value="1" disabled></label>
+        <div id="user-light-position" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"><label>X <input id="user-light-x" type="number" step=".1" value="2" disabled></label><label>Y <input id="user-light-y" type="number" step=".1" value="3" disabled></label><label>Z <input id="user-light-z" type="number" step=".1" value="2" disabled></label></div>
+        <button id="remove-light-btn" type="button" disabled>Remove selected light</button>
+        <button id="lighting-reset" type="button">Reset lighting</button>
       </section>
       <section class="workspace-view" data-view="materials" hidden><h3>Selected material</h3><p id="material-target">Select a mesh to edit its material.</p><label class="light-control">Base color <input id="material-color" type="color" value="#cccccc"></label><label class="light-control">Metalness <input id="material-metalness" type="range" min="0" max="1" step="0.01" value="0"></label><label class="light-control">Roughness <input id="material-roughness" type="range" min="0" max="1" step="0.01" value="0.7"></label><label class="light-control">Opacity <input id="material-opacity" type="range" min="0" max="1" step="0.01" value="1"></label></section><section class="workspace-view" data-view="inspect" hidden><h3>Model inspection</h3><dl id="model-inspection">Open a model to inspect it.</dl></section>
       <section class="workspace-view" data-view="plugins" hidden><h3>Plugins</h3><div class="workspace-placeholder">Plugin management will appear here when the plugin API is available.</div></section>
@@ -598,12 +605,15 @@ else setWorkspaceView('scene');
 function saveEditorPreferences(){
   const ids=['ambient-intensity','key-intensity','fill-intensity','light-azimuth','light-elevation','key-color','fill-color','rim-intensity','shadow-opacity','lighting-preset','shading-mode'];
   const values={};ids.forEach(id=>{const el=document.getElementById(id);if(el)values[id]=el.value;});
+  values.userLights=[...userLights.values()].map(entry=>({id:entry.id,name:entry.name,type:entry.type,color:'#'+entry.light.color.getHexString(),intensity:entry.light.intensity,offset:entry.offset.toArray()}));
   values.grid=document.getElementById('grid-toggle').checked;values.axes=document.getElementById('axes-toggle').checked;values.shadows=document.getElementById('shadows-toggle').checked;values.background=state.background;
   try{localStorage.setItem('glb-editor-preferences-v1',JSON.stringify(values));}catch{}
 }
 function restoreEditorPreferences(){
   let values={};try{values=JSON.parse(localStorage.getItem('glb-editor-preferences-v1')||'{}');}catch{}
   Object.entries(values).forEach(([id,value])=>{const el=document.getElementById(id);if(el&&typeof value!=='object')el.value=String(value);});
+  if(Array.isArray(values.userLights))values.userLights.forEach(saved=>{const center=modelWorldCenter(),id='user-light-'+nextUserLightId++;let light;if(saved.type==='spot'){light=new THREE.SpotLight(saved.color,saved.intensity);light.castShadow=true;}else if(saved.type==='directional'){light=new THREE.DirectionalLight(saved.color,saved.intensity);scene.add(light.target);}else light=new THREE.PointLight(saved.color,saved.intensity,0,2);const offset=new THREE.Vector3(...saved.offset);light.position.copy(center).add(offset);light.userData.editorHelper=true;scene.add(light);userLights.set(id,{id,name:saved.name,type:saved.type,light,offset});});
+  refreshUserLightList();
   if(typeof values.grid==='boolean')document.getElementById('grid-toggle').checked=values.grid;
   if(typeof values.axes==='boolean')document.getElementById('axes-toggle').checked=values.axes;
   if(typeof values.shadows==='boolean')document.getElementById('shadows-toggle').checked=values.shadows;
@@ -659,6 +669,9 @@ document.getElementById('lighting-reset').addEventListener('click', () => {
 let currentModel = null;
 let isDirty = false;
 let panMode = false;
+const userLights = new Map();
+let selectedUserLightId = null;
+let nextUserLightId = 1;
 let panPointer = null;
 let modelHomePosition = null;
 let orthographicCamera = null;
@@ -696,6 +709,52 @@ function setPanMode(enabled) {
   const button=document.getElementById('pan-mode-btn');
   button.classList.toggle('active',panMode); button.textContent=panMode?'Pan: On':'Pan';
 }
+function modelWorldCenter(){
+  if(!currentModel)return new THREE.Vector3();
+  return new THREE.Box3().setFromObject(currentModel).getCenter(new THREE.Vector3());
+}
+function refreshUserLightList(){
+  const select=document.getElementById('user-light-list'),previous=selectedUserLightId;
+  select.replaceChildren();
+  if(!userLights.size){const option=document.createElement('option');option.value='';option.textContent='No additional lights';select.append(option);selectedUserLightId=null;}
+  else userLights.forEach((entry,id)=>{const option=document.createElement('option');option.value=id;option.textContent=entry.name;select.append(option);});
+  if(previous&&userLights.has(previous)){select.value=previous;selectedUserLightId=previous;}
+  syncUserLightControls();
+}
+function syncUserLightControls(){
+  const entry=userLights.get(selectedUserLightId),ids=['user-light-color','user-light-intensity','user-light-x','user-light-y','user-light-z','remove-light-btn'];
+  ids.forEach(id=>document.getElementById(id).disabled=!entry);
+  if(!entry)return;
+  document.getElementById('user-light-color').value='#'+entry.light.color.getHexString();
+  document.getElementById('user-light-intensity').value=String(entry.light.intensity);
+  ['x','y','z'].forEach(axis=>document.getElementById('user-light-'+axis).value=String(entry.offset[axis]));
+}
+function addUserLight(type){
+  const center=modelWorldCenter(),id='user-light-'+nextUserLightId++;
+  let light;
+  if(type==='spot'){light=new THREE.SpotLight(0xffffff,1);light.angle=Math.PI/5;light.penumbra=.25;light.castShadow=true;}
+  else if(type==='directional'){light=new THREE.DirectionalLight(0xffffff,1);light.castShadow=true;scene.add(light.target);}
+  else light=new THREE.PointLight(0xffffff,1,0,2);
+  const offset=new THREE.Vector3(2,3,2);light.position.copy(center).add(offset);light.userData.editorHelper=true;scene.add(light);
+  const entry={id,name:type[0].toUpperCase()+type.slice(1)+' '+nextUserLightId, type,light,offset};
+  if(type==='spot'||type==='directional'){entry.targetOffset=new THREE.Vector3(0,0,0);light.target.position.copy(center);}
+  userLights.set(id,entry);selectedUserLightId=id;refreshUserLightList();markDirty();saveEditorPreferences();
+}
+function updateUserLight(){
+  const entry=userLights.get(selectedUserLightId);if(!entry)return;
+  entry.light.color.set(document.getElementById('user-light-color').value);
+  entry.light.intensity=Number(document.getElementById('user-light-intensity').value);
+  ['x','y','z'].forEach(axis=>{entry.offset[axis]=Number(document.getElementById('user-light-'+axis).value);});
+  syncModelLighting();markDirty();saveEditorPreferences();
+}
+document.getElementById('add-light-btn').addEventListener('click',()=>addUserLight(document.getElementById('new-light-type').value));
+document.getElementById('user-light-list').addEventListener('change',e=>{selectedUserLightId=e.target.value||null;syncUserLightControls();});
+['user-light-color','user-light-intensity','user-light-x','user-light-y','user-light-z'].forEach(id=>document.getElementById(id).addEventListener('input',updateUserLight));
+document.getElementById('remove-light-btn').addEventListener('click',()=>{
+  const entry=userLights.get(selectedUserLightId);if(!entry)return;
+  scene.remove(entry.light);if(entry.light.target?.parent)scene.remove(entry.light.target);
+  userLights.delete(selectedUserLightId);selectedUserLightId=null;refreshUserLightList();markDirty();saveEditorPreferences();
+});
 function syncModelLighting() {
   if(!currentModel)return;
   currentModel.updateWorldMatrix(true,true);
@@ -710,6 +769,7 @@ function syncModelLighting() {
   fillLight.position.set(center.x-radius*.65,center.y+radius*.25,center.z-radius*.55);
   rimLight.position.set(center.x,center.y+radius*.65,center.z-radius*.8);
   groundShadow.position.set(center.x,box.min.y-.015,center.z);
+  userLights.forEach(entry=>{entry.light.position.copy(center).add(entry.offset);if(entry.light.target)entry.light.target.position.copy(center);});
 }
 function panModelByScreenDelta(dx,dy) {
   if(!currentModel)return;
