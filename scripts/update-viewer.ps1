@@ -32,6 +32,7 @@ try {
     'src/editor/SceneRuntime.js',
     'src/editor/CommandPalette.js',
     'src/editor/OrbitPreview.js',
+    'src/editor/ViewportWorkspace.js',
     'src/core/ResourceDisposer.js',
     'src/core/PerformanceMonitor.js',
     'src/core/HardwareProviders.js',
