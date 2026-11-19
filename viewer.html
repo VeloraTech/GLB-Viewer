@@ -211,7 +211,7 @@
           <label>Scale X <input name="sx" type="number" step="any" value="1"></label><label>Scale Y <input name="sy" type="number" step="any" value="1"></label><label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
           <button type="submit">Apply to selected objects</button><button type="button" id="reset-transform-btn">Reset transform</button>
         </form>
-        <p class="workspace-note">The gizmo edits one object or transforms the selected group around a shared pivot. Numeric edits apply the active object's transform delta to all selected, unlocked objects. Axis locks preserve the corresponding local position, rotation or scale component for the active gizmo mode.</p>
+        <p class="workspace-note">The gizmo edits one object or transforms the selected group around a shared pivot. Numeric edits apply the active object's transform delta to all selected, unlocked objects. For a single object, axis locks preserve its local position, rotation or scale components. For a selected group, locks constrain the shared-pivot gizmo in the chosen Local or World coordinate space.</p>
       </section>
       <section class="workspace-view" data-view="lighting" hidden>
         <h3>Viewport lighting</h3>
@@ -1276,7 +1276,7 @@ const raycaster = new THREE.Raycaster();
 transformGizmo.addEventListener('dragging-changed',event=>{
   controls.enabled=!event.value&&!panMode;
   if(event.value){
-    if(multiObjectTransform.objects.length>1) multiObjectTransform.begin();
+    if(multiObjectTransform.objects.length>1) multiObjectTransform.begin(transformGizmo.getMode(),{x:document.getElementById('lock-axis-x').checked,y:document.getElementById('lock-axis-y').checked,z:document.getElementById('lock-axis-z').checked});
     else {const object=sceneStore.getSelection();if(object)gizmoDragSnapshot={object,mode:transformGizmo.getMode(),position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()};}
   } else if(multiObjectTransform.before){
     const command=multiObjectTransform.finish();
