@@ -942,7 +942,7 @@ document.getElementById('view-front-btn').addEventListener('click',()=>viewportW
 document.getElementById('view-right-btn').addEventListener('click',()=>viewportWorkspace.preset('right'));
 document.getElementById('view-top-btn').addEventListener('click',()=>viewportWorkspace.preset('top'));
 document.getElementById('rename-object-btn').addEventListener('click',()=>{const object=sceneStore.getSelection();if(object)renameObject(object);});
-document.getElementById('delete-object-btn').addEventListener('click',()=>{const object=sceneStore.getSelection();if(!object)return;if(!window.confirm('Delete '+(object.name||object.type)+'?'))return;commandHistory.execute(new RemoveObjectCommand(sceneStore,object.uuid));selectedIds.clear();markDirty();refreshObjectList();updateHistoryControls();updateSelectionPanel();});
+document.getElementById('delete-object-btn').addEventListener('click',()=>{const object=sceneStore.getSelection();if(!object)return;if(!window.confirm('Delete '+(object.name||object.type)+'?'))return;commandHistory.execute(new RemoveObjectCommand(sceneStore,object.uuid));selectedIds.clear();selectObject(null);markDirty();refreshObjectList();updateHistoryControls();updateSelectionPanel();});
 document.getElementById('outliner-search').addEventListener('input',e=>{
   const q=e.target.value.trim().toLowerCase();
   document.querySelectorAll('.scene-row').forEach(row=>{row.hidden=!row.dataset.objectName.includes(q);});
