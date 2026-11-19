@@ -164,7 +164,7 @@
     <button id="screenshot" title="Screenshot">Screenshot</button>
     <button id="file-picker-btn" title="Open file">Open GLB</button>
     <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
-    <button id="orbit-preview-btn" title="Rotate the model automatically">Orbit Preview</button>
+    <button id="orbit-preview-btn" title="Rotate the model automatically">Orbit Preview</button><button id="frame-all-btn">Frame All</button><button id="view-front-btn">Front</button><button id="view-right-btn">Right</button><button id="view-top-btn">Top</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
   </div>
 
@@ -182,7 +182,7 @@
       <button type="button" class="active" data-workspace="scene" data-tooltip="Scene" aria-label="Scene" aria-controls="workspace-main" aria-pressed="true"><ion-icon name="layers-outline" aria-hidden="true"></ion-icon></button>
       <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="cube-outline" aria-hidden="true"></ion-icon></button>
       <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="move-outline" aria-hidden="true"></ion-icon></button>
-      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="sunny-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="sunny-outline" aria-hidden="true"></ion-icon></button><button type="button" data-workspace="materials" data-tooltip="Materials" aria-label="Materials" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="color-palette-outline"></ion-icon></button><button type="button" data-workspace="inspect" data-tooltip="Inspect" aria-label="Inspect" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="analytics-outline"></ion-icon></button>
       <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="puzzle-outline" aria-hidden="true"></ion-icon></button>
       <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="grid-outline" aria-hidden="true"></ion-icon></button>
     </nav>
@@ -196,7 +196,7 @@
         <div id="selected-name">Nothing selected</div>
       </section>
       <section class="workspace-view" data-view="objects" hidden>
-        <h3>Hierarchy</h3><div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
+        <h3>Hierarchy</h3><input id="outliner-search" type="search" placeholder="Filter objects…" aria-label="Filter objects" style="width:100%;padding:8px;margin-bottom:8px"><div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
         <p id="scene-hint">Select an object in the list or click it directly in the viewport.</p>
       </section>
       <section class="workspace-view" data-view="transform" hidden>
@@ -218,6 +218,7 @@
         <label class="light-control"><span class="range-line"><span>Key elevation</span><output id="elevation-value">48°</output></span><input id="light-elevation" type="range" min="5" max="85" step="1" value="48"></label>
         <button id="lighting-reset" type="button">Reset lighting</button>
       </section>
+      <section class="workspace-view" data-view="materials" hidden><h3>Selected material</h3><p id="material-target">Select a mesh to edit its material.</p><label class="light-control">Base color <input id="material-color" type="color" value="#cccccc"></label><label class="light-control">Metalness <input id="material-metalness" type="range" min="0" max="1" step="0.01" value="0"></label><label class="light-control">Roughness <input id="material-roughness" type="range" min="0" max="1" step="0.01" value="0.7"></label><label class="light-control">Opacity <input id="material-opacity" type="range" min="0" max="1" step="0.01" value="1"></label></section><section class="workspace-view" data-view="inspect" hidden><h3>Model inspection</h3><dl id="model-inspection">Open a model to inspect it.</dl></section>
       <section class="workspace-view" data-view="plugins" hidden><h3>Plugins</h3><div class="workspace-placeholder">Plugin management will appear here when the plugin API is available.</div></section>
       <section class="workspace-view" data-view="extensions" hidden><h3>Extensions</h3><div class="workspace-placeholder">Extension management will appear here when extension loading is implemented.</div></section>
     </div>
@@ -275,6 +276,7 @@ import { ViewportInteraction } from './src/editor/ViewportInteraction.js';
 import { SceneRuntime } from './src/editor/SceneRuntime.js';
 import { CommandPalette } from './src/editor/CommandPalette.js';
 import { OrbitPreview } from './src/editor/OrbitPreview.js';
+import { ViewportWorkspace } from './src/editor/ViewportWorkspace.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
 const performanceMonitor = new PerformanceMonitor();
@@ -463,6 +465,8 @@ const editorTools = [
   { id: 'objects', label: 'Objects / Outliner', icon: 'cube-outline', order: 2 },
   { id: 'transform', label: 'Transform', icon: 'move-outline', order: 3 },
   { id: 'lighting', label: 'Lighting', icon: 'sunny-outline', order: 4 },
+  { id: 'materials', label: 'Materials', icon: 'color-palette-outline', order: 5 },
+  { id: 'inspect', label: 'Inspect', icon: 'analytics-outline', order: 6 },
   { id: 'plugins', label: 'Plugins', icon: 'puzzle-outline', order: 5 },
   { id: 'extensions', label: 'Extensions', icon: 'grid-outline', order: 6 },
 ];
@@ -650,6 +654,41 @@ function toggleOrbitPause() {
   syncOrbitUi();
 }
 orbitPreview = new OrbitPreview({ THREE, camera, controls, getModel: () => currentModel });
+const viewportWorkspace = new ViewportWorkspace({ THREE, scene, camera, controls, renderer, getModel: () => currentModel, getSelection: () => sceneStore.getSelection() });
+function selectedMaterial() {
+  const object=sceneStore.getSelection();
+  if(!object?.isMesh||!object.material)return null;
+  return Array.isArray(object.material)?object.material[0]:object.material;
+}
+function syncMaterialControls() {
+  const object=sceneStore.getSelection(),material=selectedMaterial();
+  document.getElementById('material-target').textContent=material?(object.name||object.type||'Selected mesh'):'Select a mesh to edit its material.';
+  for(const id of ['material-color','material-metalness','material-roughness','material-opacity'])document.getElementById(id).disabled=!material;
+  if(!material)return;
+  if(material.color)document.getElementById('material-color').value='#'+material.color.getHexString();
+  document.getElementById('material-metalness').value=material.metalness??0;
+  document.getElementById('material-roughness').value=material.roughness??1;
+  document.getElementById('material-opacity').value=material.opacity??1;
+}
+function editSelectedMaterial(key,value) {
+  const material=selectedMaterial();if(!material)return;
+  if(key==='color'&&material.color)material.color.set(value);else if(key in material)material[key]=Number(value);
+  if(key==='opacity'){material.transparent=Number(value)<1;material.depthWrite=Number(value)>=1;}
+  material.needsUpdate=true;
+}
+document.getElementById('material-color').addEventListener('input',e=>editSelectedMaterial('color',e.target.value));
+document.getElementById('material-metalness').addEventListener('input',e=>editSelectedMaterial('metalness',e.target.value));
+document.getElementById('material-roughness').addEventListener('input',e=>editSelectedMaterial('roughness',e.target.value));
+document.getElementById('material-opacity').addEventListener('input',e=>editSelectedMaterial('opacity',e.target.value));
+document.getElementById('frame-all-btn').addEventListener('click',()=>viewportWorkspace.frame(currentModel));
+document.getElementById('view-front-btn').addEventListener('click',()=>viewportWorkspace.preset('front'));
+document.getElementById('view-right-btn').addEventListener('click',()=>viewportWorkspace.preset('right'));
+document.getElementById('view-top-btn').addEventListener('click',()=>viewportWorkspace.preset('top'));
+document.getElementById('outliner-search').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.scene-row').forEach(row=>{row.hidden=!row.dataset.objectName.includes(q);});
+});
+
 controls.addEventListener('start', () => { if (orbitPreview.active) syncOrbitUi(); });
 commandPalette = new CommandPalette({
   root: document,
@@ -849,6 +888,7 @@ function refreshObjectList() {
     const row = document.createElement('div');
     row.className = 'scene-row';
     row.dataset.objectId = object.uuid;
+    row.dataset.objectName = (object.name || object.type || 'Object').toLowerCase();
 
     const selectButton = document.createElement('button');
     selectButton.type = 'button';
@@ -946,7 +986,7 @@ const viewportInteraction = new ViewportInteraction({
 viewportInteraction.scene.children = scene.children;
 
 
-sceneStore.on('selection:changed', updateSelectionPanel);
+sceneStore.on('selection:changed', () => { updateSelectionPanel(); syncMaterialControls(); });
 commandHistory.onChange = updateHistoryControls;
 
 // Opt-in test surface for browser automation. It is absent during normal use.
