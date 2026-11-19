@@ -911,6 +911,14 @@ for(const [property,inputId,clearId,isColor] of materialTextureChannels){
     const url=URL.createObjectURL(file);
     new THREE.TextureLoader().load(url,texture=>{
       URL.revokeObjectURL(url);
+      // The user may have replaced the model while the image was decoding.
+      // Never attach a newly loaded GPU resource to a material from a disposed model.
+      let stillOwned=false;
+      currentModel?.traverse(object=>{
+        const slots=Array.isArray(object.material)?object.material:[object.material];
+        if(slots.includes(material))stillOwned=true;
+      });
+      if(!stillOwned){texture.dispose();return;}
       if(isColor)texture.colorSpace=THREE.SRGBColorSpace;
       texture.flipY=false;
       commandHistory.execute(new SetMaterialPropertiesCommand(material,{[property]:texture}));
