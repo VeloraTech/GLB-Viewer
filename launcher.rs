@@ -20,6 +20,11 @@ fn main() -> io::Result<()> {
     }
 
     let root = env::current_exe()?.parent().unwrap_or(Path::new(".")).to_path_buf();
+    // Refresh the viewer bundle before serving it. Offline starts remain
+    // usable: the updater has short network timeouts and failures are non-fatal.
+    if env::var_os("GLB_VIEWER_TEST").is_none() {
+        refresh_viewer_bundle(&root);
+    }
     let model = model.map(fs::canonicalize).transpose()?;
     let listener = TcpListener::bind(("127.0.0.1", 0))?;
     listener.set_nonblocking(true)?;
@@ -72,6 +77,37 @@ fn main() -> io::Result<()> {
     }
 
     Ok(())
+}
+
+fn refresh_viewer_bundle(root: &Path) {
+    let updater = root.join("scripts").join("update-viewer.ps1");
+    if !updater.is_file() { return; }
+    let mut child = match Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"])
+        .arg(&updater).arg("-InstallRoot").arg(root)
+        .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn()
+    {
+        Ok(child) => child,
+        Err(error) => { eprintln!("Viewer update check unavailable; using installed files: {error}"); return; }
+    };
+    let deadline = Instant::now() + Duration::from_secs(25);
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                if !status.success() { eprintln!("Viewer update check failed; using installed files."); }
+                return;
+            }
+            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(150)),
+            Ok(None) => {
+                let _ = child.kill(); let _ = child.wait();
+                eprintln!("Viewer update check timed out; using installed files."); return;
+            }
+            Err(error) => {
+                eprintln!("Could not monitor viewer update check: {error}");
+                let _ = child.kill(); return;
+            }
+        }
+    }
 }
 
 fn handle_request(
