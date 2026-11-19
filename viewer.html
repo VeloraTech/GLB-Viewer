@@ -780,7 +780,8 @@ function syncModelLighting() {
 function panModelByScreenDelta(dx,dy) {
   if(!currentModel)return;
   const distance=camera.position.distanceTo(controls.target);
-  const worldPerPixel=2*distance*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2)/renderer.domElement.clientHeight;
+  const height=Math.max(renderer.domElement.clientHeight,1);
+  const worldPerPixel=useOrthographic?(camera.top-camera.bottom)/height:2*distance*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2)/height;
   const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0);
   const up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
   currentModel.position.add(right.multiplyScalar(dx*worldPerPixel).add(up.multiplyScalar(-dy*worldPerPixel)));
