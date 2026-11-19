@@ -475,6 +475,7 @@ workspaceViews.forEach((view, index) => {
     button?.setAttribute('aria-expanded', 'false');
     button?.classList.remove('active');
     if (activeWorkspacePanel === panel) activeWorkspacePanel = null;
+    syncWorkspaceRail();
   });
 });
 workspaceShell.remove();
