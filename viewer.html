@@ -51,7 +51,7 @@
   #workspace-rail button { position:relative; width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:7px; color:#aeb5c1; background:transparent; cursor:pointer; }
   #workspace-rail button:hover,#workspace-rail button.active { color:#fff; background:rgba(255,255,255,.13); }
   #workspace-rail button.active { box-shadow:inset 2px 0 #e59b52; }
-  .tool-icon { width:19px; height:19px; display:block; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
+  #workspace-rail ion-icon { width:20px; height:20px; pointer-events:none; }
   [data-tooltip]::after { content:attr(data-tooltip); position:absolute; right:calc(100% + 10px); top:50%; transform:translate(4px,-50%); padding:6px 9px; border:1px solid rgba(255,255,255,.14); border-radius:5px; background:#202329; color:#f5f5f5; font:500 11px/1.2 system-ui,sans-serif; white-space:nowrap; opacity:0; visibility:hidden; pointer-events:none; z-index:100; box-shadow:0 5px 18px rgba(0,0,0,.28); transition:opacity .12s ease,transform .12s ease,visibility .12s; }
   [data-tooltip]:hover::after,[data-tooltip]:focus-visible::after { opacity:1; visibility:visible; transform:translate(0,-50%); }
   #workspace-main { position:fixed; top:96px; right:70px; width:340px; height:min(620px,calc(100vh - 120px)); min-width:280px; min-height:220px; max-width:calc(100vw - 90px); max-height:calc(100vh - 24px); display:flex; flex-direction:column; overflow:hidden; resize:both; border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(29,31,35,.97); color:#eee; pointer-events:auto; z-index:35; backdrop-filter:blur(16px); box-shadow:0 18px 48px rgba(0,0,0,.38); font-size:12px; }
@@ -117,22 +117,14 @@
     <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
   </div>
-  <svg id="tool-icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
-    <symbol id="icon-scene" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 8 9 5 9-5M3 8v9l9 5 9-5V8M12 13v9"/></symbol>
-    <symbol id="icon-objects" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="7" cy="5" r="1.5"/><circle cx="7" cy="12" r="1.5"/><circle cx="7" cy="19" r="1.5"/></symbol>
-    <symbol id="icon-transform" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-3 3m3-3 3 3M21 12l-3-3m3 3-3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3"/></symbol>
-    <symbol id="icon-lighting" viewBox="0 0 24 24"><path d="M9 18h6m-5 3h4m-2-19a7 7 0 0 0-4 12.7c.8.6 1 1.1 1 2.3h6c0-1.2.2-1.7 1-2.3A7 7 0 0 0 12 2Z"/></symbol>
-    <symbol id="icon-plugins" viewBox="0 0 24 24"><path d="M9 3v4m6-4v4M8 7h8a2 2 0 0 1 2 2v3h3v4h-3v3H6v-3H3v-4h3V9a2 2 0 0 1 2-2Z"/></symbol>
-    <symbol id="icon-extensions" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
-  </svg>
   <aside id="scene-panel" aria-label="Editor tools">
     <nav id="workspace-rail" aria-label="Workspace tools">
-      <button type="button" class="active" data-workspace="scene" data-tooltip="Scene" aria-label="Scene" aria-controls="workspace-main" aria-pressed="true"><svg class="tool-icon" aria-hidden="true"><use href="#icon-scene"></use></svg></button>
-      <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-objects"></use></svg></button>
-      <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-transform"></use></svg></button>
-      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-lighting"></use></svg></button>
-      <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-plugins"></use></svg></button>
-      <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-extensions"></use></svg></button>
+      <button type="button" class="active" data-workspace="scene" data-tooltip="Scene" aria-label="Scene" aria-controls="workspace-main" aria-pressed="true"><ion-icon name="layers-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="cube-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="move-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="sunny-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="extension-puzzle-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="grid-outline" aria-hidden="true"></ion-icon></button>
     </nav>
   </aside>
   <section id="workspace-main" role="region" aria-label="Scene tool panel">
@@ -193,7 +185,7 @@
 
 
 
-<script type="importmap">
+<script type="module" src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js"></script>\n<script nomodule src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.js"></script>\n<script type="importmap">
 {
   "imports": {
     "three": "./three/build/three.module.js",
@@ -214,6 +206,11 @@ import { evaluateAdaptiveQuality } from './src/core/AdaptiveQualityPolicy.js';
 import { SceneStore } from './src/core/SceneStore.js';
 import { CommandHistory } from './src/core/CommandHistory.js';
 import { SetTransformCommand, SetVisibilityCommand } from './src/core/SceneCommands.js';
+import { EditorStateStore } from './src/editor/EditorStateStore.js';
+import { ToolRegistry } from './src/editor/ToolRegistry.js';
+import { WorkspaceManager } from './src/editor/WorkspaceManager.js';
+import { ViewportInteraction } from './src/editor/ViewportInteraction.js';
+import { SceneRuntime } from './src/editor/SceneRuntime.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
 const performanceMonitor = new PerformanceMonitor();
@@ -383,7 +380,7 @@ rimLight.position.set(0, 5, -7);
 scene.add(rimLight);
 
 // Register the fully initialized base scene before user models are loaded.
-const sceneStore = new SceneStore(scene);
+const sceneStore = new SceneStore(scene);\nconst sceneRuntime = new SceneRuntime({ scene, sceneStore, disposeResources: disposeObjectResources });
 const commandHistory = new CommandHistory({ limit: 100 });
  
 // ---------- Editor workspace navigation and persisted layout ----------
@@ -399,7 +396,7 @@ function setWorkspaceView(name) {
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   });
-  workspaceTitle.textContent = name[0].toUpperCase() + name.slice(1);
+  workspaceTitle.textContent = name[0].toUpperCase() + name.slice(1);\n  editorState.patch('activeTool', name, 'tool:activate');
   workspace.setAttribute('aria-label', name[0].toUpperCase() + name.slice(1) + ' tool panel');
   workspace.hidden = false;
   workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', String(button.dataset.workspace === name)));
@@ -415,39 +412,38 @@ workspaceButtons.forEach((button) => button.addEventListener('click', () => {
 }));
 
 const workspaceHeader = document.getElementById('workspace-header');
-let savedPosition = null;
-try { savedPosition = JSON.parse(localStorage.getItem('glb-workspace-position') || 'null'); } catch { savedPosition = null; }
-if (savedPosition && Number.isFinite(savedPosition.left) && Number.isFinite(savedPosition.top)) {
-  workspace.style.left = Math.max(8, Math.min(window.innerWidth - 120, savedPosition.left)) + 'px';
-  workspace.style.top = Math.max(8, Math.min(window.innerHeight - 100, savedPosition.top)) + 'px';
-  workspace.style.right = 'auto';
-}
-let workspaceDrag = null;
-workspaceHeader.addEventListener('pointerdown', (event) => {
-  if (event.target.closest('button')) return;
-  const rect = workspace.getBoundingClientRect();
-  workspaceDrag = { pointerId: event.pointerId, x: event.clientX - rect.left, y: event.clientY - rect.top };
-  workspaceHeader.setPointerCapture(event.pointerId);
+workspaceHeader.dataset.panelDragHandle = '';
+const editorState = new EditorStateStore();
+const toolRegistry = new ToolRegistry();
+const workspaceManager = new WorkspaceManager();
+workspaceManager.register('main-tools', workspace, { handle: workspaceHeader, defaultRect: { x: Math.max(12, innerWidth - 420), y: 96, width: 340, height: Math.min(620, innerHeight - 120) } });
+const editorTools = [
+  { id: 'scene', label: 'Scene', icon: 'layers-outline', order: 1 },
+  { id: 'objects', label: 'Objects / Outliner', icon: 'cube-outline', order: 2 },
+  { id: 'transform', label: 'Transform', icon: 'move-outline', order: 3 },
+  { id: 'lighting', label: 'Lighting', icon: 'sunny-outline', order: 4 },
+  { id: 'plugins', label: 'Plugins', icon: 'extension-puzzle-outline', order: 5 },
+  { id: 'extensions', label: 'Extensions', icon: 'grid-outline', order: 6 },
+];
+editorTools.forEach((tool) => toolRegistry.register(tool));
+toolRegistry.subscribe(({ tools }) => {
+  const byId = new Map(workspaceButtons.map((button) => [button.dataset.workspace, button]));
+  tools.forEach((tool) => {
+    const button = byId.get(tool.id);
+    if (!button) return;
+    const icon = button.querySelector('ion-icon');
+    if (icon) icon.name = tool.icon;
+    button.setAttribute('aria-label', tool.label);
+    button.dataset.tooltip = tool.label;
+  });
 });
-workspaceHeader.addEventListener('pointermove', (event) => {
-  if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
-  const left = Math.max(0, Math.min(window.innerWidth - Math.min(workspace.offsetWidth, 80), event.clientX - workspaceDrag.x));
-  const top = Math.max(0, Math.min(window.innerHeight - 48, event.clientY - workspaceDrag.y));
-  workspace.style.left = left + 'px';
-  workspace.style.top = top + 'px';
-  workspace.style.right = 'auto';
+editorState.subscribe(({ state: next }) => {
+  document.documentElement.dataset.activeTool = next.activeTool || '';
 });
-function finishWorkspaceDrag(event) {
-  if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
-  workspaceDrag = null;
-  const rect = workspace.getBoundingClientRect();
-  try { localStorage.setItem('glb-workspace-position', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) })); } catch {}
-}
-workspaceHeader.addEventListener('pointerup', finishWorkspaceDrag);
-workspaceHeader.addEventListener('pointercancel', finishWorkspaceDrag);
-collapseButton.addEventListener('click', () => { workspace.hidden = true; workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); });
+
+collapseButton.addEventListener('click', () => { workspaceManager.close('main-tools'); workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); });
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !workspace.hidden) { workspace.hidden = true; workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); }
+  if (event.key === 'Escape' && !workspace.hidden) { workspaceManager.close('main-tools'); workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); }
 });
 const savedWorkspace = localStorage.getItem('glb-workspace-view');
 if (workspaceViews.some((view) => view.dataset.view === savedWorkspace)) setWorkspaceView(savedWorkspace);
@@ -754,27 +750,18 @@ function fitCamera(object) {
 
 // ---------- Scene selection and command-backed editing ----------
 const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-let pointerDown = null;
+const viewportInteraction = new ViewportInteraction({
+  element: renderer.domElement, camera, scene: { children: [] }, raycaster,
+  onSelect(object) {
+    if (!object || !currentModel) return;
+    let target = object;
+    while (target.parent && target.parent !== currentModel) target = target.parent;
+    selectObject(target);
+  }
+});
+// Raycast only the active model; the scene wrapper is updated when a model loads.
+viewportInteraction.scene.children = scene.children;
 
-renderer.domElement.addEventListener('pointerdown', (event) => {
-  pointerDown = { x: event.clientX, y: event.clientY, button: event.button };
-});
-renderer.domElement.addEventListener('pointerup', (event) => {
-  if (!pointerDown || pointerDown.button !== 0) return;
-  const moved = Math.hypot(event.clientX - pointerDown.x, event.clientY - pointerDown.y);
-  pointerDown = null;
-  if (moved > 5 || !currentModel) return;
-  const bounds = renderer.domElement.getBoundingClientRect();
-  pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-  pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-  raycaster.setFromCamera(pointer, camera);
-  const hit = raycaster.intersectObject(currentModel, true)[0];
-  if (!hit) return;
-  let target = hit.object;
-  while (target.parent && target.parent !== currentModel) target = target.parent;
-  selectObject(target);
-});
 
 sceneStore.on('selection:changed', updateSelectionPanel);
 commandHistory.onChange = updateHistoryControls;
@@ -782,7 +769,7 @@ commandHistory.onChange = updateHistoryControls;
 // Opt-in test surface for browser automation. It is absent during normal use.
 if (new URLSearchParams(window.location.search).has('test')) {
   window.__GLB_VIEWER_TEST__ = Object.freeze({
-    setWorkspaceView,
+    setWorkspaceView,\n    get editorState() { return editorState; },\n    get toolRegistry() { return toolRegistry; },\n    get workspaceManager() { return workspaceManager; },\n    get sceneRuntime() { return sceneRuntime; },\n    get viewportInteraction() { return viewportInteraction; },
     setWorkspaceCollapsed(collapsed) { workspace.hidden = Boolean(collapsed); },
     get workspace() { return workspace; },
     get controls() { return controls; },
