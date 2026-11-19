@@ -13,6 +13,11 @@ export class MultiObjectTransform {
     this.active = null;
     this.before = null;
     this.startPivot = null;
+    this.startPivotPosition = null;
+    this.startPivotQuaternion = null;
+    this.startPivotScale = null;
+    this.dragMode = 'translate';
+    this.axisLocks = { x: false, y: false, z: false };
     this.space = 'world';
   }
 
@@ -67,12 +72,68 @@ export class MultiObjectTransform {
         : new this.THREE.Matrix4()
     }));
     this.startPivot = this.proxy.matrixWorld.clone();
+    this.startPivotPosition = this.proxy.position.clone();
+    this.startPivotQuaternion = this.proxy.quaternion.clone();
+    this.startPivotScale = this.proxy.scale.clone();
     return this.before;
+  }
+
+  begin(mode = 'translate', axisLocks = {}) {
+    if (this.objects.length < 2) return null;
+    // Capture the mode and lock state once per drag so the constraint basis
+    // cannot drift while TransformControls updates the proxy.
+    this.dragMode = mode;
+    this.axisLocks = { x: Boolean(axisLocks.x), y: Boolean(axisLocks.y), z: Boolean(axisLocks.z) };
+    this.scene.updateMatrixWorld(true);
+    this.proxy.updateMatrixWorld(true);
+    this.before = this.objects.map(object => ({
+      object,
+      position: object.position.clone(),
+      quaternion: object.quaternion.clone(),
+      rotation: object.rotation.clone(),
+      scale: object.scale.clone(),
+      world: object.matrixWorld.clone(),
+      parentWorldInverse: object.parent ? object.parent.matrixWorld.clone().invert() : new this.THREE.Matrix4()
+    }));
+    this.startPivot = this.proxy.matrixWorld.clone();
+    this.startPivotPosition = this.proxy.position.clone();
+    this.startPivotQuaternion = this.proxy.quaternion.clone();
+    this.startPivotScale = this.proxy.scale.clone();
+    return this.before;
+  }
+
+  constrainPivot() {
+    if (!this.startPivotPosition || !this.startPivotQuaternion) return;
+    const { THREE } = this;
+    const locked = this.axisLocks;
+    if (this.dragMode === 'translate') {
+      const delta = this.proxy.position.clone().sub(this.startPivotPosition);
+      if (this.space === 'local') delta.applyQuaternion(this.startPivotQuaternion.clone().invert());
+      for (const axis of ['x', 'y', 'z']) if (locked[axis]) delta[axis] = 0;
+      if (this.space === 'local') delta.applyQuaternion(this.startPivotQuaternion);
+      this.proxy.position.copy(this.startPivotPosition).add(delta);
+    } else if (this.dragMode === 'rotate') {
+      const delta = this.space === 'local'
+        ? this.startPivotQuaternion.clone().invert().multiply(this.proxy.quaternion)
+        : this.proxy.quaternion.clone().multiply(this.startPivotQuaternion.clone().invert());
+      const euler = new THREE.Euler().setFromQuaternion(delta, 'XYZ');
+      for (const axis of ['x', 'y', 'z']) if (locked[axis]) euler[axis] = 0;
+      const constrained = new THREE.Quaternion().setFromEuler(euler);
+      this.proxy.quaternion.copy(this.space === 'local'
+        ? this.startPivotQuaternion.clone().multiply(constrained)
+        : constrained.multiply(this.startPivotQuaternion));
+    } else if (this.dragMode === 'scale') {
+      for (const axis of ['x', 'y', 'z']) {
+        if (locked[axis]) this.proxy.scale[axis] = this.startPivotScale[axis];
+      }
+    }
+    this.proxy.updateMatrixWorld(true);
   }
 
   update() {
     if (!this.before || !this.startPivot) return;
     const { THREE } = this;
+    this.constrainPivot();
     this.proxy.updateMatrixWorld(true);
     const delta = this.proxy.matrixWorld.clone().multiply(this.startPivot.clone().invert());
     for (const snapshot of this.before) {
@@ -97,6 +158,9 @@ export class MultiObjectTransform {
     }));
     this.before = null;
     this.startPivot = null;
+    this.startPivotPosition = null;
+    this.startPivotQuaternion = null;
+    this.startPivotScale = null;
     const changed = after.some((item, index) =>
       !item.position.equals(before[index].position) ||
       !item.quaternion.equals(before[index].quaternion) ||
@@ -130,6 +194,9 @@ export class MultiObjectTransform {
     });
     this.before = null;
     this.startPivot = null;
+    this.startPivotPosition = null;
+    this.startPivotQuaternion = null;
+    this.startPivotScale = null;
     this.syncPivot();
   }
 
