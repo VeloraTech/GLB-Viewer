@@ -65,8 +65,8 @@
   #workspace-content::-webkit-scrollbar-thumb { background:rgba(255,255,255,.16); border-radius:8px; }
   #scene-panel button:focus-visible,#workspace-main button:focus-visible,#workspace-main input:focus-visible { outline:2px solid #e59b52; outline-offset:2px; }
   .workspace-view[hidden] { display:none; }
-  #scene-panel h3 { font-size:11px; color:#a7afbb; margin:14px 0 7px; text-transform:uppercase; letter-spacing:.08em; }
-  #scene-panel button,#scene-panel input { font:inherit; }
+  #workspace-main h3 { font-size:11px; color:#a7afbb; margin:14px 0 7px; text-transform:uppercase; letter-spacing:.08em; }
+  #workspace-main button,#workspace-main input { font:inherit; }
   #history-controls { display:flex; gap:6px; }
   #history-controls button,.scene-row button,#transform-form button { border:1px solid rgba(255,255,255,.18); border-radius:6px; padding:7px 9px; color:#eee; background:rgba(255,255,255,.07); cursor:pointer; }
   #history-controls button:disabled { opacity:.35; cursor:default; }
@@ -90,7 +90,7 @@
   body.light #workspace-rail button.active,body.light #workspace-rail button:hover { color:#111; background:rgba(0,0,0,.08); }
   body.light #workspace-header { border-color:rgba(0,0,0,.1); background:rgba(0,0,0,.025); }
   body.light #workspace-collapse,body.light #history-controls button,body.light .scene-row button,body.light #transform-form button { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
-  body.light #scene-panel h3,body.light #selected-name,body.light #scene-hint,body.light .workspace-note,body.light .light-control { color:#626b78; }
+  body.light #workspace-main h3,body.light #selected-name,body.light #scene-hint,body.light .workspace-note,body.light .light-control { color:#626b78; }
   body.light #transform-form input,body.light .light-control input[type=number] { color:#222; border-color:rgba(0,0,0,.16); background:#fff; }
   body.light [data-tooltip]::after { background:#fff; color:#222; border-color:rgba(0,0,0,.14); }
   @media (max-width:700px) { #workspace-main { top:64px; right:62px; width:min(340px,calc(100vw - 78px)); height:calc(100vh - 88px); max-width:calc(100vw - 70px); } #toolbar { left:8px; top:8px; gap:5px; flex-wrap:wrap; max-width:calc(100vw - 70px); } #toolbar button { padding:7px 9px; font-size:11px; } #scene-panel { right:8px; } }
@@ -402,9 +402,17 @@ function setWorkspaceView(name) {
   workspaceTitle.textContent = name[0].toUpperCase() + name.slice(1);
   workspace.setAttribute('aria-label', name[0].toUpperCase() + name.slice(1) + ' tool panel');
   workspace.hidden = false;
+  workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', String(button.dataset.workspace === name)));
   localStorage.setItem('glb-workspace-view', name);
 }
-workspaceButtons.forEach((button) => button.addEventListener('click', () => setWorkspaceView(button.dataset.workspace)));
+workspaceButtons.forEach((button) => button.addEventListener('click', () => {
+  if (button.classList.contains('active') && !workspace.hidden) {
+    workspace.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+    return;
+  }
+  setWorkspaceView(button.dataset.workspace);
+}));
 
 const workspaceHeader = document.getElementById('workspace-header');
 let savedPosition = null;
@@ -437,9 +445,9 @@ function finishWorkspaceDrag(event) {
 }
 workspaceHeader.addEventListener('pointerup', finishWorkspaceDrag);
 workspaceHeader.addEventListener('pointercancel', finishWorkspaceDrag);
-collapseButton.addEventListener('click', () => { workspace.hidden = true; });
+collapseButton.addEventListener('click', () => { workspace.hidden = true; workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); });
 document.addEventListener('keydown', (event) => {
-  if (event.key === 'Escape' && !workspace.hidden) workspace.hidden = true;
+  if (event.key === 'Escape' && !workspace.hidden) { workspace.hidden = true; workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); }
 });
 const savedWorkspace = localStorage.getItem('glb-workspace-view');
 if (workspaceViews.some((view) => view.dataset.view === savedWorkspace)) setWorkspaceView(savedWorkspace);
@@ -775,6 +783,7 @@ commandHistory.onChange = updateHistoryControls;
 if (new URLSearchParams(window.location.search).has('test')) {
   window.__GLB_VIEWER_TEST__ = Object.freeze({
     setWorkspaceView,
+    setWorkspaceCollapsed(collapsed) { workspace.hidden = Boolean(collapsed); },
     get workspace() { return workspace; },
     get controls() { return controls; },
     get lights() { return { ambient, key: dirLight, fill: fillLight }; },
