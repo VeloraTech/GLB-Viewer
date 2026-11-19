@@ -164,7 +164,7 @@
     <button id="screenshot" title="Screenshot">Screenshot</button>
     <button id="file-picker-btn" title="Open file">Open GLB</button>
     <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button><button id="export-glb-btn" title="Export a new GLB copy">Export GLB</button><button id="projection-toggle" title="Switch camera projection">Perspective</button>
-    <button id="orbit-preview-btn" title="Rotate the model automatically">Orbit Preview</button><button id="frame-all-btn">Frame All</button><button id="view-front-btn">Front</button><button id="view-right-btn">Right</button><button id="view-top-btn">Top</button>
+    <button id="orbit-preview-btn" title="Rotate the model automatically">Orbit Preview</button><button id="pan-mode-btn" title="Drag the model to reposition it">Pan</button><button id="reset-model-position-btn" title="Reset model position">Reset position</button><button id="frame-all-btn">Frame All</button><button id="view-front-btn">Front</button><button id="view-right-btn">Right</button><button id="view-top-btn">Top</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
   </div>
 
@@ -216,7 +216,7 @@
         <label class="light-control"><span class="range-line"><span>Fill light</span><output id="fill-value">1.0</output></span><input id="fill-intensity" type="range" min="0" max="3" step=".05" value="1"></label>
         <label class="light-control"><span class="range-line"><span>Key azimuth</span><output id="azimuth-value">35°</output></span><input id="light-azimuth" type="range" min="-180" max="180" step="1" value="35"></label>
         <label class="light-control"><span class="range-line"><span>Key elevation</span><output id="elevation-value">48°</output></span><input id="light-elevation" type="range" min="5" max="85" step="1" value="48"></label>
-        <button id="lighting-reset" type="button">Reset lighting</button>
+        <label class="light-control">Key light color <input id="key-color" type="color" value="#ffffff"></label><label class="light-control">Fill light color <input id="fill-color" type="color" value="#c8dcff"></label><label class="light-control">Rim intensity <input id="rim-intensity" type="range" min="0" max="3" step=".05" value=".65"></label><label class="light-control">Shadow strength <input id="shadow-opacity" type="range" min="0" max="1" step=".05" value=".28"></label><label><input id="shadows-toggle" type="checkbox" checked> Ground shadow</label><label class="light-control">Preset <select id="lighting-preset"><option value="studio">Studio</option><option value="soft">Soft</option><option value="dramatic">Dramatic</option><option value="neutral">Neutral</option></select></label><button id="lighting-reset" type="button">Reset lighting</button>
       </section>
       <section class="workspace-view" data-view="materials" hidden><h3>Selected material</h3><p id="material-target">Select a mesh to edit its material.</p><label class="light-control">Base color <input id="material-color" type="color" value="#cccccc"></label><label class="light-control">Metalness <input id="material-metalness" type="range" min="0" max="1" step="0.01" value="0"></label><label class="light-control">Roughness <input id="material-roughness" type="range" min="0" max="1" step="0.01" value="0.7"></label><label class="light-control">Opacity <input id="material-opacity" type="range" min="0" max="1" step="0.01" value="1"></label></section><section class="workspace-view" data-view="inspect" hidden><h3>Model inspection</h3><dl id="model-inspection">Open a model to inspect it.</dl></section>
       <section class="workspace-view" data-view="plugins" hidden><h3>Plugins</h3><div class="workspace-placeholder">Plugin management will appear here when the plugin API is available.</div></section>
@@ -393,6 +393,8 @@ const canvas = document.getElementById('canvas');
 const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 const nativeRelayProvider = new NativeRelayHardwareProvider();
 const browserCapabilityProvider = new BrowserCapabilityProvider();
@@ -438,6 +440,10 @@ scene.add(ambient);
 const dirLight = new THREE.DirectionalLight(0xffffff, 2.0);
 dirLight.position.set(5, 7, 6);
 dirLight.castShadow = true;
+dirLight.shadow.mapSize.set(1024, 1024);
+dirLight.shadow.camera.near = 0.1;
+dirLight.shadow.camera.far = 100;
+dirLight.shadow.bias = -0.00015;
 scene.add(dirLight);
 const fillLight = new THREE.DirectionalLight(0xc8dcff, 1.0);
 fillLight.position.set(-5, 2, -4);
@@ -602,7 +608,7 @@ function bindLightRange(id, light, outputId) {
   const input = document.getElementById(id);
   const output = document.getElementById(outputId);
   const update = () => { light.intensity = Number(input.value); output.value = Number(input.value).toFixed(2); };
-  input.addEventListener('input', update);
+  input.addEventListener('input', () => { update(); markDirty(); });
   update();
 }
 bindLightRange('ambient-intensity', ambient, 'ambient-value');
@@ -610,13 +616,19 @@ bindLightRange('key-intensity', dirLight, 'key-value');
 bindLightRange('fill-intensity', fillLight, 'fill-value');
 document.getElementById('light-azimuth').addEventListener('input', () => {
   document.getElementById('azimuth-value').value = document.getElementById('light-azimuth').value + '°';
-  setKeyLightDirection();
+  setKeyLightDirection(); markDirty();
 });
 document.getElementById('light-elevation').addEventListener('input', () => {
   document.getElementById('elevation-value').value = document.getElementById('light-elevation').value + '°';
-  setKeyLightDirection();
+  setKeyLightDirection(); markDirty();
 });
 setKeyLightDirection();
+document.getElementById('key-color').addEventListener('input',e=>{dirLight.color.set(e.target.value);markDirty();});
+document.getElementById('fill-color').addEventListener('input',e=>{fillLight.color.set(e.target.value);markDirty();});
+document.getElementById('rim-intensity').addEventListener('input',e=>{rimLight.intensity=Number(e.target.value);markDirty();});
+document.getElementById('shadow-opacity').addEventListener('input',e=>{groundShadow.material.opacity=Number(e.target.value);markDirty();});
+document.getElementById('shadows-toggle').addEventListener('change',e=>{groundShadow.visible=e.target.checked;dirLight.castShadow=e.target.checked;markDirty();});
+document.getElementById('lighting-preset').addEventListener('change',e=>applyLightingPreset(e.target.value));
 document.getElementById('lighting-reset').addEventListener('click', () => {
   document.getElementById('ambient-intensity').value = '1.1';
   document.getElementById('key-intensity').value = '2';
@@ -625,12 +637,16 @@ document.getElementById('lighting-reset').addEventListener('click', () => {
   document.getElementById('light-elevation').value = '48';
   ['ambient-intensity','key-intensity','fill-intensity'].forEach((id) => document.getElementById(id).dispatchEvent(new Event('input')));
   setKeyLightDirection();
+  dirLight.color.set('#ffffff');fillLight.color.set('#c8dcff');rimLight.intensity=.65;groundShadow.material.opacity=.28;groundShadow.visible=true;dirLight.castShadow=true;
+  document.getElementById('key-color').value='#ffffff';document.getElementById('fill-color').value='#c8dcff';document.getElementById('rim-intensity').value='.65';document.getElementById('shadow-opacity').value='.28';document.getElementById('shadows-toggle').checked=true;document.getElementById('lighting-preset').value='studio';markDirty();
 });
 
 
 // ---------- Model loading ----------
 let currentModel = null;
 let isDirty = false;
+let panMode = false;
+let panPointer = null;
 let orthographicCamera = null;
 let useOrthographic = false;
 let selectedIds = new Set();
@@ -661,6 +677,57 @@ function toggleOrbitPause() {
 }
 orbitPreview = new OrbitPreview({ THREE, camera, controls, getModel: () => currentModel });
 const viewportWorkspace = new ViewportWorkspace({ THREE, scene, camera, controls, renderer, getModel: () => currentModel, getSelection: () => sceneStore.getSelection() });
+function setPanMode(enabled) {
+  panMode=Boolean(enabled); controls.enabled=!panMode;
+  const button=document.getElementById('pan-mode-btn');
+  button.classList.toggle('active',panMode); button.textContent=panMode?'Pan: On':'Pan';
+}
+function syncModelLighting() {
+  if(!currentModel)return;
+  currentModel.updateWorldMatrix(true,true);
+  const box=new THREE.Box3().setFromObject(currentModel);
+  if(box.isEmpty())return;
+  const center=box.getCenter(new THREE.Vector3());
+  const radius=Math.max(box.getSize(new THREE.Vector3()).length(),3);
+  const az=THREE.MathUtils.degToRad(Number(document.getElementById('light-azimuth').value));
+  const el=THREE.MathUtils.degToRad(Number(document.getElementById('light-elevation').value));
+  dirLight.position.set(center.x+radius*Math.cos(el)*Math.sin(az),center.y+radius*Math.sin(el),center.z+radius*Math.cos(el)*Math.cos(az));
+  dirLight.target.position.copy(center);
+  fillLight.position.set(center.x-radius*.65,center.y+radius*.25,center.z-radius*.55);
+  rimLight.position.set(center.x,center.y+radius*.65,center.z-radius*.8);
+  groundShadow.position.set(center.x,box.min.y-.015,center.z);
+}
+function panModelByScreenDelta(dx,dy) {
+  if(!currentModel)return;
+  const distance=camera.position.distanceTo(controls.target);
+  const worldPerPixel=2*distance*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2)/renderer.domElement.clientHeight;
+  const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0);
+  const up=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,1);
+  currentModel.position.add(right.multiplyScalar(dx*worldPerPixel).add(up.multiplyScalar(-dy*worldPerPixel)));
+  syncModelLighting(); markDirty(); updateInspection();
+}
+renderer.domElement.addEventListener('pointerdown',event=>{
+  if(!panMode||event.button!==0||!currentModel)return;
+  panPointer={id:event.pointerId,x:event.clientX,y:event.clientY};
+  renderer.domElement.setPointerCapture(event.pointerId);
+});
+renderer.domElement.addEventListener('pointermove',event=>{
+  if(!panPointer||panPointer.id!==event.pointerId)return;
+  const dx=event.clientX-panPointer.x,dy=event.clientY-panPointer.y;
+  panPointer.x=event.clientX;panPointer.y=event.clientY;panModelByScreenDelta(dx,dy);
+});
+function finishPan(event){if(panPointer&&panPointer.id===event.pointerId)panPointer=null;}
+renderer.domElement.addEventListener('pointerup',finishPan);
+renderer.domElement.addEventListener('pointercancel',finishPan);
+document.getElementById('pan-mode-btn').addEventListener('click',()=>setPanMode(!panMode));
+document.getElementById('reset-model-position-btn').addEventListener('click',()=>{
+  if(!currentModel)return;currentModel.position.set(0,0,0);syncModelLighting();markDirty();updateInspection();
+});
+function applyLightingPreset(name){
+  const p={studio:[1.1,2,1,.65,35,48],soft:[1.65,1.1,1.25,.25,25,65],dramatic:[.35,3.4,.25,1.2,-55,32],neutral:[1.3,1.35,.8,.35,45,55]}[name]||[1.1,2,1,.65,35,48];
+  ['ambient-intensity','key-intensity','fill-intensity','rim-intensity','light-azimuth','light-elevation'].forEach((id,i)=>{document.getElementById(id).value=String(p[i]);document.getElementById(id).dispatchEvent(new Event('input'));});
+  syncModelLighting();markDirty();
+}
 function selectedMaterial() {
   const object=sceneStore.getSelection();
   if(!object?.isMesh||!object.material)return null;
@@ -682,10 +749,10 @@ function editSelectedMaterial(key,value) {
   if(key==='opacity'){material.transparent=Number(value)<1;material.depthWrite=Number(value)>=1;}
   material.needsUpdate=true;
 }
-document.getElementById('material-color').addEventListener('input',e=>editSelectedMaterial('color',e.target.value));
-document.getElementById('material-metalness').addEventListener('input',e=>editSelectedMaterial('metalness',e.target.value));
-document.getElementById('material-roughness').addEventListener('input',e=>editSelectedMaterial('roughness',e.target.value));
-document.getElementById('material-opacity').addEventListener('input',e=>editSelectedMaterial('opacity',e.target.value));
+document.getElementById('material-color').addEventListener('input',e=>{editSelectedMaterial('color',e.target.value);markDirty();});
+document.getElementById('material-metalness').addEventListener('input',e=>{editSelectedMaterial('metalness',e.target.value);markDirty();});
+document.getElementById('material-roughness').addEventListener('input',e=>{editSelectedMaterial('roughness',e.target.value);markDirty();});
+document.getElementById('material-opacity').addEventListener('input',e=>{editSelectedMaterial('opacity',e.target.value);markDirty();});
 document.getElementById('projection-toggle').addEventListener('click',()=>{
   if(!orthographicCamera){const aspect=window.innerWidth/window.innerHeight;orthographicCamera=new THREE.OrthographicCamera(-2*aspect,2*aspect,2,-2,0.01,10000);orthographicCamera.position.copy(camera.position);orthographicCamera.quaternion.copy(camera.quaternion);}
   const old=useOrthographic?orthographicCamera:camera,next=useOrthographic?camera:orthographicCamera;
@@ -876,7 +943,7 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
 
       commandPalette.refresh();
-      isDirty = false; selectedIds.clear(); lockedObjectIds.clear();
+      isDirty = false; document.title='GLB Viewer'; selectedIds.clear(); lockedObjectIds.clear();
       state.fileName = fileName;
       state.fileSize = fileSize;
       const stats = countStats(currentModel);
@@ -889,6 +956,7 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       updateInspection();
 
       fitCamera(currentModel);
+      syncModelLighting();
       refreshObjectList();
       selectObject(null);
       showLoading(false);
@@ -1094,6 +1162,7 @@ document.getElementById('transform-form').addEventListener('submit', (event) => 
   };
   if (lockedObjectIds.has(object.uuid)) { window.alert('Unlock this object before transforming it.'); return; }
   commandHistory.execute(new SetTransformCommand(sceneStore, object.uuid, transform));
+  syncModelLighting();
   markDirty();
   updateHistoryControls();
   updateSelectionPanel();
