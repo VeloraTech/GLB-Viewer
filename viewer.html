@@ -123,7 +123,7 @@
       <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="cube-outline" aria-hidden="true"></ion-icon></button>
       <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="move-outline" aria-hidden="true"></ion-icon></button>
       <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="sunny-outline" aria-hidden="true"></ion-icon></button>
-      <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="extension-puzzle-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="puzzle-outline" aria-hidden="true"></ion-icon></button>
       <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="grid-outline" aria-hidden="true"></ion-icon></button>
     </nav>
   </aside>
@@ -600,14 +600,13 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       const nextModel = gltf.scene;
       const previousModel = currentModel;
       if (previousModel) {
-        sceneStore.removeObject(previousModel.uuid);
         commandHistory.clear();
         clearCurrentAnimation();
-        disposeObjectResources(previousModel);
       }
 
+      // SceneRuntime owns model replacement and GPU-resource disposal.
+      sceneRuntime.replaceModel(nextModel);
       currentModel = nextModel;
-      sceneStore.addObject(currentModel, scene);
       mixer = new THREE.AnimationMixer(currentModel);
       gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
 
