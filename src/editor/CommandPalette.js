@@ -55,6 +55,7 @@ export class CommandPalette {
   async execute(id){
     const command=this.commands.get(id);if(!command)return false;
     const status=this.state(command);if(!status.enabled)return false;
+    this.close();
     const group=command.exclusiveGroup;if(group)this.runningGroups.add(group);
     this.refresh();
     try{const result=await command.execute();this.onExecute(command);return result===undefined?true:result;}
