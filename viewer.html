@@ -277,6 +277,7 @@ import { disposeObjectResources } from './src/core/ResourceDisposer.js';
 import { PerformanceMonitor } from './src/core/PerformanceMonitor.js';
 import { NativeRelayHardwareProvider, BrowserCapabilityProvider } from './src/core/HardwareProviders.js';
 import { evaluateAdaptiveQuality } from './src/core/AdaptiveQualityPolicy.js';
+import { inspectModel } from './src/core/ModelInspector.js';
 import { SceneStore } from './src/core/SceneStore.js';
 import { CommandHistory } from './src/core/CommandHistory.js';
 import { SetTransformCommand, SetVisibilityCommand, RenameObjectCommand, RemoveObjectCommand, SetMaterialPropertiesCommand } from './src/core/SceneCommands.js';
@@ -673,6 +674,7 @@ document.getElementById('lighting-reset').addEventListener('click', () => {
 
 // ---------- Model loading ----------
 let currentModel = null;
+let currentAnimations = [];
 let isDirty = false;
 let panMode = false;
 const userLights = new Map();
@@ -990,42 +992,15 @@ function countStats(object) {
 function updateInspection() {
   const panel=document.getElementById('model-inspection');
   if(!currentModel){panel.textContent='Open a model to inspect it.';return;}
-  let meshes=0,vertices=0,triangles=0,groups=0;
-  const materials=new Set(),textures=new Set(),warnings=new Set();
-  currentModel.updateWorldMatrix(true,true);
-  const box=new THREE.Box3().setFromObject(currentModel),size=box.getSize(new THREE.Vector3());
-  currentModel.traverse(o=>{
-    if(o.isGroup)groups++;
-    if(o.isMesh){
-      meshes++;
-      const geometry=o.geometry;
-      const position=geometry?.attributes?.position;
-      const index=geometry?.index;
-      if(!position){warnings.add('A mesh has no position attribute.');}
-      else{
-        vertices+=position.count;
-        const elementCount=index?index.count:position.count;
-        triangles+=Math.floor(elementCount/3);
-        if(elementCount%3!==0)warnings.add('Some mesh geometry is not a complete set of triangles.');
-      }
-      if(geometry?.morphAttributes&&Object.keys(geometry.morphAttributes).length)warnings.add('Morph targets are present; verify animation after export.');
-      if(o.isSkinnedMesh)warnings.add('Skinned mesh detected; verify skinning after export.');
-      (Array.isArray(o.material)?o.material:[o.material]).filter(Boolean).forEach(material=>{
-        materials.add(material);
-        material.traverse?.(value=>{if(value?.isTexture)textures.add(value);});
-        for(const value of Object.values(material))if(value?.isTexture)textures.add(value);
-      });
-    }
-    if(o.isLine||o.isPoints)warnings.add('Line or point geometry is present; GLB export compatibility should be checked.');
-  });
-  if(!Number.isFinite(size.x+size.y+size.z))warnings.add('Model bounds could not be calculated.');
+  const stats=inspectModel(currentModel);
+  const {meshes,vertices,triangles,groups,materials,textures,warnings,size}=stats;
   const rows=[
     ['File',state.fileName||'Untitled'],['File size',formatBytes(state.fileSize)],
     ['Meshes',meshes],['Triangles',Math.round(triangles).toLocaleString()],
     ['Vertices',vertices.toLocaleString()],['Groups',groups],
     ['Materials',materials.size],['Textures',textures.size],
     ['Dimensions',size.toArray().map(v=>Number.isFinite(v)?v.toFixed(3):'—').join(' × ')],
-    ['Inspection notes',warnings.size?[...warnings].join(' '):'No basic geometry warnings detected.']
+    ['Inspection notes',warnings.length?warnings.join(' '):'No basic geometry warnings detected.']
   ];
   panel.replaceChildren(...rows.flatMap(([k,v])=>{const dt=document.createElement('dt'),dd=document.createElement('dd');dt.textContent=k;dd.textContent=String(v);return[dt,dd];}));
 }
@@ -1121,8 +1096,9 @@ function loadModelFromUrl(url, fileName, fileSize, blob) {
       // SceneRuntime owns model replacement and GPU-resource disposal.
       sceneRuntime.replaceModel(nextModel);
       currentModel = nextModel;
+      currentAnimations = gltf.animations || [];
       mixer = new THREE.AnimationMixer(currentModel);
-      gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+      currentAnimations.forEach((clip) => mixer.clipAction(clip).play());
 
       commandPalette.refresh();
       isDirty = false; document.title='GLB Viewer'; selectedIds.clear(); lockedObjectIds.clear();
@@ -1405,7 +1381,7 @@ document.getElementById('export-glb-btn').addEventListener('click',()=>{
   },(error)=>{
     console.error(error);restoreDisplayMode();
     window.alert('Export failed. See the developer console for details.');
-  },{binary:true,onlyVisible:false,animations:[]});
+  },{binary:true,onlyVisible:false,animations:currentAnimations});
 });
 
 // ---------- Drag and drop ----------
