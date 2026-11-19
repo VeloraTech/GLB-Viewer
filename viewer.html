@@ -209,7 +209,7 @@
           <label>Scale X <input name="sx" type="number" step="any" value="1"></label><label>Scale Y <input name="sy" type="number" step="any" value="1"></label><label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
           <button type="submit">Apply to selected objects</button><button type="button" id="reset-transform-btn">Reset transform</button>
         </form>
-        <p class="workspace-note">Gizmo edits the active object. Numeric edits apply the active object's transform delta to all selected, unlocked objects. Axis locks preserve local components during gizmo drags.</p>
+        <p class="workspace-note">The gizmo edits one object or transforms the selected group around a shared pivot. Numeric edits apply the active object's transform delta to all selected, unlocked objects. Axis locks preserve local components during single-object gizmo drags.</p>
       </section>
       <section class="workspace-view" data-view="lighting" hidden>
         <h3>Viewport lighting</h3>
@@ -289,6 +289,7 @@ import { SceneRuntime } from './src/editor/SceneRuntime.js';
 import { CommandPalette } from './src/editor/CommandPalette.js';
 import { OrbitPreview } from './src/editor/OrbitPreview.js';
 import { ViewportWorkspace } from './src/editor/ViewportWorkspace.js';
+import { MultiObjectTransform } from './src/editor/MultiObjectTransform.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
 const performanceMonitor = new PerformanceMonitor();
@@ -470,6 +471,7 @@ const sceneRuntime = new SceneRuntime({ scene, sceneStore, disposeResources: dis
 const commandHistory = new CommandHistory({ limit: 100 });
 const transformGizmo = new TransformControls(camera, renderer.domElement);
 scene.add(transformGizmo.getHelper());
+const multiObjectTransform = new MultiObjectTransform({ THREE, scene, controls: transformGizmo });
 let gizmoDragSnapshot=null, materialSlotIndex=0;
  
 // ---------- Editor workspace navigation and persisted layout ----------
@@ -1197,7 +1199,11 @@ function selectObject(object, keepMulti = false) {
   if (object && !sceneStore.getObject(object.uuid)) return;
   if (!keepMulti) selectedIds = new Set(object ? [object.uuid] : []);
   sceneStore.select(object ? object.uuid : null);
-  if(object&&!lockedObjectIds.has(object.uuid))transformGizmo.attach(object);else transformGizmo.detach();
+  const active = sceneStore.getSelection();
+  const selected = [...selectedIds].map(id => sceneStore.getObject(id)).filter(item => item && !lockedObjectIds.has(item.uuid));
+  const selectedSet = new Set(selected);
+  const roots = selected.filter(item => { for(let parent=item.parent;parent;parent=parent.parent) if(selectedSet.has(parent)) return false; return true; });
+  multiObjectTransform.setSelection(roots, active && roots.includes(active) ? active : roots[0] || null, document.getElementById('gizmo-space').value);
   updateSelectionPanel();
   document.querySelectorAll('.scene-row').forEach(row=>row.classList.toggle('selected',selectedIds.has(row.dataset.objectId)));
 }
@@ -1253,19 +1259,30 @@ function fitCamera(object) {
 const raycaster = new THREE.Raycaster();
 transformGizmo.addEventListener('dragging-changed',event=>{
   controls.enabled=!event.value&&!panMode;
-  if(event.value){const object=sceneStore.getSelection();if(object)gizmoDragSnapshot={object,position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()};}
-  else if(gizmoDragSnapshot){const snap=gizmoDragSnapshot;gizmoDragSnapshot=null;const after={position:snap.object.position.clone(),rotation:snap.object.rotation.clone(),scale:snap.object.scale.clone()};
+  if(event.value){
+    if(multiObjectTransform.objects.length>1) multiObjectTransform.begin();
+    else {const object=sceneStore.getSelection();if(object)gizmoDragSnapshot={object,position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()};}
+  } else if(multiObjectTransform.before){
+    const command=multiObjectTransform.finish();
+    if(command){commandHistory.execute(command);markDirty();syncModelLighting();updateHistoryControls();updateSelectionPanel();}
+  } else if(gizmoDragSnapshot){
+    const snap=gizmoDragSnapshot;gizmoDragSnapshot=null;const after={position:snap.object.position.clone(),rotation:snap.object.rotation.clone(),scale:snap.object.scale.clone()};
     if(!snap.position.equals(after.position)||!snap.rotation.equals(after.rotation)||!snap.scale.equals(after.scale)){
       const apply=value=>{snap.object.position.copy(value.position);snap.object.rotation.copy(value.rotation);snap.object.scale.copy(value.scale);snap.object.updateMatrixWorld(true);};
       commandHistory.execute({do:()=>apply(after),undo:()=>apply(snap)});markDirty();syncModelLighting();updateHistoryControls();updateSelectionPanel();
     }
   }
 });
-transformGizmo.addEventListener('objectChange',()=>{if(!gizmoDragSnapshot)return;const o=gizmoDragSnapshot.object;for(const axis of ['x','y','z'])if(document.getElementById('lock-axis-'+axis).checked){o.position[axis]=gizmoDragSnapshot.position[axis];o.rotation[axis]=gizmoDragSnapshot.rotation[axis];o.scale[axis]=gizmoDragSnapshot.scale[axis];}o.updateMatrixWorld(true);syncModelLighting();updateSelectionPanel();});
+transformGizmo.addEventListener('objectChange',()=>{
+  if(multiObjectTransform.before){multiObjectTransform.update();syncModelLighting();updateSelectionPanel();return;}
+  if(!gizmoDragSnapshot)return;const o=gizmoDragSnapshot.object;
+  for(const axis of ['x','y','z'])if(document.getElementById('lock-axis-'+axis).checked){o.position[axis]=gizmoDragSnapshot.position[axis];o.rotation[axis]=gizmoDragSnapshot.rotation[axis];o.scale[axis]=gizmoDragSnapshot.scale[axis];}
+  o.updateMatrixWorld(true);syncModelLighting();updateSelectionPanel();
+});
 document.getElementById('gizmo-translate').addEventListener('click',()=>transformGizmo.setMode('translate'));
 document.getElementById('gizmo-rotate').addEventListener('click',()=>transformGizmo.setMode('rotate'));
 document.getElementById('gizmo-scale').addEventListener('click',()=>transformGizmo.setMode('scale'));
-document.getElementById('gizmo-space').addEventListener('change',e=>transformGizmo.setSpace(e.target.value));
+document.getElementById('gizmo-space').addEventListener('change',e=>{transformGizmo.setSpace(e.target.value);multiObjectTransform.setSpace(e.target.value);});
 const viewportInteraction = new ViewportInteraction({
   element: renderer.domElement, camera, scene: { children: [] }, raycaster,
   onSelect(object) {
@@ -1308,6 +1325,7 @@ if (new URLSearchParams(window.location.search).has('test')) {
     get workspaceButtons() { return workspaceButtons; },
     get sceneStore() { return sceneStore; },
     get commandHistory() { return commandHistory; },
+    get multiObjectTransform() { return multiObjectTransform; },
     get currentModel() { return currentModel; },
     selectObject,
     refreshObjectList,
