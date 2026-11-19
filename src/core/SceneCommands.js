@@ -218,7 +218,7 @@ export class SetMaterialPropertiesCommand {
     const values = {};
     for (const key of Object.keys(this.properties)) {
       const value = this.material[key];
-      values[key] = value && typeof value.clone === 'function' ? value.clone() : value;
+      values[key] = value && !value.isTexture && typeof value.clone === 'function' ? value.clone() : value;
     }
     return values;
   }
@@ -226,7 +226,7 @@ export class SetMaterialPropertiesCommand {
   apply(values) {
     for (const [key, value] of Object.entries(values)) {
       const current = this.material[key];
-      if (current && value && typeof current.copy === 'function' && typeof value === 'object') {
+      if (current && value && !current.isTexture && !value.isTexture && typeof current.copy === 'function' && typeof value === 'object') {
         current.copy(value);
       } else {
         this.material[key] = value;
