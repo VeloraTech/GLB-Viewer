@@ -185,7 +185,9 @@
 
 
 
-<script type="module" src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js"></script>\n<script nomodule src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.js"></script>\n<script type="importmap">
+<script type="module" src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.js"></script>
+<script type="importmap">
 {
   "imports": {
     "three": "./three/build/three.module.js",
@@ -380,7 +382,8 @@ rimLight.position.set(0, 5, -7);
 scene.add(rimLight);
 
 // Register the fully initialized base scene before user models are loaded.
-const sceneStore = new SceneStore(scene);\nconst sceneRuntime = new SceneRuntime({ scene, sceneStore, disposeResources: disposeObjectResources });
+const sceneStore = new SceneStore(scene);
+const sceneRuntime = new SceneRuntime({ scene, sceneStore, disposeResources: disposeObjectResources });
 const commandHistory = new CommandHistory({ limit: 100 });
  
 // ---------- Editor workspace navigation and persisted layout ----------
@@ -396,7 +399,8 @@ function setWorkspaceView(name) {
     button.classList.toggle('active', active);
     button.setAttribute('aria-pressed', String(active));
   });
-  workspaceTitle.textContent = name[0].toUpperCase() + name.slice(1);\n  editorState.patch('activeTool', name, 'tool:activate');
+  workspaceTitle.textContent = name[0].toUpperCase() + name.slice(1);
+  editorState.patch('activeTool', name, 'tool:activate');
   workspace.setAttribute('aria-label', name[0].toUpperCase() + name.slice(1) + ' tool panel');
   workspace.hidden = false;
   workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', String(button.dataset.workspace === name)));
@@ -422,7 +426,7 @@ const editorTools = [
   { id: 'objects', label: 'Objects / Outliner', icon: 'cube-outline', order: 2 },
   { id: 'transform', label: 'Transform', icon: 'move-outline', order: 3 },
   { id: 'lighting', label: 'Lighting', icon: 'sunny-outline', order: 4 },
-  { id: 'plugins', label: 'Plugins', icon: 'extension-puzzle-outline', order: 5 },
+  { id: 'plugins', label: 'Plugins', icon: 'puzzle-outline', order: 5 },
   { id: 'extensions', label: 'Extensions', icon: 'grid-outline', order: 6 },
 ];
 editorTools.forEach((tool) => toolRegistry.register(tool));
@@ -768,7 +772,12 @@ commandHistory.onChange = updateHistoryControls;
 // Opt-in test surface for browser automation. It is absent during normal use.
 if (new URLSearchParams(window.location.search).has('test')) {
   window.__GLB_VIEWER_TEST__ = Object.freeze({
-    setWorkspaceView,\n    get editorState() { return editorState; },\n    get toolRegistry() { return toolRegistry; },\n    get workspaceManager() { return workspaceManager; },\n    get sceneRuntime() { return sceneRuntime; },\n    get viewportInteraction() { return viewportInteraction; },
+    setWorkspaceView,
+    get editorState() { return editorState; },
+    get toolRegistry() { return toolRegistry; },
+    get workspaceManager() { return workspaceManager; },
+    get sceneRuntime() { return sceneRuntime; },
+    get viewportInteraction() { return viewportInteraction; },
     setWorkspaceCollapsed(collapsed) { workspace.hidden = Boolean(collapsed); },
     get workspace() { return workspace; },
     get controls() { return controls; },
