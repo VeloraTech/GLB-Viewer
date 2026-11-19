@@ -992,13 +992,13 @@ function countStats(object) {
 function updateInspection() {
   const panel=document.getElementById('model-inspection');
   if(!currentModel){panel.textContent='Open a model to inspect it.';return;}
-  const stats=inspectModel(currentModel);
+  const stats=inspectModel(currentModel,THREE);
   const {meshes,vertices,triangles,groups,materials,textures,warnings,size}=stats;
   const rows=[
     ['File',state.fileName||'Untitled'],['File size',formatBytes(state.fileSize)],
     ['Meshes',meshes],['Triangles',Math.round(triangles).toLocaleString()],
     ['Vertices',vertices.toLocaleString()],['Groups',groups],
-    ['Materials',materials.size],['Textures',textures.size],
+    ['Materials',materials],['Textures',textures],
     ['Dimensions',size.toArray().map(v=>Number.isFinite(v)?v.toFixed(3):'—').join(' × ')],
     ['Inspection notes',warnings.length?warnings.join(' '):'No basic geometry warnings detected.']
   ];
