@@ -69,7 +69,10 @@
   body.light .editor-panel { background:rgba(249,250,252,.98); color:#222; border-color:rgba(0,0,0,.16); }
   body.light .editor-panel-header { border-color:rgba(0,0,0,.1); background:rgba(0,0,0,.025); }
   body.light .editor-panel-close { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
-  body.light .editor-panel h3 { color:#626b78; }
+  body.light .editor-panel h3,body.light .editor-panel .workspace-note,body.light .editor-panel #selected-name,body.light .editor-panel #scene-hint,body.light .editor-panel .light-control { color:#626b78; }
+  body.light .editor-panel button { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
+  body.light .editor-panel input[type=number] { color:#222; border-color:rgba(0,0,0,.16); background:#fff; }
+  body.light .editor-panel input[type=range] { accent-color:#426fa8; }
   @media (max-width:700px) { .editor-panel { top:64px; right:62px; width:min(340px,calc(100vw - 78px)); height:calc(100vh - 88px); max-width:calc(100vw - 70px); } }
   #workspace-main { position:fixed; top:96px; right:70px; width:340px; height:min(620px,calc(100vh - 120px)); min-width:280px; min-height:220px; max-width:calc(100vw - 90px); max-height:calc(100vh - 24px); display:flex; flex-direction:column; overflow:hidden; resize:both; border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(29,31,35,.97); color:#eee; pointer-events:auto; z-index:35; backdrop-filter:blur(16px); box-shadow:0 18px 48px rgba(0,0,0,.38); font-size:12px; }
   #workspace-main[hidden] { display:none; }
@@ -476,7 +479,9 @@ function syncWorkspaceRail() {
   workspaceButtons.forEach((button) => {
     const panel = workspacePanels.get(button.dataset.workspace);
     const open = Boolean(panel && !panel.hidden);
+    button.setAttribute('aria-controls', panel?.id || '');
     button.setAttribute('aria-expanded', String(open));
+    button.setAttribute('aria-pressed', String(open && activeWorkspacePanel === panel));
     button.classList.toggle('active', activeWorkspacePanel === panel && open);
   });
 }
