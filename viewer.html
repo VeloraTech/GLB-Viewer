@@ -192,7 +192,7 @@
     <div id="workspace-content">
       <section class="workspace-view" data-view="scene">
         <div id="history-controls"><button id="undo-btn" type="button" disabled>Undo</button><button id="redo-btn" type="button" disabled>Redo</button></div>
-        <h3>Scene overview</h3><p class="workspace-note">Inspect the active model and manage your current editing session.</p>
+        <h3>Viewport</h3><label><input id="grid-toggle" type="checkbox" checked> Grid</label> <label><input id="axes-toggle" type="checkbox" checked> XYZ axes</label><label class="light-control">Shading <select id="shading-mode"><option value="material">Material</option><option value="wireframe">Wireframe</option><option value="normal">Normals</option></select></label><div id="history-controls"><button id="frame-selected-btn" type="button">Frame selected</button><button id="reset-view-btn" type="button">Reset view</button></div><h3>Scene overview</h3><p class="workspace-note">Inspect the active model and manage your current editing session.</p>
         <div id="selected-name">Nothing selected</div>
       </section>
       <section class="workspace-view" data-view="objects" hidden>
@@ -681,6 +681,12 @@ document.getElementById('material-metalness').addEventListener('input',e=>editSe
 document.getElementById('material-roughness').addEventListener('input',e=>editSelectedMaterial('roughness',e.target.value));
 document.getElementById('material-opacity').addEventListener('input',e=>editSelectedMaterial('opacity',e.target.value));
 document.getElementById('frame-all-btn').addEventListener('click',()=>viewportWorkspace.frame(currentModel));
+document.getElementById('grid-toggle').addEventListener('change',e=>viewportWorkspace.setGrid(e.target.checked));
+document.getElementById('axes-toggle').addEventListener('change',e=>viewportWorkspace.setAxes(e.target.checked));
+document.getElementById('shading-mode').addEventListener('change',e=>viewportWorkspace.setShading(e.target.value));
+document.getElementById('frame-selected-btn').addEventListener('click',()=>viewportWorkspace.frame(sceneStore.getSelection()));
+document.getElementById('reset-view-btn').addEventListener('click',()=>viewportWorkspace.resetView());
+
 document.getElementById('view-front-btn').addEventListener('click',()=>viewportWorkspace.preset('front'));
 document.getElementById('view-right-btn').addEventListener('click',()=>viewportWorkspace.preset('right'));
 document.getElementById('view-top-btn').addEventListener('click',()=>viewportWorkspace.preset('top'));
