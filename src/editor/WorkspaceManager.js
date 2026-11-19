@@ -5,8 +5,8 @@
 const STORAGE_KEY = "glb-editor-workspace-v1";
 const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
 export class WorkspaceManager {
-  constructor({ root = document, storage = localStorage, storageKey = STORAGE_KEY } = {}) {
-    this.root = root; this.storage = storage; this.storageKey = storageKey;
+  constructor({ root = document, storage = localStorage, storageKey = STORAGE_KEY, viewport = () => ({ width: globalThis.innerWidth || 1280, height: globalThis.innerHeight || 800 }) } = {}) {
+    this.root = root; this.storage = storage; this.storageKey = storageKey; this.viewport = viewport;
     this.panels = new Map(); this.drag = null;
     this.layout = this.readLayout();
     this.onPointerMove = (event) => this.move(event);
@@ -49,8 +49,9 @@ export class WorkspaceManager {
   move(event) {
     if (!this.drag || event.pointerId !== this.drag.pointerId) return;
     const panel = this.require(this.drag.id), r = panel.rect;
-    r.x = clamp(this.drag.x + event.clientX - this.drag.startX, 0, Math.max(0, innerWidth - 72));
-    r.y = clamp(this.drag.y + event.clientY - this.drag.startY, 0, Math.max(0, innerHeight - 44));
+    const viewport = this.viewport();
+    r.x = clamp(this.drag.x + event.clientX - this.drag.startX, 0, Math.max(0, viewport.width - 72));
+    r.y = clamp(this.drag.y + event.clientY - this.drag.startY, 0, Math.max(0, viewport.height - 44));
     this.apply(panel); this.layout[panel.id] = { ...r };
   }
   stopDrag() { if (!this.drag) return; this.drag = null; this.save(); }
