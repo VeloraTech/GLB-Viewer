@@ -171,3 +171,25 @@ export class ReparentObjectCommand {
     this.sceneStore.reparentObject(this.objectId, this.snapshot.oldParent, this.snapshot.oldIndex);
   }
 }
+
+export class RenameObjectCommand {
+  constructor(sceneStore, objectId, name) {
+    requireSceneMutationApi(sceneStore, 'requireObject');
+    this.sceneStore=sceneStore;this.objectId=String(objectId);this.name=String(name).trim();
+    if(!this.name)throw new TypeError('Object name cannot be empty.');
+    this.previousName=null;
+  }
+  do(){
+    const object=this.sceneStore.requireObject(this.objectId);
+    if(this.previousName===null)this.previousName=object.name||'';
+    object.name=this.name;
+    this.sceneStore.emit?.('object:changed',{action:'rename',object});
+    this.sceneStore.emit?.('scene:changed',{action:'rename',object});
+  }
+  undo(){
+    if(this.previousName===null)throw new Error('Cannot undo a rename before it executes.');
+    const object=this.sceneStore.requireObject(this.objectId);object.name=this.previousName;
+    this.sceneStore.emit?.('object:changed',{action:'rename',object});
+    this.sceneStore.emit?.('scene:changed',{action:'rename',object});
+  }
+}
