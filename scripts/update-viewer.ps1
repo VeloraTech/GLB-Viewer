@@ -30,6 +30,8 @@ try {
     'src/editor/WorkspaceManager.js',
     'src/editor/ViewportInteraction.js',
     'src/editor/SceneRuntime.js',
+    'src/editor/CommandPalette.js',
+    'src/editor/OrbitPreview.js',
     'src/core/ResourceDisposer.js',
     'src/core/PerformanceMonitor.js',
     'src/core/HardwareProviders.js',
