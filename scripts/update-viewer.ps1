@@ -39,7 +39,8 @@ try {
     'src/core/AdaptiveQualityPolicy.js',
     'src/core/SceneStore.js',
     'src/core/CommandHistory.js',
-    'src/core/SceneCommands.js'
+    'src/core/SceneCommands.js',
+    'src/core/ModelInspector.js'
   )
   $stageRoot = Join-Path $UpdateRoot ('.staging-' + [guid]::NewGuid().ToString('N'))
   $bundleRoot = Join-Path $UpdateRoot $commitSha
