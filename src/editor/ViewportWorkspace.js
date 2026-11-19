@@ -85,5 +85,19 @@ export class ViewportWorkspace {
     this.camera.lookAt(center);this.controls.update();return true;
   }
   resetView(){const model=this.getModel();if(!model)return false;return this.frame(model);}
-  dispose(){this.restoreMaterials();this.scene.remove(this.grid,this.axes);if(this.selectionHelper)this.scene.remove(this.selectionHelper);}
+  dispose(){
+    this.restoreMaterials();
+    this.scene.remove(this.grid,this.axes);
+    const disposeHelper = helper => {
+      if (!helper) return;
+      helper.geometry?.dispose?.();
+      const materials = Array.isArray(helper.material) ? helper.material : [helper.material];
+      materials.forEach(material => material?.dispose?.());
+      this.scene.remove(helper);
+    };
+    disposeHelper(this.grid);
+    disposeHelper(this.axes);
+    disposeHelper(this.selectionHelper);
+    this.selectionHelper = null;
+  }
 }
