@@ -1214,7 +1214,13 @@ function refreshObjectList() {
 function selectObject(object, keepMulti = false) {
   if (object && !sceneStore.getObject(object.uuid)) return;
   if (!keepMulti) selectedIds = new Set(object ? [object.uuid] : []);
-  sceneStore.select(object ? object.uuid : null);
+  let activeObject = object;
+  if (keepMulti && object && !selectedIds.has(object.uuid)) {
+    const remaining = [...selectedIds].map(id => sceneStore.getObject(id)).filter(item => item && !lockedObjectIds.has(item.uuid));
+    activeObject = remaining[remaining.length - 1] || null;
+  }
+  if (activeObject && lockedObjectIds.has(activeObject.uuid)) activeObject = null;
+  sceneStore.select(activeObject ? activeObject.uuid : null);
   const active = sceneStore.getSelection();
   const selected = [...selectedIds].map(id => sceneStore.getObject(id)).filter(item => item && !lockedObjectIds.has(item.uuid));
   const selectedSet = new Set(selected);
