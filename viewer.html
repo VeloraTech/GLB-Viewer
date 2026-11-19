@@ -1301,11 +1301,22 @@ document.getElementById('gizmo-scale').addEventListener('click',()=>transformGiz
 document.getElementById('gizmo-space').addEventListener('change',e=>{transformGizmo.setSpace(e.target.value);multiObjectTransform.setSpace(e.target.value);});
 const viewportInteraction = new ViewportInteraction({
   element: renderer.domElement, camera, scene: { children: [] }, raycaster,
-  onSelect(object) {
-    if (panMode || !object || object.userData?.editorHelper || !currentModel) return;
-    let target = object;
+  onSelect(object, hits, event) {
+    if (panMode || !currentModel) return;
+    const targetHit = (hits || []).find(hit => hit.object?.isMesh && !hit.object.userData?.editorHelper && currentModel.getObjectById(hit.object.id));
+    if (!targetHit) {
+      if (!event?.ctrlKey && !event?.metaKey && !event?.shiftKey) { selectedIds.clear(); selectObject(null); }
+      return;
+    }
+    let target = targetHit.object;
     while (target.parent && target.parent !== currentModel) target = target.parent;
-    selectObject(target);
+    if (event?.ctrlKey || event?.metaKey || event?.shiftKey) {
+      if (selectedIds.has(target.uuid)) selectedIds.delete(target.uuid); else selectedIds.add(target.uuid);
+      selectObject(target, true);
+    } else {
+      selectObject(target);
+    }
+    refreshObjectList();
   }
 });
 // Raycast only the active model; the scene wrapper is updated when a model loads.
