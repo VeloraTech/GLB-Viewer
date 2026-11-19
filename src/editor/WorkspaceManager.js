@@ -14,7 +14,7 @@ export class WorkspaceManager {
           for (const entry of entries) {
             const id = entry.target.dataset.workspacePanelId;
             const panel = this.panels.get(id);
-            if (!panel) continue;
+            if (!panel || entry.contentRect.width < 100 || entry.contentRect.height < 100) continue;
             panel.rect.width = Math.round(entry.contentRect.width);
             panel.rect.height = Math.round(entry.contentRect.height);
             this.layout[id] = { ...panel.rect };
