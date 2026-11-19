@@ -32,7 +32,7 @@ export class CommandPalette {
       const candidates=[command.label,command.id,...command.aliases,...command.keywords].map(normalize);
       let score=0;
       if(!q)score=1;else if(candidates.some(v=>v===q))score=100;else if(candidates.some(v=>v.startsWith(q)))score=80;else if(tokens.every(t=>candidates.some(v=>v.includes(t))))score=50;else return null;
-      return {command,score,...this.state(command)};
+      return {id:command.id,command,score,...this.state(command)};
     }).filter(Boolean).sort((a,b)=>b.score-a.score||a.command.label.localeCompare(b.command.label));
   }
   refresh(){if(this.opened)this.render();}
