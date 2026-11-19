@@ -8,6 +8,7 @@ import {
   ReparentObjectCommand,
   SetTransformCommand,
   SetVisibilityCommand,
+  RenameObjectCommand,
 } from '../src/core/SceneCommands.js';
 
 function vector(x, y, z, extra = {}) {
@@ -213,4 +214,24 @@ test('scene graph rejects cycles and unregistered destination parents', () => {
   assert.throws(() => store.reparentObject('child', outsider), /destination parent/);
   assert.equal(parent.parent, root);
   assert.equal(child.parent, parent);
+});
+
+
+test('rename command is undoable and emits scene change events', () => {
+  const { object, store, history } = setup();
+  const events = [];
+  store.on('object:changed', (event) => events.push(event.action));
+  history.execute(new RenameObjectCommand(store, 'mesh', 'Renamed mesh'));
+  assert.equal(object.name, 'Renamed mesh');
+  history.undo();
+  assert.equal(object.name, '');
+  history.redo();
+  assert.equal(object.name, 'Renamed mesh');
+  assert.deepEqual(events, ['rename', 'rename', 'rename']);
+});
+
+test('rename command rejects blank names and unknown objects', () => {
+  const { store, history } = setup();
+  assert.throws(() => new RenameObjectCommand(store, 'mesh', '   '), /cannot be empty/i);
+  assert.throws(() => history.execute(new RenameObjectCommand(store, 'missing', 'Name')), /Unknown scene object/);
 });
