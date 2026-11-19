@@ -193,3 +193,55 @@ export class RenameObjectCommand {
     this.sceneStore.emit?.('scene:changed',{action:'rename',object});
   }
 }
+
+
+/**
+ * Reversible material-property edit. Values with clone()/copy() (for example
+ * THREE.Color) are snapshotted by value; textures and other resource objects
+ * are retained by reference so undo can restore the original resource.
+ */
+export class SetMaterialPropertiesCommand {
+  constructor(material, properties) {
+    if (!material || typeof material !== 'object') {
+      throw new TypeError('A material object is required.');
+    }
+    if (!properties || typeof properties !== 'object' || Array.isArray(properties) ||
+        Object.keys(properties).length === 0) {
+      throw new TypeError('At least one material property is required.');
+    }
+    this.material = material;
+    this.properties = { ...properties };
+    this.previous = null;
+  }
+
+  snapshot() {
+    const values = {};
+    for (const key of Object.keys(this.properties)) {
+      const value = this.material[key];
+      values[key] = value && typeof value.clone === 'function' ? value.clone() : value;
+    }
+    return values;
+  }
+
+  apply(values) {
+    for (const [key, value] of Object.entries(values)) {
+      const current = this.material[key];
+      if (current && value && typeof current.copy === 'function' && typeof value === 'object') {
+        current.copy(value);
+      } else {
+        this.material[key] = value;
+      }
+    }
+    this.material.needsUpdate = true;
+  }
+
+  do() {
+    if (this.previous === null) this.previous = this.snapshot();
+    this.apply(this.properties);
+  }
+
+  undo() {
+    if (this.previous === null) throw new Error('Cannot undo a material edit before it executes.');
+    this.apply(this.previous);
+  }
+}
