@@ -1247,11 +1247,12 @@ document.getElementById('redo-btn').addEventListener('click', () => applyHistory
 document.getElementById('transform-form').addEventListener('submit',event=>{
   event.preventDefault();const active=sceneStore.getSelection();if(!active)return;const form=event.currentTarget,n=name=>Number(form.elements[name].value);
   const target={position:new THREE.Vector3(n('x'),n('y'),n('z')),rotation:new THREE.Euler(THREE.MathUtils.degToRad(n('rx')),THREE.MathUtils.degToRad(n('ry')),THREE.MathUtils.degToRad(n('rz')),active.rotation.order),scale:new THREE.Vector3(n('sx'),n('sy'),n('sz'))};
-  const objects=[...selectedIds].map(id=>sceneStore.getObject(id)).filter(o=>o&&!lockedObjectIds.has(o.uuid));if(!objects.includes(active)&&!lockedObjectIds.has(active.uuid))objects.push(active);if(!objects.length)return;
+  let objects=[...selectedIds].map(id=>sceneStore.getObject(id)).filter(o=>o&&!lockedObjectIds.has(o.uuid));if(!objects.includes(active)&&!lockedObjectIds.has(active.uuid))objects.push(active);if(!objects.length)return;
+  const selectedSet=new Set(objects);objects=objects.filter(object=>{for(let parent=object.parent;parent;parent=parent.parent)if(selectedSet.has(parent))return false;return true;});
   const snapshots=objects.map(object=>({object,position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()}));
-  const dp=target.position.clone().sub(active.position),dr=[target.rotation.x-active.rotation.x,target.rotation.y-active.rotation.y,target.rotation.z-active.rotation.z],ds=[target.scale.x/active.scale.x,target.scale.y/active.scale.y,target.scale.z/active.scale.z];
+  const dp=target.position.clone().sub(active.position),dr=[target.rotation.x-active.rotation.x,target.rotation.y-active.rotation.y,target.rotation.z-active.rotation.z],ds=target.scale.clone().sub(active.scale);
   const restore=()=>snapshots.forEach(v=>{v.object.position.copy(v.position);v.object.rotation.copy(v.rotation);v.object.scale.copy(v.scale);v.object.updateMatrixWorld(true);});
-  const apply=()=>snapshots.forEach(v=>{v.object.position.copy(v.position).add(dp);v.object.rotation.set(v.rotation.x+dr[0],v.rotation.y+dr[1],v.rotation.z+dr[2],v.rotation.order);v.object.scale.set(v.scale.x*ds[0],v.scale.y*ds[1],v.scale.z*ds[2]);v.object.updateMatrixWorld(true);});
+  const apply=()=>snapshots.forEach(v=>{v.object.position.copy(v.position).add(dp);v.object.rotation.set(v.rotation.x+dr[0],v.rotation.y+dr[1],v.rotation.z+dr[2],v.rotation.order);v.object.scale.copy(v.scale).add(ds);v.object.updateMatrixWorld(true);});
   commandHistory.execute({do:apply,undo:restore});syncModelLighting();markDirty();updateHistoryControls();updateSelectionPanel();
 });
 document.getElementById('reset-transform-btn').addEventListener('click',()=>{
