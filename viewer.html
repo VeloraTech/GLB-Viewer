@@ -201,13 +201,15 @@
       </section>
       <section class="workspace-view" data-view="transform" hidden>
         <h3>Transform</h3>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px"><button type="button" id="gizmo-translate">Move</button><button type="button" id="gizmo-rotate">Rotate</button><button type="button" id="gizmo-scale">Scale</button><select id="gizmo-space"><option value="local">Local</option><option value="world">World</option></select></div>
+        <div style="display:flex;gap:12px;margin-bottom:9px"><label><input type="checkbox" id="lock-axis-x"> Lock X</label><label><input type="checkbox" id="lock-axis-y"> Lock Y</label><label><input type="checkbox" id="lock-axis-z"> Lock Z</label></div>
         <form id="transform-form">
           <label>X <input name="x" type="number" step="any" value="0"></label><label>Y <input name="y" type="number" step="any" value="0"></label><label>Z <input name="z" type="number" step="any" value="0"></label>
           <label>Rotate X° <input name="rx" type="number" step="any" value="0"></label><label>Rotate Y° <input name="ry" type="number" step="any" value="0"></label><label>Rotate Z° <input name="rz" type="number" step="any" value="0"></label>
           <label>Scale X <input name="sx" type="number" step="any" value="1"></label><label>Scale Y <input name="sy" type="number" step="any" value="1"></label><label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
-          <button type="submit">Apply transform</button>
+          <button type="submit">Apply to selected objects</button><button type="button" id="reset-transform-btn">Reset transform</button>
         </form>
-        <p class="workspace-note">Position, rotation and scale are independently editable on all three axes.</p>
+        <p class="workspace-note">Gizmo edits the active object. Numeric edits apply the active object's transform delta to all selected, unlocked objects. Axis locks preserve local components during gizmo drags.</p>
       </section>
       <section class="workspace-view" data-view="lighting" hidden>
         <h3>Viewport lighting</h3>
@@ -225,7 +227,7 @@
         <button id="remove-light-btn" type="button" disabled>Remove selected light</button>
         <button id="lighting-reset" type="button">Reset lighting</button>
       </section>
-      <section class="workspace-view" data-view="materials" hidden><h3>Selected material</h3><p id="material-target">Select a mesh to edit its material.</p><label class="light-control">Base color <input id="material-color" type="color" value="#cccccc"></label><label class="light-control">Metalness <input id="material-metalness" type="range" min="0" max="1" step="0.01" value="0"></label><label class="light-control">Roughness <input id="material-roughness" type="range" min="0" max="1" step="0.01" value="0.7"></label><label class="light-control">Opacity <input id="material-opacity" type="range" min="0" max="1" step="0.01" value="1"></label></section><section class="workspace-view" data-view="inspect" hidden><h3>Model inspection</h3><dl id="model-inspection">Open a model to inspect it.</dl></section>
+      <section class="workspace-view" data-view="materials" hidden><h3>Selected material</h3><p id="material-target">Select a mesh to edit its material.</p><label class="light-control">Material slot <select id="material-slot" disabled></select></label><label class="light-control">Base color <input id="material-color" type="color" value="#cccccc" disabled></label><label class="light-control">Metalness <input id="material-metalness" type="range" min="0" max="1" step="0.01" value="0" disabled></label><label class="light-control">Roughness <input id="material-roughness" type="range" min="0" max="1" step="0.01" value="0.7" disabled></label><label class="light-control">Opacity <input id="material-opacity" type="range" min="0" max="1" step="0.01" value="1" disabled></label><label class="light-control">Base color texture <input id="material-texture" type="file" accept="image/*" disabled></label><button id="clear-material-texture" type="button" disabled>Clear base color texture</button></section><section class="workspace-view" data-view="inspect" hidden><h3>Model inspection</h3><dl id="model-inspection">Open a model to inspect it.</dl></section>
       <section class="workspace-view" data-view="plugins" hidden><h3>Plugins</h3><div class="workspace-placeholder">Plugin management will appear here when the plugin API is available.</div></section>
       <section class="workspace-view" data-view="extensions" hidden><h3>Extensions</h3><div class="workspace-placeholder">Extension management will appear here when extension loading is implemented.</div></section>
     </div>
@@ -269,6 +271,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { disposeObjectResources } from './src/core/ResourceDisposer.js';
 import { PerformanceMonitor } from './src/core/PerformanceMonitor.js';
@@ -464,6 +467,9 @@ scene.add(rimLight);
 const sceneStore = new SceneStore(scene);
 const sceneRuntime = new SceneRuntime({ scene, sceneStore, disposeResources: disposeObjectResources });
 const commandHistory = new CommandHistory({ limit: 100 });
+const transformGizmo = new TransformControls(camera, renderer.domElement);
+scene.add(transformGizmo.getHelper());
+let gizmoDragSnapshot=null, materialSlotIndex=0;
  
 // ---------- Editor workspace navigation and persisted layout ----------
 const workspaceShell = document.getElementById('workspace-main');
@@ -803,20 +809,21 @@ function applyLightingPreset(name){
   syncModelLighting();markDirty();
 }
 function selectedMaterial() {
-  const object=sceneStore.getSelection();
-  if(!object?.isMesh||!object.material)return null;
-  return Array.isArray(object.material)?object.material[0]:object.material;
+  const object=sceneStore.getSelection();if(!object?.isMesh||!object.material)return null;
+  const slots=Array.isArray(object.material)?object.material:[object.material];return slots[materialSlotIndex]||null;
 }
 function syncMaterialControls() {
-  const object=sceneStore.getSelection(),material=selectedMaterial();
-  document.getElementById('material-target').textContent=material?(object.name||object.type||'Selected mesh'):'Select a mesh to edit its material.';
-  for(const id of ['material-color','material-metalness','material-roughness','material-opacity'])document.getElementById(id).disabled=!material;
+  const object=sceneStore.getSelection(),slots=object?.isMesh&&object.material?(Array.isArray(object.material)?object.material:[object.material]):[];
+  const select=document.getElementById('material-slot');select.replaceChildren(...slots.map((m,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=m.name||'Material '+(i+1);return o;}));
+  materialSlotIndex=Math.min(materialSlotIndex,Math.max(0,slots.length-1));select.value=String(materialSlotIndex);
+  const material=selectedMaterial();document.getElementById('material-target').textContent=material?(object.name||object.type||'Selected mesh'):'Select a mesh to edit its material.';
+  for(const id of ['material-slot','material-color','material-metalness','material-roughness','material-opacity','material-texture','clear-material-texture'])document.getElementById(id).disabled=!material;
   if(!material)return;
   if(material.color)document.getElementById('material-color').value='#'+material.color.getHexString();
-  document.getElementById('material-metalness').value=material.metalness??0;
-  document.getElementById('material-roughness').value=material.roughness??1;
-  document.getElementById('material-opacity').value=material.opacity??1;
+  document.getElementById('material-metalness').value=material.metalness??0;document.getElementById('material-roughness').value=material.roughness??1;document.getElementById('material-opacity').value=material.opacity??1;
+  document.getElementById('clear-material-texture').disabled=!material.map;
 }
+document.getElementById('material-slot').addEventListener('change',e=>{materialSlotIndex=Number(e.target.value)||0;syncMaterialControls();});
 function editSelectedMaterial(key,value) {
   const material=selectedMaterial();if(!material)return;
   if(key==='color'&&material.color)material.color.set(value);else if(key in material)material[key]=Number(value);
@@ -827,6 +834,8 @@ document.getElementById('material-color').addEventListener('input',e=>{editSelec
 document.getElementById('material-metalness').addEventListener('input',e=>{editSelectedMaterial('metalness',e.target.value);markDirty();});
 document.getElementById('material-roughness').addEventListener('input',e=>{editSelectedMaterial('roughness',e.target.value);markDirty();});
 document.getElementById('material-opacity').addEventListener('input',e=>{editSelectedMaterial('opacity',e.target.value);markDirty();});
+document.getElementById('material-texture').addEventListener('change',e=>{const file=e.target.files?.[0],material=selectedMaterial();if(!file||!material)return;const url=URL.createObjectURL(file);new THREE.TextureLoader().load(url,texture=>{URL.revokeObjectURL(url);texture.colorSpace=THREE.SRGBColorSpace;texture.flipY=false;material.map=texture;material.needsUpdate=true;markDirty();syncMaterialControls();},undefined,error=>{URL.revokeObjectURL(url);console.error(error);window.alert('Could not load this texture image.');});e.target.value='';});
+document.getElementById('clear-material-texture').addEventListener('click',()=>{const material=selectedMaterial();if(!material?.map)return;material.map=null;material.needsUpdate=true;markDirty();syncMaterialControls();});
 document.getElementById('projection-toggle').addEventListener('click',()=>{
   if(!orthographicCamera){const aspect=window.innerWidth/window.innerHeight;orthographicCamera=new THREE.OrthographicCamera(-2*aspect,2*aspect,2,-2,0.01,10000);orthographicCamera.position.copy(camera.position);orthographicCamera.quaternion.copy(camera.quaternion);}
   const old=useOrthographic?orthographicCamera:camera,next=useOrthographic?camera:orthographicCamera;
@@ -1112,8 +1121,9 @@ function selectObject(object, keepMulti = false) {
   if (object && !sceneStore.getObject(object.uuid)) return;
   if (!keepMulti) selectedIds = new Set(object ? [object.uuid] : []);
   sceneStore.select(object ? object.uuid : null);
+  if(object&&!lockedObjectIds.has(object.uuid))transformGizmo.attach(object);else transformGizmo.detach();
   updateSelectionPanel();
-  document.querySelectorAll('.scene-row').forEach((row) => row.classList.toggle('selected', selectedIds.has(row.dataset.objectId)));
+  document.querySelectorAll('.scene-row').forEach(row=>row.classList.toggle('selected',selectedIds.has(row.dataset.objectId)));
 }
 
 function updateSelectionPanel() {
@@ -1131,7 +1141,9 @@ function updateSelectionPanel() {
   form.querySelector('[name="sx"]').value = object?.scale.x ?? 1;
   form.querySelector('[name="sy"]').value = object?.scale.y ?? 1;
   form.querySelector('[name="sz"]').value = object?.scale.z ?? 1;
-  form.querySelectorAll('input, button').forEach((input) => { input.disabled = !object; });
+  form.querySelectorAll('input, button').forEach(input=>{input.disabled=!object;});
+  document.getElementById('reset-transform-btn').disabled=!object;
+  transformGizmo.enabled=Boolean(object&&!lockedObjectIds.has(object.uuid));
 }
 
 function updateHistoryControls() {
@@ -1140,12 +1152,8 @@ function updateHistoryControls() {
 }
 
 function applyHistoryAction(action) {
-  if (action === 'undo') commandHistory.undo();
-  else commandHistory.redo();
-  markDirty();
-  refreshObjectList();
-  updateHistoryControls();
-  updateSelectionPanel();
+  const changed=action==='undo'?commandHistory.undo():commandHistory.redo();if(!changed)return;
+  markDirty();syncModelLighting();refreshObjectList();updateHistoryControls();updateSelectionPanel();syncMaterialControls();
 }
 
 function fitCamera(object) {
@@ -1167,6 +1175,21 @@ function fitCamera(object) {
 
 // ---------- Scene selection and command-backed editing ----------
 const raycaster = new THREE.Raycaster();
+transformGizmo.addEventListener('dragging-changed',event=>{
+  controls.enabled=!event.value&&!panMode;
+  if(event.value){const object=sceneStore.getSelection();if(object)gizmoDragSnapshot={object,position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()};}
+  else if(gizmoDragSnapshot){const snap=gizmoDragSnapshot;gizmoDragSnapshot=null;const after={position:snap.object.position.clone(),rotation:snap.object.rotation.clone(),scale:snap.object.scale.clone()};
+    if(!snap.position.equals(after.position)||!snap.rotation.equals(after.rotation)||!snap.scale.equals(after.scale)){
+      const apply=value=>{snap.object.position.copy(value.position);snap.object.rotation.copy(value.rotation);snap.object.scale.copy(value.scale);snap.object.updateMatrixWorld(true);};
+      commandHistory.execute({do:()=>apply(after),undo:()=>apply(snap)});markDirty();syncModelLighting();updateHistoryControls();updateSelectionPanel();
+    }
+  }
+});
+transformGizmo.addEventListener('objectChange',()=>{if(!gizmoDragSnapshot)return;const o=gizmoDragSnapshot.object;for(const axis of ['x','y','z'])if(document.getElementById('lock-axis-'+axis).checked){o.position[axis]=gizmoDragSnapshot.position[axis];o.rotation[axis]=gizmoDragSnapshot.rotation[axis];o.scale[axis]=gizmoDragSnapshot.scale[axis];}o.updateMatrixWorld(true);syncModelLighting();updateSelectionPanel();});
+document.getElementById('gizmo-translate').addEventListener('click',()=>transformGizmo.setMode('translate'));
+document.getElementById('gizmo-rotate').addEventListener('click',()=>transformGizmo.setMode('rotate'));
+document.getElementById('gizmo-scale').addEventListener('click',()=>transformGizmo.setMode('scale'));
+document.getElementById('gizmo-space').addEventListener('change',e=>transformGizmo.setSpace(e.target.value));
 const viewportInteraction = new ViewportInteraction({
   element: renderer.domElement, camera, scene: { children: [] }, raycaster,
   onSelect(object) {
@@ -1181,7 +1204,7 @@ viewportInteraction.scene.children = scene.children;
 
 
 sceneStore.on('selection:changed', () => { updateSelectionPanel(); syncMaterialControls(); });
-commandHistory.onChange = updateHistoryControls;
+commandHistory.onChange=({action})=>{updateHistoryControls();if(action==='undo'||action==='redo'){markDirty();syncModelLighting();refreshObjectList();updateSelectionPanel();syncMaterialControls();}};
 
 // Opt-in test surface for browser automation. It is absent during normal use.
 if (new URLSearchParams(window.location.search).has('test')) {
@@ -1220,28 +1243,21 @@ if (new URLSearchParams(window.location.search).has('test')) {
 document.getElementById('undo-btn').addEventListener('click', () => applyHistoryAction('undo'));
 document.getElementById('redo-btn').addEventListener('click', () => applyHistoryAction('redo'));
 
-document.getElementById('transform-form').addEventListener('submit', (event) => {
-  event.preventDefault();
-  const object = sceneStore.getSelection();
-  if (!object) return;
-  const form = event.currentTarget;
-  const number = (name) => Number(form.elements[name].value);
-  const transform = {
-    position: { x: number('x'), y: number('y'), z: number('z') },
-    rotation: {
-      x: THREE.MathUtils.degToRad(number('rx')),
-      y: THREE.MathUtils.degToRad(number('ry')),
-      z: THREE.MathUtils.degToRad(number('rz')),
-      order: object.rotation.order
-    },
-    scale: { x: number('sx'), y: number('sy'), z: number('sz') }
-  };
-  if (lockedObjectIds.has(object.uuid)) { window.alert('Unlock this object before transforming it.'); return; }
-  commandHistory.execute(new SetTransformCommand(sceneStore, object.uuid, transform));
-  syncModelLighting();
-  markDirty();
-  updateHistoryControls();
-  updateSelectionPanel();
+document.getElementById('transform-form').addEventListener('submit',event=>{
+  event.preventDefault();const active=sceneStore.getSelection();if(!active)return;const form=event.currentTarget,n=name=>Number(form.elements[name].value);
+  const target={position:new THREE.Vector3(n('x'),n('y'),n('z')),rotation:new THREE.Euler(THREE.MathUtils.degToRad(n('rx')),THREE.MathUtils.degToRad(n('ry')),THREE.MathUtils.degToRad(n('rz')),active.rotation.order),scale:new THREE.Vector3(n('sx'),n('sy'),n('sz'))};
+  const objects=[...selectedIds].map(id=>sceneStore.getObject(id)).filter(o=>o&&!lockedObjectIds.has(o.uuid));if(!objects.includes(active)&&!lockedObjectIds.has(active.uuid))objects.push(active);if(!objects.length)return;
+  const snapshots=objects.map(object=>({object,position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()}));
+  const dp=target.position.clone().sub(active.position),dr=[target.rotation.x-active.rotation.x,target.rotation.y-active.rotation.y,target.rotation.z-active.rotation.z],ds=[target.scale.x/active.scale.x,target.scale.y/active.scale.y,target.scale.z/active.scale.z];
+  const restore=()=>snapshots.forEach(v=>{v.object.position.copy(v.position);v.object.rotation.copy(v.rotation);v.object.scale.copy(v.scale);v.object.updateMatrixWorld(true);});
+  const apply=()=>snapshots.forEach(v=>{v.object.position.copy(v.position).add(dp);v.object.rotation.set(v.rotation.x+dr[0],v.rotation.y+dr[1],v.rotation.z+dr[2],v.rotation.order);v.object.scale.set(v.scale.x*ds[0],v.scale.y*ds[1],v.scale.z*ds[2]);v.object.updateMatrixWorld(true);});
+  commandHistory.execute({do:apply,undo:restore});syncModelLighting();markDirty();updateHistoryControls();updateSelectionPanel();
+});
+document.getElementById('reset-transform-btn').addEventListener('click',()=>{
+  const objects=[...selectedIds].map(id=>sceneStore.getObject(id)).filter(o=>o&&!lockedObjectIds.has(o.uuid));if(!objects.length)return;
+  const before=objects.map(object=>({object,position:object.position.clone(),rotation:object.rotation.clone(),scale:object.scale.clone()}));
+  commandHistory.execute({do:()=>objects.forEach(o=>{o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.set(1,1,1);o.updateMatrixWorld(true);}),undo:()=>before.forEach(v=>{v.object.position.copy(v.position);v.object.rotation.copy(v.rotation);v.object.scale.copy(v.scale);v.object.updateMatrixWorld(true);})});
+  syncModelLighting();markDirty();updateHistoryControls();updateSelectionPanel();
 });
 
 updateSelectionPanel();
