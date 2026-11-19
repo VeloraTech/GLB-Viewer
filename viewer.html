@@ -66,6 +66,8 @@
   .editor-panel button:focus-visible,.editor-panel input:focus-visible { outline:2px solid #e59b52; outline-offset:2px; }
   .editor-panel h3 { font-size:11px; color:#a7afbb; margin:14px 0 7px; text-transform:uppercase; letter-spacing:.08em; }
   .editor-panel button,.editor-panel input { font:inherit; }
+  .material-texture-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; margin:7px 0; }
+  .material-texture-row button { padding:5px 8px; border:1px solid rgba(255,255,255,.18); border-radius:5px; background:rgba(255,255,255,.07); color:inherit; cursor:pointer; }
   body.light .editor-panel { background:rgba(249,250,252,.98); color:#222; border-color:rgba(0,0,0,.16); }
   body.light .editor-panel-header { border-color:rgba(0,0,0,.1); background:rgba(0,0,0,.025); }
   body.light .editor-panel-close { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
@@ -227,7 +229,13 @@
         <button id="remove-light-btn" type="button" disabled>Remove selected light</button>
         <button id="lighting-reset" type="button">Reset lighting</button>
       </section>
-      <section class="workspace-view" data-view="materials" hidden><h3>Selected material</h3><p id="material-target">Select a mesh to edit its material.</p><label class="light-control">Material slot <select id="material-slot" disabled></select></label><label class="light-control">Base color <input id="material-color" type="color" value="#cccccc" disabled></label><label class="light-control">Metalness <input id="material-metalness" type="range" min="0" max="1" step="0.01" value="0" disabled></label><label class="light-control">Roughness <input id="material-roughness" type="range" min="0" max="1" step="0.01" value="0.7" disabled></label><label class="light-control">Opacity <input id="material-opacity" type="range" min="0" max="1" step="0.01" value="1" disabled></label><label class="light-control">Base color texture <input id="material-texture" type="file" accept="image/*" disabled></label><button id="clear-material-texture" type="button" disabled>Clear base color texture</button></section><section class="workspace-view" data-view="inspect" hidden><h3>Model inspection</h3><dl id="model-inspection">Open a model to inspect it.</dl></section>
+      <section class="workspace-view" data-view="materials" hidden><h3>Selected material</h3><p id="material-target">Select a mesh to edit its material.</p><label class="light-control">Material slot <select id="material-slot" disabled></select></label><label class="light-control">Base color <input id="material-color" type="color" value="#cccccc" disabled></label><label class="light-control">Metalness <input id="material-metalness" type="range" min="0" max="1" step="0.01" value="0" disabled></label><label class="light-control">Roughness <input id="material-roughness" type="range" min="0" max="1" step="0.01" value="0.7" disabled></label><label class="light-control">Opacity <input id="material-opacity" type="range" min="0" max="1" step="0.01" value="1" disabled></label><h3>Texture channels</h3>
+          <div class="material-texture-row"><label class="light-control">Base color <input id="material-texture" type="file" accept="image/*" disabled></label><button id="clear-material-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Metalness <input id="material-metalness-texture" type="file" accept="image/*" disabled></label><button id="clear-material-metalness-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Roughness <input id="material-roughness-texture" type="file" accept="image/*" disabled></label><button id="clear-material-roughness-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Normal <input id="material-normal-texture" type="file" accept="image/*" disabled></label><button id="clear-material-normal-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Ambient occlusion <input id="material-ao-texture" type="file" accept="image/*" disabled></label><button id="clear-material-ao-texture" type="button" disabled>Clear</button></div>
+          <div class="material-texture-row"><label class="light-control">Emissive <input id="material-emissive-texture" type="file" accept="image/*" disabled></label><button id="clear-material-emissive-texture" type="button" disabled>Clear</button></div></section><section class="workspace-view" data-view="inspect" hidden><h3>Model inspection</h3><dl id="model-inspection">Open a model to inspect it.</dl></section>
       <section class="workspace-view" data-view="plugins" hidden><h3>Plugins</h3><div class="workspace-placeholder">Plugin management will appear here when the plugin API is available.</div></section>
       <section class="workspace-view" data-view="extensions" hidden><h3>Extensions</h3><div class="workspace-placeholder">Extension management will appear here when extension loading is implemented.</div></section>
     </div>
@@ -823,11 +831,12 @@ function syncMaterialControls() {
   const select=document.getElementById('material-slot');select.replaceChildren(...slots.map((m,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=m.name||'Material '+(i+1);return o;}));
   materialSlotIndex=Math.min(materialSlotIndex,Math.max(0,slots.length-1));select.value=String(materialSlotIndex);
   const material=selectedMaterial();document.getElementById('material-target').textContent=material?(object.name||object.type||'Selected mesh'):'Select a mesh to edit its material.';
-  for(const id of ['material-slot','material-color','material-metalness','material-roughness','material-opacity','material-texture','clear-material-texture'])document.getElementById(id).disabled=!material;
+  const textureChannels=[['map','material-texture','clear-material-texture'],['metalnessMap','material-metalness-texture','clear-material-metalness-texture'],['roughnessMap','material-roughness-texture','clear-material-roughness-texture'],['normalMap','material-normal-texture','clear-material-normal-texture'],['aoMap','material-ao-texture','clear-material-ao-texture'],['emissiveMap','material-emissive-texture','clear-material-emissive-texture']];
+  for(const id of ['material-slot','material-color','material-metalness','material-roughness','material-opacity',...textureChannels.flatMap(([,input,clear])=>[input,clear])])document.getElementById(id).disabled=!material;
   if(!material)return;
   if(material.color)document.getElementById('material-color').value='#'+material.color.getHexString();
   document.getElementById('material-metalness').value=material.metalness??0;document.getElementById('material-roughness').value=material.roughness??1;document.getElementById('material-opacity').value=material.opacity??1;
-  document.getElementById('clear-material-texture').disabled=!material.map;
+  textureChannels.forEach(([property,,clear])=>{document.getElementById(clear).disabled=!material[property];});
 }
 document.getElementById('material-slot').addEventListener('change',e=>{materialSlotIndex=Number(e.target.value)||0;syncMaterialControls();});
 let materialEditStart = null;
@@ -886,26 +895,33 @@ for (const [id, key] of [['material-color','color'],['material-metalness','metal
   input.addEventListener('input', event => previewMaterialEdit(key, event.target.value));
   input.addEventListener('change', event => commitMaterialEdit(key, event.target.value));
 }
-document.getElementById('material-texture').addEventListener('change',e=>{
-  const file=e.target.files?.[0],material=selectedMaterial();
-  if(!file||!material){e.target.value='';return;}
-  const url=URL.createObjectURL(file);
-  new THREE.TextureLoader().load(url,texture=>{
-    URL.revokeObjectURL(url);
-    texture.colorSpace=THREE.SRGBColorSpace;
-    texture.flipY=false;
-    commandHistory.execute(new SetMaterialPropertiesCommand(material,{map:texture}));
-    markDirty();updateHistoryControls();syncMaterialControls();
-  },undefined,error=>{
-    URL.revokeObjectURL(url);console.error(error);window.alert('Could not load this texture image.');
+const materialTextureChannels=[
+  ['map','material-texture','clear-material-texture',true],
+  ['metalnessMap','material-metalness-texture','clear-material-metalness-texture',false],
+  ['roughnessMap','material-roughness-texture','clear-material-roughness-texture',false],
+  ['normalMap','material-normal-texture','clear-material-normal-texture',false],
+  ['aoMap','material-ao-texture','clear-material-ao-texture',false],
+  ['emissiveMap','material-emissive-texture','clear-material-emissive-texture',true]
+];
+for(const [property,inputId,clearId,isColor] of materialTextureChannels){
+  document.getElementById(inputId).addEventListener('change',event=>{
+    const file=event.target.files?.[0],material=selectedMaterial();event.target.value='';
+    if(!file||!material)return;
+    const url=URL.createObjectURL(file);
+    new THREE.TextureLoader().load(url,texture=>{
+      URL.revokeObjectURL(url);
+      if(isColor)texture.colorSpace=THREE.SRGBColorSpace;
+      texture.flipY=false;
+      commandHistory.execute(new SetMaterialPropertiesCommand(material,{[property]:texture}));
+      markDirty();updateHistoryControls();syncMaterialControls();
+    },undefined,error=>{URL.revokeObjectURL(url);console.error(error);window.alert('Could not load this texture image.');});
   });
-  e.target.value='';
-});
-document.getElementById('clear-material-texture').addEventListener('click',()=>{
-  const material=selectedMaterial();if(!material?.map)return;
-  commandHistory.execute(new SetMaterialPropertiesCommand(material,{map:null}));
-  markDirty();updateHistoryControls();syncMaterialControls();
-});
+  document.getElementById(clearId).addEventListener('click',()=>{
+    const material=selectedMaterial();if(!material?.[property])return;
+    commandHistory.execute(new SetMaterialPropertiesCommand(material,{[property]:null}));
+    markDirty();updateHistoryControls();syncMaterialControls();
+  });
+}
 document.getElementById('projection-toggle').addEventListener('click',()=>{
   if(!orthographicCamera){const aspect=window.innerWidth/window.innerHeight;orthographicCamera=new THREE.OrthographicCamera(-2*aspect,2*aspect,2,-2,0.01,10000);orthographicCamera.position.copy(camera.position);orthographicCamera.quaternion.copy(camera.quaternion);}
   const old=useOrthographic?orthographicCamera:camera,next=useOrthographic?camera:orthographicCamera;
