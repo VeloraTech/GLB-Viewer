@@ -28,10 +28,7 @@ export class OrbitPreview {
     const box = new this.THREE.Box3().setFromObject(model);
     if (box.isEmpty()) return false;
     this.center = box.getCenter(new this.THREE.Vector3());
-    const offset = this.camera.position.clone().sub(this.center);
-    this.radius = Math.max(Math.hypot(offset.x, offset.z), 0.001);
-    this.angle = Math.atan2(offset.x, offset.z);
-    this.height = offset.y;
+    this.syncFromCamera();
     this.controls.target.copy(this.center);
     this.controls.update();
     this.active = true;
@@ -39,8 +36,21 @@ export class OrbitPreview {
     return true;
   }
 
+  syncFromCamera() {
+    if (!this.center) return;
+    const offset = this.camera.position.clone().sub(this.center);
+    this.radius = Math.max(Math.hypot(offset.x, offset.z), 0.001);
+    this.angle = Math.atan2(offset.x, offset.z);
+    this.height = offset.y;
+  }
+
   pause() { if (this.active) this.paused = true; }
-  resume() { if (this.active) this.paused = false; else return this.start(); return true; }
+  resume() {
+    if (!this.active) return this.start();
+    this.syncFromCamera();
+    this.paused = false;
+    return true;
+  }
   stop() { this.active = false; this.paused = false; }
   toggle() { return this.active ? (this.stop(), false) : this.start(); }
 
