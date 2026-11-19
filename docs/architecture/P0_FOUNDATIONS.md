@@ -124,7 +124,7 @@ This is an update mechanism, not a signed software-update channel: transport rel
 
 ### Still outstanding before P0 can be called complete
 
-- Each registered tool view now becomes its own independently draggable, resizable, closable floating panel. Panels can remain open together, are brought forward on focus, and persist their own geometry. The remaining workspace work is docking/splitting and a richer panel layout system.
+- Floating tool panels are now independent, draggable, resizable, closable, and can remain open together. Docking/splitting, snapping, and richer workspace layout presets remain.
 - Scene setup, renderer configuration, camera configuration, lighting, loading, and animation are not yet fully separated into dedicated runtime services.
 - Transform gizmos, multi-selection, nested outliner hierarchy, viewport shading modes, grid/axes controls, and keyboard shortcut registration remain to be implemented.
 - Ionicons currently load from the official Ionicons CDN; they are not yet bundled locally, so first-time icon rendering requires internet access. This should be vendored for fully offline installations.
