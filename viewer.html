@@ -45,20 +45,28 @@
   /* File picker hidden input */
   #file-input { display: none; }
 
-  /* Editor workspace: docked, collapsible inspector with focused workspaces. */
-  #scene-panel { position:absolute; top:64px; left:12px; bottom:64px; width:326px; display:flex; overflow:hidden; border:1px solid rgba(255,255,255,.16); border-radius:12px; background:rgba(24,26,30,.96); color:#eee; pointer-events:auto; z-index:20; backdrop-filter:blur(14px); box-shadow:0 18px 48px rgba(0,0,0,.28); font-size:12px; transition:width .2s ease, transform .2s ease; }
-  #scene-panel.collapsed { width:48px; }
-  #workspace-rail { width:48px; flex:0 0 48px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:10px 5px; border-right:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.025); }
-  #workspace-rail button { width:36px; height:36px; border:0; border-radius:8px; color:#aeb5c1; background:transparent; cursor:pointer; font-size:11px; font-weight:650; }
-  #workspace-rail button:hover,#workspace-rail button.active { color:#fff; background:rgba(255,255,255,.12); }
-  #workspace-main { min-width:0; flex:1; display:flex; flex-direction:column; overflow:hidden; }
-  #workspace-header { min-height:52px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,.1); cursor:grab; touch-action:none; user-select:none; }
-  #workspace-header h2 { font-size:13px; letter-spacing:.02em; }
-  #workspace-collapse { width:28px; height:28px; border:0; border-radius:6px; color:inherit; background:rgba(255,255,255,.08); cursor:pointer; }
-  #workspace-content { flex:1; overflow:auto; padding:14px; }
+  /* Blender-inspired tool shelf: fixed right rail + movable tool/editor panels. */
+  #scene-panel { position:fixed; top:50%; right:12px; transform:translateY(-50%); width:48px; display:flex; flex-direction:column; align-items:center; gap:6px; padding:9px 5px; border:1px solid rgba(255,255,255,.14); border-radius:10px; background:rgba(28,30,34,.96); color:#eee; pointer-events:auto; z-index:40; backdrop-filter:blur(14px); box-shadow:0 12px 34px rgba(0,0,0,.32); }
+  #workspace-rail { width:100%; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  #workspace-rail button { position:relative; width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:7px; color:#aeb5c1; background:transparent; cursor:pointer; }
+  #workspace-rail button:hover,#workspace-rail button.active { color:#fff; background:rgba(255,255,255,.13); }
+  #workspace-rail button.active { box-shadow:inset 2px 0 #e59b52; }
+  .tool-icon { width:19px; height:19px; display:block; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
+  [data-tooltip]::after { content:attr(data-tooltip); position:absolute; right:calc(100% + 10px); top:50%; transform:translate(4px,-50%); padding:6px 9px; border:1px solid rgba(255,255,255,.14); border-radius:5px; background:#202329; color:#f5f5f5; font:500 11px/1.2 system-ui,sans-serif; white-space:nowrap; opacity:0; visibility:hidden; pointer-events:none; z-index:100; box-shadow:0 5px 18px rgba(0,0,0,.28); transition:opacity .12s ease,transform .12s ease,visibility .12s; }
+  [data-tooltip]:hover::after,[data-tooltip]:focus-visible::after { opacity:1; visibility:visible; transform:translate(0,-50%); }
+  #workspace-main { position:fixed; top:96px; right:70px; width:340px; height:min(620px,calc(100vh - 120px)); min-width:280px; min-height:220px; max-width:calc(100vw - 90px); max-height:calc(100vh - 24px); display:flex; flex-direction:column; overflow:hidden; resize:both; border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(29,31,35,.97); color:#eee; pointer-events:auto; z-index:35; backdrop-filter:blur(16px); box-shadow:0 18px 48px rgba(0,0,0,.38); font-size:12px; }
+  #workspace-main[hidden] { display:none; }
+  #workspace-header { min-height:42px; flex:0 0 42px; display:flex; align-items:center; justify-content:space-between; padding:0 12px; border-bottom:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.035); cursor:grab; touch-action:none; user-select:none; }
+  #workspace-header:active { cursor:grabbing; }
+  #workspace-header h2 { font-size:12px; font-weight:650; letter-spacing:.035em; }
+  #workspace-collapse { width:26px; height:26px; border:0; border-radius:5px; color:inherit; background:rgba(255,255,255,.08); cursor:pointer; }
+  #workspace-content { flex:1; min-height:0; overflow:auto; padding:14px; }
+  #workspace-content::-webkit-scrollbar { width:8px; }
+  #workspace-content::-webkit-scrollbar-thumb { background:rgba(255,255,255,.16); border-radius:8px; }
+  #scene-panel button:focus-visible,#workspace-main button:focus-visible,#workspace-main input:focus-visible { outline:2px solid #e59b52; outline-offset:2px; }
   .workspace-view[hidden] { display:none; }
-  #scene-panel h3 { font-size:11px; color:#a7afbb; margin:14px 0 7px; text-transform:uppercase; letter-spacing:.08em; }
-  #scene-panel button,#scene-panel input { font:inherit; }
+  #workspace-main h3 { font-size:11px; color:#a7afbb; margin:14px 0 7px; text-transform:uppercase; letter-spacing:.08em; }
+  #workspace-main button,#workspace-main input { font:inherit; }
   #history-controls { display:flex; gap:6px; }
   #history-controls button,.scene-row button,#transform-form button { border:1px solid rgba(255,255,255,.18); border-radius:6px; padding:7px 9px; color:#eee; background:rgba(255,255,255,.07); cursor:pointer; }
   #history-controls button:disabled { opacity:.35; cursor:default; }
@@ -77,15 +85,15 @@
   .light-control .range-line { display:flex; justify-content:space-between; gap:10px; }
   .light-control input[type=range] { width:100%; accent-color:#8eb7ff; }
   .workspace-placeholder { padding:12px; border:1px dashed rgba(255,255,255,.18); border-radius:8px; color:#aeb5c1; line-height:1.55; }
-  body.light #scene-panel { background:rgba(249,250,252,.97); color:#222; border-color:rgba(0,0,0,.16); }
-  body.light #workspace-rail { border-color:rgba(0,0,0,.1); }
+  body.light #scene-panel,body.light #workspace-main { background:rgba(249,250,252,.98); color:#222; border-color:rgba(0,0,0,.16); }
   body.light #workspace-rail button { color:#555; }
   body.light #workspace-rail button.active,body.light #workspace-rail button:hover { color:#111; background:rgba(0,0,0,.08); }
-  body.light #workspace-header { border-color:rgba(0,0,0,.1); }
+  body.light #workspace-header { border-color:rgba(0,0,0,.1); background:rgba(0,0,0,.025); }
   body.light #workspace-collapse,body.light #history-controls button,body.light .scene-row button,body.light #transform-form button { color:#222; border-color:rgba(0,0,0,.14); background:rgba(0,0,0,.045); }
-  body.light #scene-panel h3,body.light #selected-name,body.light #scene-hint,body.light .workspace-note,body.light .light-control { color:#626b78; }
+  body.light #workspace-main h3,body.light #selected-name,body.light #scene-hint,body.light .workspace-note,body.light .light-control { color:#626b78; }
   body.light #transform-form input,body.light .light-control input[type=number] { color:#222; border-color:rgba(0,0,0,.16); background:#fff; }
-  @media (max-width:700px) { #scene-panel { top:58px; left:8px; bottom:58px; width:min(326px,calc(100vw - 16px)); } #toolbar { left:8px; top:8px; gap:5px; flex-wrap:wrap; max-width:calc(100vw - 16px); } #toolbar button { padding:7px 9px; font-size:11px; } }
+  body.light [data-tooltip]::after { background:#fff; color:#222; border-color:rgba(0,0,0,.14); }
+  @media (max-width:700px) { #workspace-main { top:64px; right:62px; width:min(340px,calc(100vw - 78px)); height:calc(100vh - 88px); max-width:calc(100vw - 70px); } #toolbar { left:8px; top:8px; gap:5px; flex-wrap:wrap; max-width:calc(100vw - 70px); } #toolbar button { padding:7px 9px; font-size:11px; } #scene-panel { right:8px; } }
 
   /* Light theme override */
   body.light { background: #f5f5f5; color: #222; }
@@ -109,53 +117,59 @@
     <button id="diagnostics-btn" title="Download local performance diagnostics">Diagnostics</button>
     <input type="file" id="file-input" accept=".glb,.gltf">
   </div>
-  <aside id="scene-panel" aria-label="Editor workspace">
-    <nav id="workspace-rail" aria-label="Workspace sections">
-      <button type="button" class="active" data-workspace="scene" title="Scene">SC</button>
-      <button type="button" data-workspace="objects" title="Objects">OB</button>
-      <button type="button" data-workspace="transform" title="Transform">TR</button>
-      <button type="button" data-workspace="lighting" title="Lighting">LI</button>
-      <button type="button" data-workspace="plugins" title="Plugins">PL</button>
-      <button type="button" data-workspace="extensions" title="Extensions">EX</button>
+  <svg id="tool-icon-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+    <symbol id="icon-scene" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 8 9 5 9-5M3 8v9l9 5 9-5V8M12 13v9"/></symbol>
+    <symbol id="icon-objects" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/><circle cx="7" cy="5" r="1.5"/><circle cx="7" cy="12" r="1.5"/><circle cx="7" cy="19" r="1.5"/></symbol>
+    <symbol id="icon-transform" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-3 3m3-3 3 3M21 12l-3-3m3 3-3 3M12 21l-3-3m3 3 3-3M3 12l3-3m-3 3 3 3"/></symbol>
+    <symbol id="icon-lighting" viewBox="0 0 24 24"><path d="M9 18h6m-5 3h4m-2-19a7 7 0 0 0-4 12.7c.8.6 1 1.1 1 2.3h6c0-1.2.2-1.7 1-2.3A7 7 0 0 0 12 2Z"/></symbol>
+    <symbol id="icon-plugins" viewBox="0 0 24 24"><path d="M9 3v4m6-4v4M8 7h8a2 2 0 0 1 2 2v3h3v4h-3v3H6v-3H3v-4h3V9a2 2 0 0 1 2-2Z"/></symbol>
+    <symbol id="icon-extensions" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z"/></symbol>
+  </svg>
+  <aside id="scene-panel" aria-label="Editor tools">
+    <nav id="workspace-rail" aria-label="Workspace tools">
+      <button type="button" class="active" data-workspace="scene" data-tooltip="Scene" aria-label="Scene" aria-controls="workspace-main" aria-pressed="true"><svg class="tool-icon" aria-hidden="true"><use href="#icon-scene"></use></svg></button>
+      <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-objects"></use></svg></button>
+      <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-transform"></use></svg></button>
+      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-lighting"></use></svg></button>
+      <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-plugins"></use></svg></button>
+      <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><svg class="tool-icon" aria-hidden="true"><use href="#icon-extensions"></use></svg></button>
     </nav>
-    <div id="workspace-main">
-      <header id="workspace-header"><h2 id="workspace-title">Scene</h2><button id="workspace-collapse" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">‹</button></header>
-      <div id="workspace-content">
-        <section class="workspace-view" data-view="scene">
-          <div id="history-controls"><button id="undo-btn" type="button" disabled>Undo</button><button id="redo-btn" type="button" disabled>Redo</button></div>
-          <h3>Scene overview</h3><p class="workspace-note">Inspect the active model and manage your current editing session.</p>
-          <div id="selected-name">Nothing selected</div>
-        </section>
-        <section class="workspace-view" data-view="objects" hidden>
-          <h3>Hierarchy</h3><div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
-          <p id="scene-hint">Select an object in the list or click it directly in the viewport.</p>
-        </section>
-        <section class="workspace-view" data-view="transform" hidden>
-          <h3>Transform</h3>
-          <form id="transform-form">
-            <label>X <input name="x" type="number" step="any" value="0"></label><label>Y <input name="y" type="number" step="any" value="0"></label><label>Z <input name="z" type="number" step="any" value="0"></label>
-            <label>Rotate X° <input name="rx" type="number" step="any" value="0"></label><label>Rotate Y° <input name="ry" type="number" step="any" value="0"></label><label>Rotate Z° <input name="rz" type="number" step="any" value="0"></label>
-            <label>Scale X <input name="sx" type="number" step="any" value="1"></label><label>Scale Y <input name="sy" type="number" step="any" value="1"></label><label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
-            <button type="submit">Apply transform</button>
-          </form>
-          <p class="workspace-note">Position, rotation and scale are independently editable on all three axes.</p>
-        </section>
-        <section class="workspace-view" data-view="lighting" hidden>
-          <h3>Viewport lighting</h3>
-          <label class="light-control"><span class="range-line"><span>Ambient fill</span><output id="ambient-value">1.1</output></span><input id="ambient-intensity" type="range" min="0" max="3" step=".05" value="1.1"></label>
-          <label class="light-control"><span class="range-line"><span>Key light</span><output id="key-value">2.0</output></span><input id="key-intensity" type="range" min="0" max="5" step=".05" value="2"></label>
-          <label class="light-control"><span class="range-line"><span>Fill light</span><output id="fill-value">1.0</output></span><input id="fill-intensity" type="range" min="0" max="4" step=".05" value="1"></label>
-          <h3>Key light direction</h3>
-          <label class="light-control">Horizontal <input id="light-azimuth" type="range" min="-180" max="180" step="1" value="35"></label>
-          <label class="light-control">Vertical <input id="light-elevation" type="range" min="-80" max="80" step="1" value="48"></label>
-          <p class="workspace-note">Move the light around the model and adjust fill to reveal darker surfaces and edges.</p>
-          <button id="lighting-reset" type="button">Reset lighting</button>
-        </section>
-        <section class="workspace-view" data-view="plugins" hidden><h3>Plugins</h3><div class="workspace-placeholder">Plugin panels will appear here when plugin support is available. The workspace is reserved for dockable tools.</div></section>
-        <section class="workspace-view" data-view="extensions" hidden><h3>Extensions</h3><div class="workspace-placeholder">Extension tools and format capabilities will be organized here.</div></section>
-      </div>
-    </div>
   </aside>
+  <section id="workspace-main" role="region" aria-label="Scene tool panel">
+    <header id="workspace-header"><h2 id="workspace-title">Scene</h2><button id="workspace-collapse" type="button" aria-label="Close tool panel" title="Close tool panel">×</button></header>
+    <div id="workspace-content">
+      <section class="workspace-view" data-view="scene">
+        <div id="history-controls"><button id="undo-btn" type="button" disabled>Undo</button><button id="redo-btn" type="button" disabled>Redo</button></div>
+        <h3>Scene overview</h3><p class="workspace-note">Inspect the active model and manage your current editing session.</p>
+        <div id="selected-name">Nothing selected</div>
+      </section>
+      <section class="workspace-view" data-view="objects" hidden>
+        <h3>Hierarchy</h3><div id="object-list"><span id="empty-scene">Open a model to inspect its objects.</span></div>
+        <p id="scene-hint">Select an object in the list or click it directly in the viewport.</p>
+      </section>
+      <section class="workspace-view" data-view="transform" hidden>
+        <h3>Transform</h3>
+        <form id="transform-form">
+          <label>X <input name="x" type="number" step="any" value="0"></label><label>Y <input name="y" type="number" step="any" value="0"></label><label>Z <input name="z" type="number" step="any" value="0"></label>
+          <label>Rotate X° <input name="rx" type="number" step="any" value="0"></label><label>Rotate Y° <input name="ry" type="number" step="any" value="0"></label><label>Rotate Z° <input name="rz" type="number" step="any" value="0"></label>
+          <label>Scale X <input name="sx" type="number" step="any" value="1"></label><label>Scale Y <input name="sy" type="number" step="any" value="1"></label><label>Scale Z <input name="sz" type="number" step="any" value="1"></label>
+          <button type="submit">Apply transform</button>
+        </form>
+        <p class="workspace-note">Position, rotation and scale are independently editable on all three axes.</p>
+      </section>
+      <section class="workspace-view" data-view="lighting" hidden>
+        <h3>Viewport lighting</h3>
+        <label class="light-control"><span class="range-line"><span>Ambient fill</span><output id="ambient-value">1.1</output></span><input id="ambient-intensity" type="range" min="0" max="3" step=".05" value="1.1"></label>
+        <label class="light-control"><span class="range-line"><span>Key light</span><output id="key-value">2.0</output></span><input id="key-intensity" type="range" min="0" max="5" step=".05" value="2"></label>
+        <label class="light-control"><span class="range-line"><span>Fill light</span><output id="fill-value">1.0</output></span><input id="fill-intensity" type="range" min="0" max="3" step=".05" value="1"></label>
+        <label class="light-control"><span class="range-line"><span>Key azimuth</span><output id="azimuth-value">35°</output></span><input id="light-azimuth" type="range" min="-180" max="180" step="1" value="35"></label>
+        <label class="light-control"><span class="range-line"><span>Key elevation</span><output id="elevation-value">48°</output></span><input id="light-elevation" type="range" min="5" max="85" step="1" value="48"></label>
+        <button id="lighting-reset" type="button">Reset lighting</button>
+      </section>
+      <section class="workspace-view" data-view="plugins" hidden><h3>Plugins</h3><div class="workspace-placeholder">Plugin management will appear here when the plugin API is available.</div></section>
+      <section class="workspace-view" data-view="extensions" hidden><h3>Extensions</h3><div class="workspace-placeholder">Extension management will appear here when extension loading is implemented.</div></section>
+    </div>
+  </section>
   <div id="loading">
     <div class="spinner"></div>
     <p id="loading-text">Loading ring.glb...</p>
@@ -373,10 +387,11 @@ const sceneStore = new SceneStore(scene);
 const commandHistory = new CommandHistory({ limit: 100 });
  
 // ---------- Editor workspace navigation and persisted layout ----------
-const workspace = document.getElementById('scene-panel');
+const workspace = document.getElementById('workspace-main');
 const workspaceTitle = document.getElementById('workspace-title');
 const workspaceViews = [...document.querySelectorAll('.workspace-view')];
 const workspaceButtons = [...document.querySelectorAll('[data-workspace]')];
+const collapseButton = document.getElementById('workspace-collapse');
 function setWorkspaceView(name) {
   workspaceViews.forEach((view) => { view.hidden = view.dataset.view !== name; });
   workspaceButtons.forEach((button) => {
@@ -385,17 +400,27 @@ function setWorkspaceView(name) {
     button.setAttribute('aria-pressed', String(active));
   });
   workspaceTitle.textContent = name[0].toUpperCase() + name.slice(1);
+  workspace.setAttribute('aria-label', name[0].toUpperCase() + name.slice(1) + ' tool panel');
+  workspace.hidden = false;
+  workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', String(button.dataset.workspace === name)));
   localStorage.setItem('glb-workspace-view', name);
-  if (workspace.classList.contains('collapsed')) workspace.classList.remove('collapsed');
 }
-workspaceButtons.forEach((button) => button.addEventListener('click', () => setWorkspaceView(button.dataset.workspace)));
+workspaceButtons.forEach((button) => button.addEventListener('click', () => {
+  if (button.classList.contains('active') && !workspace.hidden) {
+    workspace.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+    return;
+  }
+  setWorkspaceView(button.dataset.workspace);
+}));
+
 const workspaceHeader = document.getElementById('workspace-header');
-const savedPosition = JSON.parse(localStorage.getItem('glb-workspace-position') || 'null');
+let savedPosition = null;
+try { savedPosition = JSON.parse(localStorage.getItem('glb-workspace-position') || 'null'); } catch { savedPosition = null; }
 if (savedPosition && Number.isFinite(savedPosition.left) && Number.isFinite(savedPosition.top)) {
-  workspace.style.left = savedPosition.left + 'px';
-  workspace.style.top = savedPosition.top + 'px';
+  workspace.style.left = Math.max(8, Math.min(window.innerWidth - 120, savedPosition.left)) + 'px';
+  workspace.style.top = Math.max(8, Math.min(window.innerHeight - 100, savedPosition.top)) + 'px';
   workspace.style.right = 'auto';
-  workspace.style.bottom = 'auto';
 }
 let workspaceDrag = null;
 workspaceHeader.addEventListener('pointerdown', (event) => {
@@ -406,33 +431,27 @@ workspaceHeader.addEventListener('pointerdown', (event) => {
 });
 workspaceHeader.addEventListener('pointermove', (event) => {
   if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
-  const left = Math.max(0, Math.min(window.innerWidth - Math.min(workspace.offsetWidth, 48), event.clientX - workspaceDrag.x));
-  const top = Math.max(0, Math.min(window.innerHeight - 100, event.clientY - workspaceDrag.y));
+  const left = Math.max(0, Math.min(window.innerWidth - Math.min(workspace.offsetWidth, 80), event.clientX - workspaceDrag.x));
+  const top = Math.max(0, Math.min(window.innerHeight - 48, event.clientY - workspaceDrag.y));
   workspace.style.left = left + 'px';
   workspace.style.top = top + 'px';
   workspace.style.right = 'auto';
-  workspace.style.bottom = 'auto';
 });
 function finishWorkspaceDrag(event) {
   if (!workspaceDrag || workspaceDrag.pointerId !== event.pointerId) return;
   workspaceDrag = null;
   const rect = workspace.getBoundingClientRect();
-  localStorage.setItem('glb-workspace-position', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) }));
+  try { localStorage.setItem('glb-workspace-position', JSON.stringify({ left: Math.round(rect.left), top: Math.round(rect.top) })); } catch {}
 }
 workspaceHeader.addEventListener('pointerup', finishWorkspaceDrag);
 workspaceHeader.addEventListener('pointercancel', finishWorkspaceDrag);
-const collapseButton = document.getElementById('workspace-collapse');
-function setWorkspaceCollapsed(collapsed) {
-  workspace.classList.toggle('collapsed', collapsed);
-  collapseButton.textContent = collapsed ? '›' : '‹';
-  collapseButton.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
-  collapseButton.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
-  localStorage.setItem('glb-workspace-collapsed', String(collapsed));
-}
-collapseButton.addEventListener('click', () => setWorkspaceCollapsed(!workspace.classList.contains('collapsed')));
-setWorkspaceCollapsed(localStorage.getItem('glb-workspace-collapsed') === 'true');
+collapseButton.addEventListener('click', () => { workspace.hidden = true; workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); });
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !workspace.hidden) { workspace.hidden = true; workspaceButtons.forEach((button) => button.setAttribute('aria-expanded', 'false')); }
+});
 const savedWorkspace = localStorage.getItem('glb-workspace-view');
 if (workspaceViews.some((view) => view.dataset.view === savedWorkspace)) setWorkspaceView(savedWorkspace);
+else setWorkspaceView('scene');
 
 // Lighting controls update the actual scene lights, not just their labels.
 function setKeyLightDirection() {
@@ -455,8 +474,14 @@ function bindLightRange(id, light, outputId) {
 bindLightRange('ambient-intensity', ambient, 'ambient-value');
 bindLightRange('key-intensity', dirLight, 'key-value');
 bindLightRange('fill-intensity', fillLight, 'fill-value');
-document.getElementById('light-azimuth').addEventListener('input', setKeyLightDirection);
-document.getElementById('light-elevation').addEventListener('input', setKeyLightDirection);
+document.getElementById('light-azimuth').addEventListener('input', () => {
+  document.getElementById('azimuth-value').value = document.getElementById('light-azimuth').value + '°';
+  setKeyLightDirection();
+});
+document.getElementById('light-elevation').addEventListener('input', () => {
+  document.getElementById('elevation-value').value = document.getElementById('light-elevation').value + '°';
+  setKeyLightDirection();
+});
 setKeyLightDirection();
 document.getElementById('lighting-reset').addEventListener('click', () => {
   document.getElementById('ambient-intensity').value = '1.1';
@@ -758,10 +783,11 @@ commandHistory.onChange = updateHistoryControls;
 if (new URLSearchParams(window.location.search).has('test')) {
   window.__GLB_VIEWER_TEST__ = Object.freeze({
     setWorkspaceView,
-    setWorkspaceCollapsed,
+    setWorkspaceCollapsed(collapsed) { workspace.hidden = Boolean(collapsed); },
     get workspace() { return workspace; },
     get controls() { return controls; },
     get lights() { return { ambient, key: dirLight, fill: fillLight }; },
+    get workspaceButtons() { return workspaceButtons; },
     get sceneStore() { return sceneStore; },
     get commandHistory() { return commandHistory; },
     get currentModel() { return currentModel; },
