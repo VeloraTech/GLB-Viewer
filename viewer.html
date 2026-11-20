@@ -215,6 +215,8 @@
       </section>
       <section class="workspace-view" data-view="lighting" hidden>
         <h3>Viewport lighting</h3>
+        <label class="light-control"><span class="range-line"><span>Viewport exposure</span><output id="exposure-value">1.25</output></span><input id="viewport-exposure" type="range" min="0.5" max="2.5" step="0.05" value="1.25"></label>
+        <label class="light-control"><span class="range-line"><span>Key light distance</span><output id="light-distance-value">1.00×</output></span><input id="light-distance" type="range" min="0.4" max="2.5" step="0.05" value="1"></label>
         <label class="light-control"><span class="range-line"><span>Ambient fill</span><output id="ambient-value">1.1</output></span><input id="ambient-intensity" type="range" min="0" max="3" step=".05" value="1.1"></label>
         <label class="light-control"><span class="range-line"><span>Key light</span><output id="key-value">2.0</output></span><input id="key-intensity" type="range" min="0" max="5" step=".05" value="2"></label>
         <label class="light-control"><span class="range-line"><span>Fill light</span><output id="fill-value">1.0</output></span><input id="fill-intensity" type="range" min="0" max="3" step=".05" value="1"></label>
@@ -431,7 +433,7 @@ async function initializeHardwareSignals() {
 }
 void initializeHardwareSignals();
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
+renderer.toneMappingExposure = 1.25;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 canvas.appendChild(renderer.domElement);
 
@@ -620,7 +622,7 @@ else setWorkspaceView('scene');
 
 // Lighting controls update the actual scene lights, not just their labels.
 function saveEditorPreferences(){
-  const ids=['ambient-intensity','key-intensity','fill-intensity','light-azimuth','light-elevation','key-color','fill-color','rim-intensity','shadow-opacity','lighting-preset','shading-mode'];
+  const ids=['ambient-intensity','key-intensity','fill-intensity','light-azimuth','light-elevation','key-color','fill-color','rim-intensity','shadow-opacity','lighting-preset','shading-mode','viewport-exposure','light-distance'];
   const values={};ids.forEach(id=>{const el=document.getElementById(id);if(el)values[id]=el.value;});
   values.userLights=[...userLights.values()].map(entry=>({id:entry.id,name:entry.name,type:entry.type,color:'#'+entry.light.color.getHexString(),intensity:entry.light.intensity,offset:entry.offset.toArray()}));
   values.grid=document.getElementById('grid-toggle').checked;values.axes=document.getElementById('axes-toggle').checked;values.shadows=document.getElementById('shadows-toggle').checked;values.background=state.background;
@@ -635,7 +637,7 @@ function restoreEditorPreferences(){
   if(typeof values.axes==='boolean')document.getElementById('axes-toggle').checked=values.axes;
   if(typeof values.shadows==='boolean')document.getElementById('shadows-toggle').checked=values.shadows;
   if(values.background)setBackground(values.background);
-  ['ambient-intensity','key-intensity','fill-intensity','light-azimuth','light-elevation','rim-intensity','shadow-opacity'].forEach(id=>document.getElementById(id)?.dispatchEvent(new Event('input')));
+  ['ambient-intensity','key-intensity','fill-intensity','light-azimuth','light-elevation','rim-intensity','shadow-opacity','viewport-exposure','light-distance'].forEach(id=>document.getElementById(id)?.dispatchEvent(new Event('input')));
   document.getElementById('key-color')?.dispatchEvent(new Event('input'));document.getElementById('fill-color')?.dispatchEvent(new Event('input'));
   if(typeof values.shadows==='boolean'){groundShadow.visible=values.shadows;dirLight.castShadow=values.shadows;userLights.forEach(entry=>{if(entry.light.castShadow!==undefined)entry.light.castShadow=values.shadows;});}
   viewportWorkspace.setGrid(document.getElementById('grid-toggle').checked);viewportWorkspace.setAxes(document.getElementById('axes-toggle').checked);viewportWorkspace.setShading(document.getElementById('shading-mode').value);
@@ -654,6 +656,8 @@ function bindLightRange(id, light, outputId) {
 bindLightRange('ambient-intensity', ambient, 'ambient-value');
 bindLightRange('key-intensity', dirLight, 'key-value');
 bindLightRange('fill-intensity', fillLight, 'fill-value');
+document.getElementById('viewport-exposure').addEventListener('input',e=>{renderer.toneMappingExposure=Number(e.target.value);document.getElementById('exposure-value').value=Number(e.target.value).toFixed(2);markDirty();saveEditorPreferences();});
+document.getElementById('light-distance').addEventListener('input',e=>{document.getElementById('light-distance-value').value=Number(e.target.value).toFixed(2)+'×';syncModelLighting();markDirty();saveEditorPreferences();});
 document.getElementById('light-azimuth').addEventListener('input', () => {
   document.getElementById('azimuth-value').value = document.getElementById('light-azimuth').value + '°';
   setKeyLightDirection(); markDirty(); saveEditorPreferences();
@@ -780,7 +784,7 @@ function syncModelLighting() {
   const box=new THREE.Box3().setFromObject(currentModel);
   if(box.isEmpty())return;
   const center=box.getCenter(new THREE.Vector3());
-  const radius=Math.max(box.getSize(new THREE.Vector3()).length(),3);
+  const radius=Math.max(box.getSize(new THREE.Vector3()).length(),3)*Number(document.getElementById('light-distance')?.value||1);
   const az=THREE.MathUtils.degToRad(Number(document.getElementById('light-azimuth').value));
   const el=THREE.MathUtils.degToRad(Number(document.getElementById('light-elevation').value));
   dirLight.position.set(center.x+radius*Math.cos(el)*Math.sin(az),center.y+radius*Math.sin(el),center.z+radius*Math.cos(el)*Math.cos(az));
