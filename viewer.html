@@ -674,6 +674,10 @@ document.getElementById('shadow-opacity').addEventListener('input',e=>{groundSha
 document.getElementById('shadows-toggle').addEventListener('change',e=>{groundShadow.visible=e.target.checked;dirLight.castShadow=e.target.checked;userLights.forEach(entry=>{if(entry.light.castShadow!==undefined)entry.light.castShadow=e.target.checked;});markDirty();saveEditorPreferences();});
 document.getElementById('lighting-preset').addEventListener('change',e=>{applyLightingPreset(e.target.value);saveEditorPreferences();});
 document.getElementById('lighting-reset').addEventListener('click', () => {
+  document.getElementById('viewport-exposure').value = '1.25';
+  document.getElementById('light-distance').value = '1';
+  document.getElementById('viewport-exposure').dispatchEvent(new Event('input'));
+  document.getElementById('light-distance').dispatchEvent(new Event('input'));
   document.getElementById('ambient-intensity').value = '1.1';
   document.getElementById('key-intensity').value = '2';
   document.getElementById('fill-intensity').value = '1';
