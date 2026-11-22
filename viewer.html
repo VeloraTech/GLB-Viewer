@@ -276,6 +276,8 @@
 }
 </script>
 
+<script src="./src/editor/ViewerShell.js"></script>
+
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -1603,6 +1605,9 @@ window.addEventListener('resize', () => {
     }
   }
 })();
+
+// Mark the full application as ready only after all startup wiring is complete.
+window.__GLB_VIEWER_BOOTED__ = true;
 </script>
 
 </body>

@@ -11,7 +11,7 @@ on:
       release_version:
         description: "Version to publish (for example 1.0.3; do not include the v prefix)"
         required: true
-        default: "1.0.3"
+        default: "1.0.5"
         type: string
 
 permissions:
@@ -41,7 +41,13 @@ jobs:
           } elseif ($env:GITHUB_REF -like "refs/tags/v*") {
             $version = $env:REF_NAME -replace '^v', ''
           } else {
-            $version = "1.0.3"
+            # Keep PR/push installer artifacts aligned with the version declared
+            # by the installer script instead of maintaining a second version.
+            $iss = Get-Content "installer/GLB-Viewer.iss" -Raw
+            if ($iss -notmatch '(?m)^\s*#define\s+AppVersion\s+"(\d+\.\d+\.\d+)"') {
+              throw "Could not resolve AppVersion from installer/GLB-Viewer.iss"
+            }
+            $version = $Matches[1]
           }
           if ($version -notmatch '^\d+\.\d+\.\d+$') {
             throw "Version must use the format X.Y.Z (received: $version)"

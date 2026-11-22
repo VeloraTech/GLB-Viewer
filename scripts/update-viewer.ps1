@@ -25,6 +25,7 @@ try {
 
   $assets = @(
     'viewer.html',
+    'src/editor/ViewerShell.js',
     'src/editor/EditorStateStore.js',
     'src/editor/ToolRegistry.js',
     'src/editor/WorkspaceManager.js',
@@ -34,6 +35,12 @@ try {
     'src/editor/OrbitPreview.js',
     'src/editor/ViewportWorkspace.js',
     'src/editor/MultiObjectTransform.js',
+    'three/examples/jsm/controls/OrbitControls.js',
+    'three/examples/jsm/controls/TransformControls.js',
+    'three/examples/jsm/environments/RoomEnvironment.js',
+    'three/examples/jsm/loaders/GLTFLoader.js',
+    'three/examples/jsm/utils/BufferGeometryUtils.js',
+    'three/examples/jsm/exporters/GLTFExporter.js',
     'src/core/ResourceDisposer.js',
     'src/core/PerformanceMonitor.js',
     'src/core/HardwareProviders.js',
@@ -58,7 +65,7 @@ try {
       if ($asset -eq 'viewer.html' -and ($content -notmatch '<!DOCTYPE html>' -or $content -notmatch 'GLB Viewer')) {
         throw 'Downloaded viewer.html failed its content check.'
       }
-      if ($asset.EndsWith('.js') -and $content -notmatch 'export ') { throw "Downloaded module failed its content check: $asset" }
+      if ($asset.EndsWith('.js') -and $asset -ne 'src/editor/ViewerShell.js' -and $content -notmatch 'export ') { throw "Downloaded module failed its content check: $asset" }
     }
 
     # Install as an immutable per-user version. The launcher reads the active
