@@ -28,7 +28,10 @@
   window.addEventListener('error', event => {
     const target = event.target;
     if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
-      showBootstrapFailure('A required application file failed to load: ' + (target.src || target.href || 'unknown asset'));
+      const assetUrl = target.src || target.href || '';
+      // Third-party icon CDN failures must never disable the local application.
+      if (assetUrl && new URL(assetUrl, window.location.href).origin !== window.location.origin) return;
+      if (assetUrl) showBootstrapFailure('A required local application file failed to load: ' + assetUrl);
       return;
     }
     if (event.error) showBootstrapFailure(event.error.message || 'An application startup error occurred.');
