@@ -25,6 +25,7 @@ try {
 
   $assets = @(
     'viewer.html',
+    'sample/ring.glb',
     'src/editor/ViewerShell.js',
     'src/editor/EditorStateStore.js',
     'src/editor/ToolRegistry.js',
@@ -61,7 +62,8 @@ try {
       Invoke-WebRequest -Uri $uri -OutFile $destination -Headers @{ 'User-Agent' = 'GLB-Viewer-Updater' } -TimeoutSec 12
       $file = Get-Item -LiteralPath $destination
       if ($file.Length -lt 80) { throw "Downloaded asset is unexpectedly small: $asset" }
-      $content = [System.IO.File]::ReadAllText($destination)
+      $content = $null
+      if ($asset -notlike '*.glb') { $content = [System.IO.File]::ReadAllText($destination) }
       if ($asset -eq 'viewer.html' -and ($content -notmatch '<!DOCTYPE html>' -or $content -notmatch 'GLB Viewer')) {
         throw 'Downloaded viewer.html failed its content check.'
       }

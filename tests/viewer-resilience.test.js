@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 const viewer = await readFile(new URL('../viewer.html', import.meta.url), 'utf8');
 const updater = await readFile(new URL('../scripts/update-viewer.ps1', import.meta.url), 'utf8');
 const shell = await readFile(new URL('../src/editor/ViewerShell.js', import.meta.url), 'utf8');
+const launcher = await readFile(new URL('../launcher.rs', import.meta.url), 'utf8');
 
 test('every local Three.js addon statically imported by the viewer is bundled', () => {
   const imports = [...viewer.matchAll(/from\s+['"]three\/addons\/([^'"]+)['"]/g)].map(match => match[1]);
@@ -14,6 +15,17 @@ test('every local Three.js addon statically imported by the viewer is bundled', 
     assert.ok(existsSync(new URL('../three/examples/jsm/' + path, import.meta.url)), 'missing bundled addon: ' + path);
     assert.ok(updater.includes("'three/examples/jsm/" + path + "'"), 'updater does not deliver addon: ' + path);
   }
+});
+
+test('updater delivers the bundled sample model used by the startup flow', () => {
+  assert.ok(existsSync(new URL('../sample/ring.glb', import.meta.url)), 'missing bundled sample/ring.glb');
+  assert.ok(updater.includes("'sample/ring.glb'"), 'updater does not deliver sample/ring.glb');
+  assert.match(updater, /asset -notlike '\*\.glb'/, 'binary GLB assets must not be decoded as text');
+});
+
+test('launcher does not kill a complete viewer update after the old 25-second deadline', () => {
+  assert.match(launcher, /Duration::from_secs\(120\)/);
+  assert.doesNotMatch(launcher, /Duration::from_secs\(25\)/);
 });
 
 test('independent shell loads before the application module', () => {

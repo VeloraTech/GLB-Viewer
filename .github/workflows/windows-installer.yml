@@ -9,9 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       release_version:
-        description: "Version to publish (for example 1.0.3; do not include the v prefix)"
+        description: "Version to publish (for example 1.0.6; do not include the v prefix)"
         required: true
-        default: "1.0.5"
+        default: "1.0.6"
         type: string
 
 permissions:
