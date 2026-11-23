@@ -16,6 +16,12 @@ test('every local Three.js addon statically imported by the viewer is bundled', 
   }
 });
 
+test('updater delivers the bundled sample model used by the startup flow', () => {
+  assert.ok(existsSync(new URL('../sample/ring.glb', import.meta.url)), 'missing bundled sample/ring.glb');
+  assert.ok(updater.includes("'sample/ring.glb'"), 'updater does not deliver sample/ring.glb');
+  assert.match(updater, /asset -notlike '\*\.glb'/, 'binary GLB assets must not be decoded as text');
+});
+
 test('independent shell loads before the application module', () => {
   const shellPosition = viewer.indexOf('<script src="./src/editor/ViewerShell.js"></script>');
   const modulePosition = viewer.indexOf('<script type="module">');
