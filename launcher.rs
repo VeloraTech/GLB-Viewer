@@ -1,31 +1,38 @@
 use std::env;
-use std::fs;
+use std::fs::{self, OpenOptions};
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::{Duration, Instant, SystemTime};
 
 const SESSION_IDLE_TIMEOUT: Duration = Duration::from_secs(180);
 const TEST_IDLE_TIMEOUT: Duration = Duration::from_secs(15);
 
 fn main() -> io::Result<()> {
+    let root = env::current_exe()?.parent().unwrap_or(Path::new(".")).to_path_buf();
+    log_launcher(&root, "Launcher started.");
     let model = env::args_os().nth(1).map(PathBuf::from);
     if let Some(path) = model.as_ref() {
         if !path.is_file() {
+            log_launcher(&root, &format!("Selected model does not exist: {}", path.display()));
             return Err(io::Error::new(io::ErrorKind::NotFound, "The selected model file does not exist."));
         }
+        log_launcher(&root, &format!("Selected model: {}", path.display()));
+    } else {
+        log_launcher(&root, "Starting in standalone mode.");
     }
 
-    let root = env::current_exe()?.parent().unwrap_or(Path::new(".")).to_path_buf();
-    // Refresh the viewer bundle before serving it. Offline starts remain
-    // usable: the updater has short network timeouts and failures are non-fatal.
+    // Do not make the user wait for network downloads before the viewer opens.
+    // The updater stages a complete immutable bundle in the background; this
+    // session keeps serving the installed/previously activated bundle.
     if env::var_os("GLB_VIEWER_TEST").is_none() {
-        refresh_viewer_bundle(&root);
+        start_viewer_bundle_refresh(&root);
     }
     let update_root = active_viewer_update_root();
+    log_launcher(&root, &format!("Active update bundle: {}", update_root.as_deref().map(Path::display).map(|p| p.to_string()).unwrap_or_else(|| "installed files".to_string())));
     let model = model.map(fs::canonicalize).transpose()?;
     let listener = TcpListener::bind(("127.0.0.1", 0))?;
     listener.set_nonblocking(true)?;
@@ -38,7 +45,8 @@ fn main() -> io::Result<()> {
 
     if env::var_os("GLB_VIEWER_TEST").is_none() {
         let url = format!("{base_url}{route}");
-        if let Err(error) = Command::new("cmd").args(["/C", "start", "", &url]).status() {
+        if let Err(error) = open_viewer_url(&url, &root) {
+            log_launcher(&root, &format!("Could not open viewer URL {url}: {error}"));
             return Err(io::Error::new(io::ErrorKind::Other, format!("Could not open the default browser: {error}")));
         }
     }
@@ -81,35 +89,63 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn refresh_viewer_bundle(root: &Path) {
+fn log_launcher(root: &Path, message: &str) {
+    let base = env::var_os("LOCALAPPDATA")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| root.to_path_buf())
+        .join("GLBViewer");
+    if fs::create_dir_all(&base).is_err() { return; }
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(base.join("launcher.log")) {
+        let _ = writeln!(file, "{:?} {}", SystemTime::now(), message);
+    }
+}
+
+fn start_viewer_bundle_refresh(root: &Path) {
     let updater = root.join("scripts").join("update-viewer.ps1");
-    if !updater.is_file() { return; }
-    let mut child = match Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"])
-        .arg(&updater).arg("-InstallRoot").arg(root)
-        .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn()
+    if !updater.is_file() {
+        log_launcher(root, "Updater script is missing; continuing with installed viewer files.");
+        return;
+    }
+
+    let mut command = Command::new("powershell");
+    command
+        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-ExecutionPolicy", "Bypass", "-File"])
+        .arg(&updater)
+        .arg("-InstallRoot")
+        .arg(root)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+
+    #[cfg(windows)]
     {
-        Ok(child) => child,
-        Err(error) => { eprintln!("Viewer update check unavailable; using installed files: {error}"); return; }
-    };
-    // The updater stages the viewer modules and bundled GLB sample sequentially.
-    // Allow the updater's bounded retries enough time to finish the immutable bundle.
-    let deadline = Instant::now() + Duration::from_secs(300);
-    loop {
-        match child.try_wait() {
-            Ok(Some(status)) => {
-                if !status.success() { eprintln!("Viewer update check failed; using installed files."); }
-                return;
-            }
-            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(150)),
-            Ok(None) => {
-                let _ = child.kill(); let _ = child.wait();
-                eprintln!("Viewer update check timed out; using installed files."); return;
-            }
-            Err(error) => {
-                eprintln!("Could not monitor viewer update check: {error}");
-                let _ = child.kill(); return;
-            }
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x08000000);
+    }
+
+    match command.spawn() {
+        Ok(child) => log_launcher(root, &format!("Started background viewer update check (PID {}).", child.id())),
+        Err(error) => log_launcher(root, &format!("Could not start background update check; using installed files: {error}")),
+    }
+}
+
+fn open_viewer_url(url: &str, root: &Path) -> io::Result<()> {
+    // Explorer delegates HTTP URLs to the user's registered default browser.
+    match Command::new("explorer.exe").arg(url).spawn() {
+        Ok(_) => {
+            log_launcher(root, &format!("Opened viewer URL through Explorer: {url}"));
+            Ok(())
+        }
+        Err(explorer_error) => {
+            log_launcher(root, &format!("Explorer URL launch failed; trying cmd start: {explorer_error}"));
+            Command::new("cmd.exe")
+                .args(["/C", "start", "", url])
+                .spawn()
+                .map(|_| ())
+                .map_err(|cmd_error| io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("Explorer failed ({explorer_error}); cmd start failed ({cmd_error})")
+                ))
         }
     }
 }
