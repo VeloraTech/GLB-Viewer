@@ -74,6 +74,15 @@ function rawGet(port, requestTarget) {
       const page = await get(port, '/viewer.html?standalone=1');
       if (page.status === 200 && page.body.toString().includes('GLB Viewer')) pass('standalone mode serves viewer page');
       else fail('standalone mode serves viewer page', `HTTP ${page.status}${page.error ? `; ${page.error}` : ''}; child exit=${standalone.exitCode}`);
+      const bundledSample = await get(port, '/sample/ring.glb');
+      if (bundledSample.status === 200 && bundledSample.body.equals(fs.readFileSync(sample))) pass('installed viewer serves the bundled sample model');
+      else fail('installed viewer serves the bundled sample model', `HTTP ${bundledSample.status}, ${bundledSample.body.length} bytes`);
+      const threeRuntime = await get(port, '/three/build/three.module.js');
+      if (threeRuntime.status === 200 && threeRuntime.body.length > 100000) pass('installed viewer serves the local Three.js runtime');
+      else fail('installed viewer serves the local Three.js runtime', `HTTP ${threeRuntime.status}, ${threeRuntime.body.length} bytes`);
+      const editorShell = await get(port, '/src/editor/ViewerShell.js');
+      if (editorShell.status === 200 && editorShell.body.toString().includes('__GLB_VIEWER_BOOTED__')) pass('installed viewer serves its editor bootstrap');
+      else fail('installed viewer serves its editor bootstrap', `HTTP ${editorShell.status}`);
       const missingModel = await get(port, '/__model');
       if (missingModel.status === 404) pass('standalone mode does not pretend a model was supplied');
       else fail('standalone mode model endpoint', `HTTP ${missingModel.status}`);
