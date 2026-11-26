@@ -24,9 +24,9 @@ test('updater delivers the bundled sample model used by the startup flow', () =>
   assert.match(updater, /asset -notlike '\*\.glb'/, 'binary GLB assets must not be decoded as text');
 });
 
-test("launcher allows the updater's five-minute retry window to complete", () => {
-  assert.match(launcher, /Duration::from_secs\(300\)/);
-  assert.doesNotMatch(launcher, /Duration::from_secs\(25\)/);
+test('launcher starts the updater in the background instead of blocking startup', () => {
+  assert.match(launcher, /start_viewer_bundle_refresh\(&root\)/);
+  assert.doesNotMatch(launcher, /Duration::from_secs\(300\)/);
 });
 
 test('independent shell loads before the application module', () => {
@@ -49,6 +49,9 @@ test('viewer startup does not wait for the network updater', () => {
   assert.doesNotMatch(launcher, /refresh_viewer_bundle\(&root\)/);
   assert.match(launcher, /Command::new\("explorer\.exe"\)/);
   assert.match(launcher, /Command::new\("cmd\.exe"\)/);
+  assert.match(launcher, /launcher\.log/);
+  assert.match(updater, /Local\\\\GLBViewerUpdater/);
+  assert.match(updater, /WaitOne\(0\)/);
 });
 
 test('installer includes the local Three.js runtime and sample model', () => {
