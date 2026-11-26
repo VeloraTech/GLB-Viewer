@@ -50,7 +50,7 @@ test('viewer startup does not wait for the network updater', () => {
   assert.match(launcher, /Command::new\("explorer\.exe"\)/);
   assert.match(launcher, /Command::new\("cmd\.exe"\)/);
   assert.match(launcher, /launcher\.log/);
-  assert.match(updater, /Local\\\\GLBViewerUpdater/);
+  assert.match(updater, /Local\\GLBViewerUpdater/);
   assert.match(updater, /WaitOne\(0\)/);
 });
 
