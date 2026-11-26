@@ -65,10 +65,10 @@ jobs:
       - name: Install and smoke-test the packaged application
         shell: pwsh
         run: |
-          $installDir = Join-Path $env:RUNNER_TEMP "GLBViewer-Packaged-Smoke"
+          $installDir = Join-Path $env:RUNNER_TEMP "GLB Viewer Packaged Smoke"
           $installer = Join-Path $PWD "dist/GLB-Viewer-Setup-v${{ steps.version.outputs.version }}.exe"
           $process = Start-Process -FilePath $installer -ArgumentList @(
-            "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=$installDir"
+            "/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/DIR=`"$installDir`""
           ) -Wait -PassThru
           if ($process.ExitCode -ne 0) {
             throw "Packaged installer exited with code $($process.ExitCode)."
