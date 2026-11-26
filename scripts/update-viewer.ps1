@@ -55,7 +55,7 @@ function Invoke-UpdateDownload([string]$Uri, [string]$Destination, [string]$Asse
   }
 }
 
-$UpdateMutex = New-Object System.Threading.Mutex($false, 'Local\GLBViewerUpdater')
+$UpdateMutex = [System.Threading.Mutex]::new($false, 'Local\GLBViewerUpdater')
 $HasUpdateMutex = $false
 try {
   $HasUpdateMutex = $UpdateMutex.WaitOne(0)
