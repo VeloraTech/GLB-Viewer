@@ -93,8 +93,8 @@ fn refresh_viewer_bundle(root: &Path) {
         Err(error) => { eprintln!("Viewer update check unavailable; using installed files: {error}"); return; }
     };
     // The updater stages the viewer modules and bundled GLB sample sequentially.
-    // Give normal connections enough time to finish the full immutable bundle.
-    let deadline = Instant::now() + Duration::from_secs(120);
+    // Allow the updater's bounded retries enough time to finish the immutable bundle.
+    let deadline = Instant::now() + Duration::from_secs(300);
     loop {
         match child.try_wait() {
             Ok(Some(status)) => {
