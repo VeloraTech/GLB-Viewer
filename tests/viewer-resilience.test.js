@@ -23,7 +23,7 @@ test('updater delivers the bundled sample model used by the startup flow', () =>
   assert.match(updater, /asset -notlike '\*\.glb'/, 'binary GLB assets must not be decoded as text');
 });
 
-test('launcher allows the updater's five-minute retry window to complete', () => {
+test("launcher allows the updater's five-minute retry window to complete", () => {
   assert.match(launcher, /Duration::from_secs(300)/);
   assert.doesNotMatch(launcher, /Duration::from_secs\(25\)/);
 });
