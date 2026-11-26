@@ -7,6 +7,7 @@ const viewer = await readFile(new URL('../viewer.html', import.meta.url), 'utf8'
 const updater = await readFile(new URL('../scripts/update-viewer.ps1', import.meta.url), 'utf8');
 const shell = await readFile(new URL('../src/editor/ViewerShell.js', import.meta.url), 'utf8');
 const launcher = await readFile(new URL('../launcher.rs', import.meta.url), 'utf8');
+const installer = await readFile(new URL('../installer/GLB-Viewer.iss', import.meta.url), 'utf8');
 
 test('every local Three.js addon statically imported by the viewer is bundled', () => {
   const imports = [...viewer.matchAll(/from\s+['"]three\/addons\/([^'"]+)['"]/g)].map(match => match[1]);
@@ -41,4 +42,25 @@ test('startup failure releases the blocking loader and preserves workspace navig
   assert.match(shell, /\[data-workspace\]/);
   assert.match(shell, /window\.__GLB_VIEWER_BOOTED__/);
   assert.match(viewer, /window\.__GLB_VIEWER_BOOTED__ = true/);
+});
+
+test('viewer startup does not wait for the network updater', () => {
+  assert.match(launcher, /start_viewer_bundle_refresh\(&root\)/);
+  assert.doesNotMatch(launcher, /refresh_viewer_bundle\(&root\)/);
+  assert.match(launcher, /Command::new\("explorer\.exe"\)/);
+  assert.match(launcher, /Command::new\("cmd\.exe"\)/);
+});
+
+test('installer includes the local Three.js runtime and sample model', () => {
+  assert.ok(existsSync(new URL('../three/build/three.module.js', import.meta.url)), 'missing local Three.js runtime');
+  assert.ok(existsSync(new URL('../sample/ring.glb', import.meta.url)), 'missing bundled sample model');
+  assert.match(installer, /Source: "\.\.\\three\\\*"/);
+  assert.match(installer, /Source: "\.\.\\sample\\\*"/);
+  assert.match(viewer, /"three": "\.\/three\/build\/three\.module\.js"/);
+});
+
+test('installer registers a quoted Open With command for GLB files', () => {
+  assert.match(installer, /Subkey: "\.glb\\OpenWithProgids"/);
+  assert.match(installer, /Subkey: "GLBViewer\\shell\\open\\command"/);
+  assert.match(installer, /ValueData: """\{app\}\\launcher\.exe"" ""%1"""/);
 });
