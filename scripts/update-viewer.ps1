@@ -55,6 +55,19 @@ function Invoke-UpdateDownload([string]$Uri, [string]$Destination, [string]$Asse
   }
 }
 
+$UpdateMutex = New-Object System.Threading.Mutex($false, 'Local\GLBViewerUpdater')
+$HasUpdateMutex = $false
+try {
+  $HasUpdateMutex = $UpdateMutex.WaitOne(0)
+} catch [System.Threading.AbandonedMutexException] {
+  $HasUpdateMutex = $true
+}
+if (-not $HasUpdateMutex) {
+  Write-UpdateLog 'Another viewer update is already running; skipping this launch.'
+  $UpdateMutex.Dispose()
+  exit 0
+}
+
 try {
   $headers = @{ 'User-Agent' = 'GLB-Viewer-Updater'; 'Accept' = 'application/vnd.github+json' }
   Write-UpdateLog 'Checking GitHub for viewer updates.'
@@ -129,4 +142,7 @@ try {
 } catch {
   Write-UpdateLog "Update skipped; keeping installed viewer. $($_.Exception.Message)"
   exit 0
+} finally {
+  if ($HasUpdateMutex) { $UpdateMutex.ReleaseMutex() }
+  $UpdateMutex.Dispose()
 }
