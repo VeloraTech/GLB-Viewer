@@ -4,8 +4,8 @@ const { spawn } = require('child_process');
 const http = require('http');
 const net = require('net');
 
-const exe = path.join(__dirname, '..', 'launcher.exe');
-const sample = path.join(__dirname, '..', 'sample', 'ring.glb');
+const exe = process.env.GLB_VIEWER_EXE || path.join(__dirname, '..', 'launcher.exe');
+const sample = process.env.GLB_VIEWER_SAMPLE || path.join(__dirname, '..', 'sample', 'ring.glb');
 const results = [];
 const pass = name => { results.push(true); console.log('PASS:', name); };
 const fail = (name, error) => { results.push(false); console.error('FAIL:', name, error); };
