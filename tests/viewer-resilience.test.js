@@ -24,7 +24,7 @@ test('updater delivers the bundled sample model used by the startup flow', () =>
 });
 
 test("launcher allows the updater's five-minute retry window to complete", () => {
-  assert.match(launcher, /Duration::from_secs(300)/);
+  assert.match(launcher, /Duration::from_secs\(300\)/);
   assert.doesNotMatch(launcher, /Duration::from_secs\(25\)/);
 });
 
