@@ -48,6 +48,10 @@ Do not attach private 3D files unless they are safe to share publicly.
 
 ## Areas where help is useful
 
+A focused community research effort is underway to explore a genuinely lightweight native runtime and reusable adaptive performance tooling. See [issue #42](https://github.com/VeloraTech/GLB-Viewer/issues/42) before starting a rewrite or architecture experiment. Rust, graphics, glTF, Windows internals, profiling, memory management, and GPU scheduling experience are especially welcome.
+
+
+
 - Test the viewer across Windows, macOS, and Linux browsers.
 - Help investigate native macOS and Linux file-opening workflows.
 - Improve accessibility, keyboard interaction, and mobile website behavior.
@@ -55,6 +59,10 @@ Do not attach private 3D files unless they are safe to share publicly.
 - Create and maintain the product demo recording.
 
 ## Product direction
+
+V2 is still in progress and is not complete. Existing editor foundations do not mean every V2 workstream is finished. See [ROADMAP.md](ROADMAP.md) for status and [CHANGELOG.md](CHANGELOG.md) for the published release history.
+
+The lightweight-runtime effort is a separate research track. Do not rewrite the production application or replace its architecture on `main`; prototype substantial changes on a dedicated branch and benchmark them against the existing implementation.
 
 V2 is in a discovery phase. Suggestions should explain the real task they solve and how often that task occurs. A feature being available in Blender does not automatically make it right for GLB Viewer.
 
