@@ -105,6 +105,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     let demoCamera = null;
     let demoControls = null;
     let demoModel = null;
+    let demoModelName = 'ring.glb';
+    let demoAmbient = null;
+    let demoKeyLight = null;
+    let demoGrid = null;
+    let demoAxes = null;
+    const demoToolPanel = document.getElementById('demo-tool-panel');
+    const demoToolPanelTitle = document.getElementById('demo-tool-panel-title');
+    const demoToolPanelContent = document.getElementById('demo-tool-panel-content');
+    const demoToolButtons = [...document.querySelectorAll('[data-demo-tool]')];
     let demoFrame = 0;
     let demoResizeObserver = null;
     let demoInitialized = false;
@@ -148,10 +157,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         demoRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.25));
         demoRenderer.outputColorSpace = THREE.SRGBColorSpace;
         demoViewport.appendChild(demoRenderer.domElement);
-        demoScene.add(new THREE.HemisphereLight(0xffffff, 0x555566, 1.6));
-        const key = new THREE.DirectionalLight(0xffffff, 2);
-        key.position.set(3, 5, 4);
-        demoScene.add(key);
+        demoAmbient = new THREE.HemisphereLight(0xffffff, 0x555566, 1.6);
+        demoScene.add(demoAmbient);
+        demoKeyLight = new THREE.DirectionalLight(0xffffff, 2);
+        demoKeyLight.position.set(3, 5, 4);
+        demoScene.add(demoKeyLight);
+        demoGrid = new THREE.GridHelper(10, 20, 0x667080, 0x343b46);
+        demoGrid.visible = false;
+        demoScene.add(demoGrid);
+        demoAxes = new THREE.AxesHelper(1.5);
+        demoAxes.visible = false;
+        demoScene.add(demoAxes);
         demoControls = new OrbitControls(demoCamera, demoRenderer.domElement);
         demoControls.enableDamping = true;
         demoControls.dampingFactor = 0.06;
@@ -212,11 +228,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         fitDemoModel(nextModel);
         const previous = demoModel;
         demoModel = nextModel;
+        demoModelName = file.name;
+        demoModelName = source.split('/').pop() || 'model.glb';
         if (previous) {
           demoScene.remove(previous);
           disposeDemoTree(previous);
         }
         setDemoStatus('', true);
+        if (demoToolPanel && !demoToolPanel.hidden) renderDemoTool(demoToolPanel.dataset.tool || 'scene');
       }, undefined, (error) => {
         console.error('Demo model load failed:', error);
         setDemoStatus('Sample preview could not load. Choose a GLB or glTF file to try the viewer.', false, false);
@@ -240,12 +259,121 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
           disposeDemoTree(previous);
         }
         setDemoStatus('', true);
+        if (demoToolPanel && !demoToolPanel.hidden) renderDemoTool(demoToolPanel.dataset.tool || 'scene');
       }, undefined, (error) => {
         URL.revokeObjectURL(url);
         console.error('Demo model load failed:', error);
         setDemoStatus('Could not load this model. Check that it is a valid GLB or glTF file.', false, false);
       });
     }
+
+
+    function demoNode(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;
+      return node;
+    }
+    function demoRange(parent, label, value, min, max, step, onInput) {
+      const wrap = demoNode('label', 'demo-tool-field');
+      const top = demoNode('span', 'demo-tool-field-label', label);
+      const output = demoNode('output', '', String(value));
+      const input = demoNode('input');
+      input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = value;
+      input.addEventListener('input', () => { output.value = input.value; onInput(Number(input.value)); });
+      top.append(output); wrap.append(top, input); parent.append(wrap);
+    }
+    function demoMaterials() {
+      const materials = new Set();
+      demoModel?.traverse(node => {
+        if (!node.isMesh || !node.material) return;
+        (Array.isArray(node.material) ? node.material : [node.material]).forEach(material => materials.add(material));
+      });
+      return [...materials];
+    }
+    function demoStats() {
+      const stats = { objects: 0, meshes: 0, vertices: 0, triangles: 0 };
+      demoModel?.traverse(node => {
+        if (node.userData?.editorHelper) return;
+        stats.objects++;
+        if (node.isMesh && node.geometry) {
+          stats.meshes++;
+          const geometry = node.geometry;
+          stats.vertices += geometry.attributes.position?.count || 0;
+          stats.triangles += geometry.index ? geometry.index.count / 3 : (geometry.attributes.position?.count || 0) / 3;
+        }
+      });
+      return stats;
+    }
+    function renderDemoTool(name) {
+      if (!demoToolPanel || !demoToolPanelContent) return;
+      const labels = { scene:'Scene', objects:'Objects / Outliner', transform:'Transform', lighting:'Lighting', materials:'Materials', inspect:'Inspect', plugins:'Plugins' };
+      demoToolPanel.dataset.tool = name;
+      demoToolPanelTitle.textContent = labels[name] || 'Viewer tools';
+      demoToolPanelContent.replaceChildren();
+      const note = text => demoToolPanelContent.append(demoNode('p','demo-tool-note',text));
+      if (!demoModel) { note('Load a GLB or glTF model to use these tools.'); return; }
+      if (name === 'scene') {
+        demoToolPanelContent.append(demoNode('div','demo-tool-model-name',demoModelName));
+        note('The model stays on your device. Nothing is uploaded.');
+        const reset = demoNode('button','demo-tool-action','Reset view');
+        reset.addEventListener('click',()=>fitDemoModel(demoModel));
+        demoToolPanelContent.append(reset);
+      } else if (name === 'objects') {
+        demoModel.traverse(node => {
+          if (node === demoModel || node.userData?.editorHelper) return;
+          const row = demoNode('div','demo-object-row');
+          const label = demoNode('span','',node.name || node.type || 'Object');
+          const toggle = demoNode('button','demo-object-toggle',node.visible ? 'Hide' : 'Show');
+          toggle.addEventListener('click',()=>{node.visible=!node.visible;toggle.textContent=node.visible?'Hide':'Show';});
+          row.append(label,toggle); demoToolPanelContent.append(row);
+        });
+        if (!demoToolPanelContent.childElementCount) note('This model has no child objects to list.');
+      } else if (name === 'transform') {
+        ['x','y','z'].forEach(axis => demoRange(demoToolPanelContent,'Rotate '+axis.toUpperCase(),Math.round(THREE.MathUtils.radToDeg(demoModel.rotation[axis])),-180,180,1,value=>{demoModel.rotation[axis]=THREE.MathUtils.degToRad(value);}));
+        demoRange(demoToolPanelContent,'Scale',Number(demoModel.scale.x.toFixed(2)),0.1,3,0.05,value=>demoModel.scale.setScalar(value));
+        const reset=demoNode('button','demo-tool-action','Reset transform');
+        reset.addEventListener('click',()=>{demoModel.rotation.set(0,0,0);demoModel.scale.setScalar(1);renderDemoTool('transform');});
+        demoToolPanelContent.append(reset);
+      } else if (name === 'lighting') {
+        demoRange(demoToolPanelContent,'Environment light',demoAmbient.intensity,0,3,0.05,value=>{demoAmbient.intensity=value;});
+        demoRange(demoToolPanelContent,'Key light',demoKeyLight.intensity,0,5,0.05,value=>{demoKeyLight.intensity=value;});
+      } else if (name === 'materials') {
+        const materials=demoMaterials();
+        const colorLabel=demoNode('label','demo-tool-field');
+        colorLabel.append(demoNode('span','demo-tool-field-label','Base color'));
+        const color=demoNode('input'); color.type='color'; color.value='#'+(materials[0]?.color?.getHexString?.()||'cccccc');
+        color.addEventListener('input',()=>materials.forEach(material=>{if(material.color)material.color.set(color.value);}));
+        colorLabel.append(color); demoToolPanelContent.append(colorLabel);
+        demoRange(demoToolPanelContent,'Metalness',materials[0]?.metalness??0.4,0,1,0.01,value=>materials.forEach(material=>{if('metalness' in material)material.metalness=value;}));
+        demoRange(demoToolPanelContent,'Roughness',materials[0]?.roughness??0.4,0,1,0.01,value=>materials.forEach(material=>{if('roughness' in material)material.roughness=value;}));
+        note('Material changes affect this preview only.');
+      } else if (name === 'inspect') {
+        const stats=demoStats();
+        [['Objects',stats.objects],['Meshes',stats.meshes],['Vertices',stats.vertices.toLocaleString()],['Triangles',Math.round(stats.triangles).toLocaleString()]].forEach(([label,value])=>{
+          const row=demoNode('div','demo-inspect-row'); row.append(demoNode('span','',label),demoNode('strong','',String(value))); demoToolPanelContent.append(row);
+        });
+      } else if (name === 'plugins') {
+        note('Preview extensions');
+        [['Grid overlay',demoGrid],['Axis helper',demoAxes]].forEach(([label,helper])=>{
+          const wrap=demoNode('label','demo-tool-check'), input=demoNode('input');
+          input.type='checkbox'; input.checked=helper.visible; input.addEventListener('change',()=>{helper.visible=input.checked;});
+          wrap.append(input,document.createTextNode(label)); demoToolPanelContent.append(wrap);
+        });
+        note('These lightweight helpers run in the browser preview. The desktop viewer has the full editor workspace.');
+      }
+    }
+    demoToolButtons.forEach(button=>button.addEventListener('click',()=>{
+      const name=button.dataset.demoTool;
+      const close=!demoToolPanel.hidden && demoToolPanel.dataset.tool===name;
+      demoToolButtons.forEach(item=>{item.classList.toggle('active',!close&&item===button);item.setAttribute('aria-expanded',String(!close&&item===button));});
+      demoToolPanel.hidden=close;
+      if(!close)renderDemoTool(name);
+    }));
+    document.getElementById('demo-tool-panel-close')?.addEventListener('click',()=>{
+      demoToolPanel.hidden=true;
+      demoToolButtons.forEach(button=>{button.classList.remove('active');button.setAttribute('aria-expanded','false');});
+    });
 
     if (demoViewport) {
       ['dragenter', 'dragover', 'dragleave', 'drop'].forEach((name) => {
