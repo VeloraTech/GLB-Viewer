@@ -22,8 +22,8 @@
       notice.style.cssText = 'position:fixed;left:12px;top:58px;z-index:200;max-width:min(560px,calc(100vw - 24px));padding:12px 14px;border:1px solid rgba(255,120,120,.45);border-radius:8px;background:#282326;color:#fff;font:13px/1.5 system-ui,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.35);pointer-events:auto';
       document.body.appendChild(notice);
     }
-    notice.textContent = 'Viewer tools could not finish initializing. Your workspace navigation is still available. ' + message;
-    console.error('[GLB Viewer bootstrap]', message);
+    notice.textContent = 'Viewer tools could not finish initializing. ' + message + ' Check %LOCALAPPDATA%\\GLBViewer\\launcher.log for missing or failed local assets.';
+    console.error('[GLB Viewer bootstrap]', message, { filename: window.__GLB_VIEWER_LAST_ERROR__ || null });
   }
   window.addEventListener('error', event => {
     const target = event.target;
@@ -34,10 +34,16 @@
       if (assetUrl) showBootstrapFailure('A required local application file failed to load: ' + assetUrl);
       return;
     }
-    if (event.error) showBootstrapFailure(event.error.message || 'An application startup error occurred.');
+    if (event.error) {
+      window.__GLB_VIEWER_LAST_ERROR__ = event.filename || '';
+      showBootstrapFailure((event.error.message || 'An application startup error occurred.') +
+        (event.filename ? ' (' + event.filename + ')' : ''));
+    }
   }, true);
   window.addEventListener('unhandledrejection', event => {
-    showBootstrapFailure(event.reason?.message || 'An application startup task failed.');
+    const reason = event.reason;
+    const detail = reason?.stack || reason?.message || String(reason || 'An application startup task failed.');
+    showBootstrapFailure(detail);
   });
   document.addEventListener('click', event => {
     if (window.__GLB_VIEWER_BOOTED__) return;
