@@ -1563,7 +1563,8 @@ window.addEventListener('resize', () => {
 // ---------- Initialize: reload last model ----------
 (async () => {
   const sessionParams = new URLSearchParams(window.location.search);
-  if (sessionParams.has('open') || sessionParams.has('standalone')) {
+  const isLocalLauncherSession = window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost';
+  if (isLocalLauncherSession || sessionParams.has('open')) {
     const heartbeat = () => fetch('./__heartbeat', { cache: 'no-store' }).catch(() => {});
     heartbeat();
     const heartbeatTimer = window.setInterval(heartbeat, 30000);
@@ -1587,6 +1588,22 @@ window.addEventListener('resize', () => {
       return;
     }
   }
+  // A normal desktop launch always starts with the bundled sample. Browser-only
+  // sessions retain their previous behavior of restoring the last saved model.
+  if (isLocalLauncherSession) {
+    try {
+      const response = await fetch('./sample/ring.glb', { cache: 'no-store' });
+      if (!response.ok) throw new Error('The bundled sample model is unavailable.');
+      const blob = await response.blob();
+      loadModelFromFile(new File([blob], 'ring.glb', { type: 'model/gltf-binary' }));
+      return;
+    } catch (error) {
+      showError(error.message || 'Could not load the bundled sample model.');
+      showLoading(false);
+      return;
+    }
+  }
+
   const rec = await loadLastModel();
   if (rec && rec.blob) {
     const f = new File([rec.blob], rec.url.split('/').pop() || 'model.glb', { type: 'model/gltf-binary' });
