@@ -1,49 +1,42 @@
-# GLB Viewer v1.0.4 — Release Notes
+# GLB Viewer v1.0.4 — Historical Release Notes
 
-> **Release status:** Prepared release notes. v1.0.4 has not been published yet.
+> **Release status:** Published as [v1.0.4](https://github.com/VeloraTech/GLB-Viewer/releases/tag/v1.0.4). This document records the actual historical release contents; it is not a pending release checklist.
 
 ## Highlights
 
-### Blender-inspired editor workspace
-- Reworked the actual `viewer.html` application with a fixed right-side tool shelf.
-- Added dedicated Scene, Objects, Transform, Lighting, Plugins, and Extensions panels.
-- Panels can be opened independently, remain open together, be dragged, resized, focused, and closed.
-- Panel positions and dimensions are saved between sessions.
-- Added Ionicons for the tool shelf, with hover and keyboard-focus tooltips and accessible labels.
+### Editor workspace
+- Added a collapsible editor workspace and viewport controls.
+- Added a Blender-inspired right-side tool shelf.
+- Added draggable, resizable editor panels and workspace foundations.
+- Added the initial editor state store, tool registry, workspace manager, viewport interaction, and scene runtime boundaries.
 
-### Windows startup viewer updates
-- Added a startup check for a newer viewer bundle on the project's `main` branch.
-- Downloads the viewer and its required editor/core modules from one immutable Git commit.
+### P0 core foundations
+- Added SceneStore, CommandHistory, SceneCommands, and ResourceDisposer.
+- Added local performance monitoring and bounded diagnostics.
+- Added hardware capability providers and an adaptive-quality policy.
+- Integrated optional NativeRelay hardware signals with an independent browser fallback.
+
+### Windows viewer updates
+- Added a startup viewer updater that downloads a coherent bundle from one immutable commit.
 - Stages and validates the bundle before activating it in the current Windows user's LocalAppData directory.
-- The launcher serves the active updated bundle and falls back to the installed application files when an updated file is unavailable.
-- If the update check or download fails, the launcher continues with the currently installed viewer.
+- Falls back to the installed viewer when an update check or download fails.
 - Model files are not included in the update bundle.
 
-### Editor foundation
-- Added an observable editor state store.
-- Added a registry for editor tools.
-- Added a workspace manager for floating panels.
-- Added viewport click/drag filtering and raycast-based object selection.
-- Added a scene runtime boundary for model replacement and resource cleanup.
+### Website
+- Improved SEO metadata and social sharing metadata.
+- Preloaded the live demo model.
+- Refreshed the FAQ layout.
 
-## Known limitations
+## Historical limitations and later changes
 
-- The startup updater uses HTTPS and content sanity checks; it does not yet verify a cryptographically signed update manifest.
-- Ionicons are currently loaded from the official CDN, so the icons require network access on first load.
-- Renderer, camera, lighting, loader, and animation responsibilities are not yet fully separated into dedicated services.
-- Transform gizmos, multi-selection, nested Outliner hierarchy, viewport shading modes, grid/axes controls, and keyboard shortcut registration are not included in this release.
-- Docking, panel splitting, and workspace layout presets are not yet implemented.
-- Browser-level interaction testing and a complete Windows installer validation are still required before publishing.
+At the time of v1.0.4, the toolbar used Ionicons from a remote CDN. That dependency was later removed in [v1.0.13](https://github.com/VeloraTech/GLB-Viewer/releases/tag/v1.0.13), where toolbar icons became local CSS/text glyphs.
 
-## Before publishing
+The startup updater uses HTTPS and content sanity checks; it is not a cryptographically signed update system. The updater and browser-based runtime should not be described as a fully native/offline application.
 
-- [ ] Set the installer version to `1.0.4`.
-- [ ] Build the Windows installer and confirm the output filename is `GLB-Viewer-Setup-v1.0.4.exe`.
-- [ ] Test a clean Windows installation and the Start menu / **Open With** launch paths.
-- [ ] Confirm the new workspace panels and lighting controls work in the installed application.
-- [ ] Test startup updates with internet access and verify the existing viewer remains usable when offline.
-- [ ] Attach the validated Windows installer to the GitHub Release tagged `v1.0.4`.
+The v1.0.4 workspace was an early editor foundation. It did not represent completion of the wider V2 roadmap. See [ROADMAP.md](ROADMAP.md) for current status.
 
----
+## Release trace
 
-This file records the intended v1.0.4 release contents. It is not itself a published release or a guarantee that the installer artifact is ready.
+- PRs: [#18–#27](https://github.com/VeloraTech/GLB-Viewer/compare/v1.0.3...v1.0.4)
+- Tag/release: [v1.0.4](https://github.com/VeloraTech/GLB-Viewer/releases/tag/v1.0.4)
+- Full commit comparison: [v1.0.3...v1.0.4](https://github.com/VeloraTech/GLB-Viewer/compare/v1.0.3...v1.0.4)
