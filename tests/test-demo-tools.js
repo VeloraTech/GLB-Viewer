@@ -5,7 +5,7 @@ const vm = require('vm');
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'docs', 'index.html'), 'utf8');
 const script = fs.readFileSync(path.join(root, 'docs', 'script.js'), 'utf8');
-const moduleBody = script.replace(/^import\\s+.*?;\\s*$/gm, '');
+const moduleBody = script.replace(/^import\s+.*?;\s*$/gm, '');
 
 new vm.Script(moduleBody, { filename: 'docs/script.js' });
 
