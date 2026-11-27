@@ -483,6 +483,18 @@ dirLight.shadow.camera.far = 100;
 dirLight.shadow.bias = -0.00015;
 scene.add(dirLight);
 scene.add(dirLight.target);
+
+// Invisible receiving plane for model shadows. Keep this defined before lighting
+// controls and model-positioning handlers reference it.
+const groundShadow = new THREE.Mesh(
+  new THREE.PlaneGeometry(200, 200),
+  new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.28 })
+);
+groundShadow.name = 'Ground Shadow';
+groundShadow.rotation.x = -Math.PI / 2;
+groundShadow.position.y = -0.015;
+groundShadow.receiveShadow = true;
+scene.add(groundShadow);
 const fillLight = new THREE.DirectionalLight(0xc8dcff, 1.0);
 fillLight.position.set(-5, 2, -4);
 scene.add(fillLight);

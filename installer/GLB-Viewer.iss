@@ -1,6 +1,6 @@
 #define AppName "GLB Viewer"
 #ifndef AppVersion
-  #define AppVersion "1.0.13"
+  #define AppVersion "1.0.14"
 #endif
 #define AppPublisher "VeloraTech"
 
