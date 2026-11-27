@@ -18,3 +18,8 @@ test('currentModel is initialized before startup lighting reads it', () => {
     'currentModel must leave its temporal dead zone before syncModelLighting is called during startup'
   );
 });
+
+test('viewer icons do not depend on remote Ionicons assets', () => {
+  assert.doesNotMatch(viewer, /<ion-icon\\b|ionicons@|unpkg\\.com\\/ionicons|cdn\\.jsdelivr\\.net\\/npm\\/ionicons/);
+  assert.match(viewer, /class="workspace-icon"/);
+});
