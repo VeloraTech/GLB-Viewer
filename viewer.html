@@ -615,8 +615,6 @@ toolRegistry.subscribe(({ tools }) => {
   tools.forEach((tool) => {
     const button = byId.get(tool.id);
     if (!button) return;
-    const icon = button.querySelector('ion-icon');
-    if (icon) icon.name = tool.icon;
     button.setAttribute('aria-label', tool.label);
     button.dataset.tooltip = tool.label;
   });
