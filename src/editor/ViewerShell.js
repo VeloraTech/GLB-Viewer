@@ -29,6 +29,8 @@
     const target = event.target;
     if (target && (target.tagName === 'SCRIPT' || target.tagName === 'LINK')) {
       const assetUrl = target.src || target.href || '';
+      // Browsers request /favicon.ico automatically; it is intentionally not a required viewer asset.
+      if (assetUrl && new URL(assetUrl, window.location.href).pathname === '/favicon.ico') return;
       // Third-party icon CDN failures must never disable the local application.
       if (assetUrl && new URL(assetUrl, window.location.href).origin !== window.location.origin) return;
       if (assetUrl) showBootstrapFailure('A required local application file failed to load: ' + assetUrl);
