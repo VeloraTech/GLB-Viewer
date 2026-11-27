@@ -4,7 +4,7 @@ This file records the notable changes in **every published GitHub release tag**.
 
 Unreleased work is not listed as a published release. There is no published `v1.0.5` release in the repository's release history; the next published tag after `v1.0.4` is `v1.0.6`.
 
-## [v1.0.14] — 2026-11-28
+## [v1.0.14] — 2026-11-27
 
 **Fix: missing ground-shadow receiver**
 
@@ -76,7 +76,7 @@ PR: [#36](https://github.com/VeloraTech/GLB-Viewer/pull/36) · [Release](https:/
 
 PR: [#35](https://github.com/VeloraTech/GLB-Viewer/pull/35) · [Release](https://github.com/VeloraTech/GLB-Viewer/releases/tag/v1.0.8) · [Compare v1.0.7...v1.0.8](https://github.com/VeloraTech/GLB-Viewer/compare/v1.0.7...v1.0.8)
 
-## [v1.0.7] — 2026-11-27
+## [v1.0.7] — 2026-11-26
 
 **Fix: installed viewer startup and GLB Open With**
 
@@ -86,7 +86,7 @@ PR: [#35](https://github.com/VeloraTech/GLB-Viewer/pull/35) · [Release](https:/
 
 PR: [#34](https://github.com/VeloraTech/GLB-Viewer/pull/34) · [Release](https://github.com/VeloraTech/GLB-Viewer/releases/tag/v1.0.7) · [Compare v1.0.6...v1.0.7](https://github.com/VeloraTech/GLB-Viewer/compare/v1.0.6...v1.0.7)
 
-## [v1.0.6] — 2026-11-27
+## [v1.0.6] — 2026-11-26
 
 **Feature: P1 editor workspace and scene editing**
 
@@ -99,7 +99,7 @@ PR: [#34](https://github.com/VeloraTech/GLB-Viewer/pull/34) · [Release](https:/
 
 PRs: [#28](https://github.com/VeloraTech/GLB-Viewer/pull/28), [#29](https://github.com/VeloraTech/GLB-Viewer/pull/29), [#30](https://github.com/VeloraTech/GLB-Viewer/pull/30), [#31](https://github.com/VeloraTech/GLB-Viewer/pull/31), [#32](https://github.com/VeloraTech/GLB-Viewer/pull/32), [#33](https://github.com/VeloraTech/GLB-Viewer/pull/33) · [Release](https://github.com/VeloraTech/GLB-Viewer/releases/tag/v1.0.6) · [Compare v1.0.4...v1.0.6](https://github.com/VeloraTech/GLB-Viewer/compare/v1.0.4...v1.0.6)
 
-## [v1.0.4] — 2026-11-27
+## [v1.0.4] — 2026-11-19
 
 **Feature: P0 foundations and editor workspace**
 
