@@ -18,7 +18,7 @@ fn main() {
             .unwrap_or_else(|| PathBuf::from("."));
         log_launcher(&root, &format!("FATAL launcher startup error: {error}"));
         #[cfg(windows)]
-        show_launcher_error(&format!("GLB Viewer could not start.\n\n{error}\n\nDetails: %LOCALAPPDATA%\GLBViewer\launcher.log"));
+        show_launcher_error(&format!("GLB Viewer could not start.\n\n{error}\n\nDetails: %LOCALAPPDATA%\\GLBViewer\\launcher.log"));
         std::process::exit(1);
     }
 }
