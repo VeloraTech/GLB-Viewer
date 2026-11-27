@@ -317,6 +317,9 @@ import { ViewportWorkspace } from './src/editor/ViewportWorkspace.js';
 import { MultiObjectTransform } from './src/editor/MultiObjectTransform.js';
 
 // ---------- Tiny vanilla in-memory UI state store ----------
+// Model state must exist before lighting preferences invoke syncModelLighting during startup.
+let currentModel = null;
+
 const performanceMonitor = new PerformanceMonitor();
 
 const state = {
@@ -718,7 +721,6 @@ document.getElementById('lighting-reset').addEventListener('click', () => {
 
 
 // ---------- Model loading ----------
-let currentModel = null;
 let currentAnimations = [];
 let isDirty = false;
 let dirtyRevision = 0;
