@@ -5,9 +5,17 @@ const vm = require('vm');
 const root = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'docs', 'index.html'), 'utf8');
 const script = fs.readFileSync(path.join(root, 'docs', 'script.js'), 'utf8');
+const desktopViewer = fs.readFileSync(path.join(root, 'viewer.html'), 'utf8');
 const moduleBody = script.replace(/^import\s+.*?;\s*$/gm, '');
 
 new vm.Script(moduleBody, { filename: 'docs/script.js' });
+
+if (!desktopViewer.includes("await import('https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js')") ||
+    !desktopViewer.includes("await import('https://cdn.jsdelivr.net/npm/ionicons@7.4.0/dist/ionicons/ionicons.esm.js')") ||
+    desktopViewer.includes('<script type="module" src="https://unpkg.com/ionicons')) {
+  throw new Error('Optional icon CDN imports must be caught and must not block viewer startup.');
+}
+
 
 const tools = ['scene', 'objects', 'transform', 'lighting', 'materials', 'inspect', 'plugins'];
 for (const tool of tools) {
