@@ -71,9 +71,9 @@ function rawGet(port, requestTarget) {
     if (!port) fail('standalone launcher starts without a model', standaloneOutput.value || 'No startup message');
     else {
       pass('standalone launcher starts without a model');
-      const page = await get(port, '/viewer.html?standalone=1');
-      if (page.status === 200 && page.body.toString().includes('GLB Viewer')) pass('standalone mode serves viewer page');
-      else fail('standalone mode serves viewer page', `HTTP ${page.status}${page.error ? `; ${page.error}` : ''}; child exit=${standalone.exitCode}`);
+      const page = await get(port, '/viewer.html');
+      if (page.status === 200 && page.body.toString().includes('GLB Viewer')) pass('normal launch serves viewer page without standalone query');
+      else fail('normal launch serves viewer page without standalone query', `HTTP ${page.status}${page.error ? `; ${page.error}` : ''}; child exit=${standalone.exitCode}`);
       const bundledSample = await get(port, '/sample/ring.glb');
       if (bundledSample.status === 200 && bundledSample.body.equals(fs.readFileSync(sample))) pass('installed viewer serves the bundled sample model');
       else fail('installed viewer serves the bundled sample model', `HTTP ${bundledSample.status}, ${bundledSample.body.length} bytes`);
@@ -84,8 +84,8 @@ function rawGet(port, requestTarget) {
       if (editorShell.status === 200 && editorShell.body.toString().includes('__GLB_VIEWER_BOOTED__')) pass('installed viewer serves its editor bootstrap');
       else fail('installed viewer serves its editor bootstrap', `HTTP ${editorShell.status}`);
       const missingModel = await get(port, '/__model');
-      if (missingModel.status === 404) pass('standalone mode does not pretend a model was supplied');
-      else fail('standalone mode model endpoint', `HTTP ${missingModel.status}`);
+      if (missingModel.status === 404) pass('normal launch does not supply a selected model endpoint');
+      else fail('normal launch model endpoint', `HTTP ${missingModel.status}`);
       const heartbeat = await get(port, '/__heartbeat');
       if (heartbeat.status === 204) pass('viewer heartbeat renews the session');
       else fail('viewer heartbeat renews the session', `HTTP ${heartbeat.status}`);
