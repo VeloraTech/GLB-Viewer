@@ -29,6 +29,7 @@ fn run() -> io::Result<()> {
     log_launcher(&root, &format!("Executable: {}", executable.display()));
     log_launcher(&root, &format!("Arguments: {:?}", env::args_os().skip(1).collect::<Vec<_>>()));
     log_launcher(&root, "Launcher started.");
+    validate_installation(&root)?;
     let model = env::args_os().nth(1).map(PathBuf::from);
     if let Some(path) = model.as_ref() {
         if !path.is_file() {
@@ -109,6 +110,49 @@ fn run() -> io::Result<()> {
     }
 
     Ok(())
+}
+
+fn validate_installation(root: &Path) -> io::Result<()> {
+    let required = [
+        "viewer.html",
+        "sample/ring.glb",
+        "three/build/three.module.js",
+        "three/examples/jsm/loaders/GLTFLoader.js",
+        "three/examples/jsm/controls/OrbitControls.js",
+        "three/examples/jsm/controls/TransformControls.js",
+        "three/examples/jsm/environments/RoomEnvironment.js",
+        "three/examples/jsm/exporters/GLTFExporter.js",
+        "src/editor/ViewerShell.js",
+        "src/editor/WorkspaceManager.js",
+        "src/editor/ViewportInteraction.js",
+        "src/editor/SceneRuntime.js",
+        "src/editor/CommandPalette.js",
+        "src/editor/OrbitPreview.js",
+        "src/editor/ViewportWorkspace.js",
+        "src/editor/MultiObjectTransform.js",
+        "src/core/ResourceDisposer.js",
+        "src/core/PerformanceMonitor.js",
+        "src/core/HardwareProviders.js",
+        "src/core/AdaptiveQualityPolicy.js",
+        "src/core/ModelInspector.js",
+        "src/core/SceneStore.js",
+        "src/core/CommandHistory.js",
+        "src/core/SceneCommands.js",
+    ];
+    let mut missing = Vec::new();
+    for relative in required {
+        if !root.join(relative).is_file() {
+            missing.push(relative);
+        }
+    }
+    if missing.is_empty() {
+        log_launcher(root, "Installed viewer bundle preflight passed.");
+        Ok(())
+    } else {
+        let message = format!("The installation is incomplete. Missing required files: {}", missing.join(", "));
+        log_launcher(root, &message);
+        Err(io::Error::new(io::ErrorKind::NotFound, message))
+    }
 }
 
 fn log_launcher(root: &Path, message: &str) {
@@ -301,7 +345,10 @@ fn handle_request(
                     let mime_path = overlay_target.as_ref().filter(|overlay| overlay.is_file()).unwrap_or(&target);
                     ("200 OK", mime_type(mime_path), bytes)
                 }
-                None => ("404 Not Found", "text/plain", b"Not Found".to_vec()),
+                None => {
+                    log_launcher(root, &format!("HTTP 404 for requested asset: {path} (root: {}).", target.display()));
+                    ("404 Not Found", "text/plain", b"Not Found".to_vec())
+                }
             }
         }
     };
@@ -357,7 +404,7 @@ fn write_response(
 fn mime_type(path: &Path) -> &'static str {
     match path.extension().and_then(|extension| extension.to_str()) {
         Some("html") => "text/html; charset=utf-8",
-        Some("js") => "application/javascript",
+        Some("js") | Some("mjs") => "application/javascript; charset=utf-8",
         Some("css") => "text/css",
         Some("glb") => "model/gltf-binary",
         Some("gltf") => "model/gltf+json",
