@@ -10,10 +10,9 @@ const moduleBody = script.replace(/^import\s+.*?;\s*$/gm, '');
 
 new vm.Script(moduleBody, { filename: 'docs/script.js' });
 
-if (!desktopViewer.includes("await import('https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js')") ||
-    !desktopViewer.includes("await import('https://cdn.jsdelivr.net/npm/ionicons@7.4.0/dist/ionicons/ionicons.esm.js')") ||
-    desktopViewer.includes('<script type="module" src="https://unpkg.com/ionicons')) {
-  throw new Error('Optional icon CDN imports must be caught and must not block viewer startup.');
+if (/<ion-icon\\b|ionicons@|unpkg\\.com\\/ionicons|cdn\\.jsdelivr\\.net\\/npm\\/ionicons/.test(desktopViewer) ||
+    !desktopViewer.includes('class="workspace-icon"')) {
+  throw new Error('Desktop viewer icons must be local and must not depend on remote Ionicons assets.');
 }
 
 
