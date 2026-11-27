@@ -254,6 +254,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         const previous = demoModel;
         demoModel = nextModel;
         demoModelName = file.name;
+        if (previous) {
           demoScene.remove(previous);
           disposeDemoTree(previous);
         }
