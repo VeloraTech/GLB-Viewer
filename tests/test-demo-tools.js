@@ -10,7 +10,10 @@ const moduleBody = script.replace(/^import\s+.*?;\s*$/gm, '');
 
 new vm.Script(moduleBody, { filename: 'docs/script.js' });
 
-if (/<ion-icon\\b|ionicons@|unpkg\\.com\\/ionicons|cdn\\.jsdelivr\\.net\\/npm\\/ionicons/.test(desktopViewer) ||
+if (desktopViewer.includes('<ion-icon') ||
+    desktopViewer.includes('ionicons@') ||
+    desktopViewer.includes('unpkg.com/ionicons') ||
+    desktopViewer.includes('cdn.jsdelivr.net/npm/ionicons') ||
     !desktopViewer.includes('class="workspace-icon"')) {
   throw new Error('Desktop viewer icons must be local and must not depend on remote Ionicons assets.');
 }
