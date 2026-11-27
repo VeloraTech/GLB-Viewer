@@ -11,8 +11,23 @@ use std::time::{Duration, Instant, SystemTime};
 const SESSION_IDLE_TIMEOUT: Duration = Duration::from_secs(180);
 const TEST_IDLE_TIMEOUT: Duration = Duration::from_secs(15);
 
-fn main() -> io::Result<()> {
-    let root = env::current_exe()?.parent().unwrap_or(Path::new(".")).to_path_buf();
+fn main() {
+    if let Err(error) = run() {
+        let root = env::current_exe().ok()
+            .and_then(|path| path.parent().map(Path::to_path_buf))
+            .unwrap_or_else(|| PathBuf::from("."));
+        log_launcher(&root, &format!("FATAL launcher startup error: {error}"));
+        #[cfg(windows)]
+        show_launcher_error(&format!("GLB Viewer could not start.\n\n{error}\n\nDetails: %LOCALAPPDATA%\GLBViewer\launcher.log"));
+        std::process::exit(1);
+    }
+}
+
+fn run() -> io::Result<()> {
+    let executable = env::current_exe()?;
+    let root = executable.parent().unwrap_or(Path::new(".")).to_path_buf();
+    log_launcher(&root, &format!("Executable: {}", executable.display()));
+    log_launcher(&root, &format!("Arguments: {:?}", env::args_os().skip(1).collect::<Vec<_>>()));
     log_launcher(&root, "Launcher started.");
     let model = env::args_os().nth(1).map(PathBuf::from);
     if let Some(path) = model.as_ref() {
@@ -34,14 +49,20 @@ fn main() -> io::Result<()> {
     let update_root = active_viewer_update_root();
     log_launcher(&root, &format!("Active update bundle: {}", update_root.as_deref().map(Path::display).map(|p| p.to_string()).unwrap_or_else(|| "installed files".to_string())));
     let model = model.map(fs::canonicalize).transpose()?;
-    let listener = TcpListener::bind(("127.0.0.1", 0))?;
+    log_launcher(&root, "Binding local HTTP server to 127.0.0.1 on an ephemeral port.");
+    let listener = TcpListener::bind(("127.0.0.1", 0)).map_err(|error| {
+        log_launcher(&root, &format!("Failed to bind local HTTP server: {error}"));
+        error
+    })?;
     listener.set_nonblocking(true)?;
     let port = listener.local_addr()?.port();
     let base_url = format!("http://127.0.0.1:{port}");
     let last_activity = Arc::new(Mutex::new(Instant::now()));
 
     println!("Server listening on {base_url}");
+    log_launcher(&root, &format!("Local HTTP server listening on {base_url}."));
     let route = if model.is_some() { "/viewer.html?open=1" } else { "/viewer.html" };
+    log_launcher(&root, &format!("Opening viewer route {route}."));
 
     if env::var_os("GLB_VIEWER_TEST").is_none() {
         let url = format!("{base_url}{route}");
@@ -49,6 +70,7 @@ fn main() -> io::Result<()> {
             log_launcher(&root, &format!("Could not open viewer URL {url}: {error}"));
             return Err(io::Error::new(io::ErrorKind::Other, format!("Could not open the default browser: {error}")));
         }
+        log_launcher(&root, "Browser handoff completed; entering HTTP server loop.");
     }
 
     // The viewer renews this lease every 30 seconds. If its tab is closed or
@@ -98,6 +120,19 @@ fn log_launcher(root: &Path, message: &str) {
     if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(base.join("launcher.log")) {
         let _ = writeln!(file, "{:?} {}", SystemTime::now(), message);
     }
+}
+
+#[cfg(windows)]
+fn show_launcher_error(message: &str) {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+    #[link(name = "user32")]
+    extern "system" {
+        fn MessageBoxW(hwnd: *mut std::ffi::c_void, text: *const u16, caption: *const u16, flags: u32) -> i32;
+    }
+    let text: Vec<u16> = OsStr::new(message).encode_wide().chain(Some(0)).collect();
+    let caption: Vec<u16> = OsStr::new("GLB Viewer startup error").encode_wide().chain(Some(0)).collect();
+    unsafe { MessageBoxW(std::ptr::null_mut(), text.as_ptr(), caption.as_ptr(), 0x10 | 0x1000); }
 }
 
 fn start_viewer_bundle_refresh(root: &Path) {
