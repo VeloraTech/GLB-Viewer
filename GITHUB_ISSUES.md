@@ -54,3 +54,10 @@ Record a 10 second GIF of opening sample `sample/ring.glb`, rotating, zooming, t
 ---
 
 To use: copy each title + body block into a new GitHub issue, add the suggested labels, and submit.
+
+
+---
+
+## Current community research issue
+
+The lightweight native runtime and resource-efficiency research is now open as [Issue #42](https://github.com/VeloraTech/GLB-Viewer/issues/42). The issue contains the full architecture brief and a discussion thread for Rust/native rendering options, CPU/GPU division, adaptive performance tooling, benchmark design, and collaboration. Please contribute there rather than creating duplicate requests.
