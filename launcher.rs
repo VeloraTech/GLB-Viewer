@@ -129,23 +129,50 @@ fn start_viewer_bundle_refresh(root: &Path) {
     }
 }
 
+#[cfg(windows)]
 fn open_viewer_url(url: &str, root: &Path) -> io::Result<()> {
-    // Explorer delegates HTTP URLs to the user's registered default browser.
-    match Command::new("explorer.exe").arg(url).spawn() {
+    use std::ffi::OsStr;
+    use std::os::windows::ffi::OsStrExt;
+
+    #[link(name = "shell32")]
+    extern "system" {
+        fn ShellExecuteW(
+            hwnd: *mut std::ffi::c_void,
+            operation: *const u16,
+            file: *const u16,
+            parameters: *const u16,
+            directory: *const u16,
+            show_command: i32,
+        ) -> isize;
+    }
+
+    let operation: Vec<u16> = OsStr::new("open").encode_wide().chain(Some(0)).collect();
+    let target: Vec<u16> = OsStr::new(url).encode_wide().chain(Some(0)).collect();
+    let result = unsafe {
+        ShellExecuteW(std::ptr::null_mut(), operation.as_ptr(), target.as_ptr(),
+            std::ptr::null(), std::ptr::null(), 1)
+    };
+
+    if result > 32 {
+        log_launcher(root, &format!("Opened viewer URL with the Windows default browser: {url} (ShellExecuteW={result})."));
+        Ok(())
+    } else {
+        log_launcher(root, &format!("Windows could not open viewer URL {url} (ShellExecuteW={result})."));
+        Err(io::Error::new(io::ErrorKind::Other,
+            format!("Windows could not open the viewer URL (ShellExecuteW={result}).")))
+    }
+}
+
+#[cfg(not(windows))]
+fn open_viewer_url(url: &str, root: &Path) -> io::Result<()> {
+    match Command::new("cmd").args(["/C", "start", "", url]).spawn() {
         Ok(_) => {
-            log_launcher(root, &format!("Opened viewer URL through Explorer: {url}"));
+            log_launcher(root, &format!("Opened viewer URL: {url}"));
             Ok(())
         }
-        Err(explorer_error) => {
-            log_launcher(root, &format!("Explorer URL launch failed; trying cmd start: {explorer_error}"));
-            Command::new("cmd.exe")
-                .args(["/C", "start", "", url])
-                .spawn()
-                .map(|_| ())
-                .map_err(|cmd_error| io::Error::new(
-                    io::ErrorKind::Other,
-                    format!("Explorer failed ({explorer_error}); cmd start failed ({cmd_error})")
-                ))
+        Err(error) => {
+            log_launcher(root, &format!("Could not open viewer URL {url}: {error}"));
+            Err(error)
         }
     }
 }
