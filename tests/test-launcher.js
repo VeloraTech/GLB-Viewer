@@ -114,6 +114,9 @@ function rawGet(port, requestTarget) {
       const missingModel = await get(port, '/__model');
       if (missingModel.status === 404) pass('normal launch does not supply a selected model endpoint');
       else fail('normal launch model endpoint', `HTTP ${missingModel.status}`);
+      const favicon = await get(port, '/favicon.ico');
+      if (favicon.status === 204) pass('automatic favicon request is handled without a missing-asset error');
+      else fail('automatic favicon request is handled without a missing-asset error', `HTTP ${favicon.status}`);
       const heartbeat = await get(port, '/__heartbeat');
       if (heartbeat.status === 204) pass('viewer heartbeat renews the session');
       else fail('viewer heartbeat renews the session', `HTTP ${heartbeat.status}`);
