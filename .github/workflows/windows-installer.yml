@@ -54,6 +54,8 @@ jobs:
           }
           "version=$version" >> $env:GITHUB_OUTPUT
           "tag=v$version" >> $env:GITHUB_OUTPUT
+      - name: Validate browser demo tools
+        run: node tests/test-demo-tools.js
       - name: Build Windows launcher
         run: rustc launcher.rs -O -o launcher.exe
       - name: Test Windows launcher lifecycle and Open With behavior
