@@ -265,8 +265,21 @@
 
 
 
-<script type="module" src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js"></script>
-<script nomodule src="https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.js"></script>
+<script>
+  // Icons are a visual enhancement, never a startup dependency. A failed CDN
+  // request must not reject the editor's own module startup.
+  (async () => {
+    try {
+      await import('https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js');
+    } catch (primaryError) {
+      try {
+        await import('https://cdn.jsdelivr.net/npm/ionicons@7.4.0/dist/ionicons/ionicons.esm.js');
+      } catch (fallbackError) {
+        console.warn('[GLB Viewer] Optional icon library unavailable; continuing without remote icons.', fallbackError);
+      }
+    }
+  })();
+</script>
 <script type="importmap">
 {
   "imports": {
@@ -425,13 +438,25 @@ const browserCapabilityProvider = new BrowserCapabilityProvider();
 const browserCapabilities = browserCapabilityProvider.getCapabilities({ renderer });
 state.hardwareSignals = { nativeRelay: { available: false, status: 'pending' }, browser: browserCapabilities };
 async function initializeHardwareSignals() {
-  const nativeRelay = await nativeRelayProvider.getProfile();
-  state.hardwareSignals.nativeRelay = nativeRelay;
-  state.adaptiveQuality = evaluateAdaptiveQuality({
-    nativeRelay,
-    browser: browserCapabilities,
-    performance: performanceMonitor.snapshot()
-  });
+  try {
+    const nativeRelay = await nativeRelayProvider.getProfile();
+    state.hardwareSignals.nativeRelay = nativeRelay;
+    state.adaptiveQuality = evaluateAdaptiveQuality({
+      nativeRelay,
+      browser: browserCapabilities,
+      performance: performanceMonitor.snapshot()
+    });
+  } catch (error) {
+    // NativeRelay is an optional enhancement; its failure must never prevent
+    // the viewer, bundled sample, or workspace tools from starting.
+    state.hardwareSignals.nativeRelay = { available: false, status: 'provider_unavailable' };
+    state.adaptiveQuality = evaluateAdaptiveQuality({
+      nativeRelay: state.hardwareSignals.nativeRelay,
+      browser: browserCapabilities,
+      performance: performanceMonitor.snapshot()
+    });
+    console.warn('[GLB Viewer] Optional native hardware profile unavailable:', error);
+  }
 }
 void initializeHardwareSignals();
 renderer.toneMapping = THREE.ACESFilmicToneMapping;

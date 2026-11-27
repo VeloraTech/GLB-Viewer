@@ -80,6 +80,34 @@ function rawGet(port, requestTarget) {
       const threeRuntime = await get(port, '/three/build/three.module.js');
       if (threeRuntime.status === 200 && threeRuntime.body.length > 100000) pass('installed viewer serves the local Three.js runtime');
       else fail('installed viewer serves the local Three.js runtime', `HTTP ${threeRuntime.status}, ${threeRuntime.body.length} bytes`);
+      const requiredAssets = [
+        '/three/examples/jsm/loaders/GLTFLoader.js',
+        '/three/examples/jsm/controls/OrbitControls.js',
+        '/three/examples/jsm/controls/TransformControls.js',
+        '/three/examples/jsm/environments/RoomEnvironment.js',
+        '/three/examples/jsm/exporters/GLTFExporter.js',
+        '/src/editor/WorkspaceManager.js',
+        '/src/editor/ViewportInteraction.js',
+        '/src/editor/SceneRuntime.js',
+        '/src/editor/CommandPalette.js',
+        '/src/editor/OrbitPreview.js',
+        '/src/editor/ViewportWorkspace.js',
+        '/src/editor/MultiObjectTransform.js',
+        '/src/core/HardwareProviders.js',
+        '/src/core/AdaptiveQualityPolicy.js',
+        '/src/core/ModelInspector.js',
+        '/src/core/SceneStore.js',
+        '/src/core/CommandHistory.js',
+        '/src/core/SceneCommands.js'
+      ];
+      const missingAssets = [];
+      for (const asset of requiredAssets) {
+        const response = await get(port, asset);
+        if (response.status !== 200 || response.body.length < 80) missingAssets.push(asset + ' (HTTP ' + response.status + ')');
+      }
+      if (!missingAssets.length) pass('all local viewer module dependencies are served');
+      else fail('all local viewer module dependencies are served', missingAssets.join(', '));
+
       const editorShell = await get(port, '/src/editor/ViewerShell.js');
       if (editorShell.status === 200 && editorShell.body.toString().includes('__GLB_VIEWER_BOOTED__')) pass('installed viewer serves its editor bootstrap');
       else fail('installed viewer serves its editor bootstrap', `HTTP ${editorShell.status}`);

@@ -11,7 +11,7 @@ on:
       release_version:
         description: "Version to publish (for example 1.0.6; do not include the v prefix)"
         required: true
-        default: "1.0.9"
+        default: "1.0.10"
         type: string
 
 permissions:
@@ -54,6 +54,8 @@ jobs:
           }
           "version=$version" >> $env:GITHUB_OUTPUT
           "tag=v$version" >> $env:GITHUB_OUTPUT
+      - name: Validate browser demo tools
+        run: node tests/test-demo-tools.js
       - name: Build Windows launcher
         run: rustc launcher.rs -O -o launcher.exe
       - name: Test Windows launcher lifecycle and Open With behavior
@@ -99,6 +101,15 @@ jobs:
           $expectedCommand = '"' + (Join-Path $installDir "launcher.exe") + '" "%1"'
           if ($registeredCommand -ne $expectedCommand) {
             throw "GLB Open With command is incorrect. Expected: $expectedCommand ; actual: $registeredCommand"
+          }
+
+          $applicationCommand = (Get-Item -LiteralPath "Registry::HKEY_CLASSES_ROOT\Applications\launcher.exe\shell\open\command").GetValue("")
+          if ($applicationCommand -ne $expectedCommand) {
+            throw "GLB Viewer application Open With command is incorrect. Expected: $expectedCommand ; actual: $applicationCommand"
+          }
+          $supportedType = Get-Item -LiteralPath "Registry::HKEY_CLASSES_ROOT\Applications\launcher.exe\SupportedTypes"
+          if (-not $supportedType.GetValueNames().Contains(".glb")) {
+            throw "GLB Viewer is not registered as an application supporting .glb files."
           }
 
           $env:GLB_VIEWER_EXE = Join-Path $installDir "launcher.exe"
