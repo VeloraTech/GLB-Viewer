@@ -47,8 +47,9 @@ test('startup failure releases the blocking loader and preserves workspace navig
 test('viewer startup does not wait for the network updater', () => {
   assert.match(launcher, /start_viewer_bundle_refresh\(&root\)/);
   assert.doesNotMatch(launcher, /refresh_viewer_bundle\(&root\)/);
-  assert.match(launcher, /Command::new\("explorer\.exe"\)/);
-  assert.match(launcher, /Command::new\("cmd\.exe"\)/);
+  assert.match(launcher, /ShellExecuteW/);
+  assert.match(launcher, /std::ptr::null_mut\(\)/);
+  assert.doesNotMatch(launcher, /Command::new\("explorer\.exe"\)/);
   assert.match(launcher, /launcher\.log/);
   assert.match(updater, /Local\\GLBViewerUpdater/);
   assert.match(updater, /WaitOne\(0\)/);
