@@ -1,6 +1,6 @@
 #define AppName "GLB Viewer"
 #ifndef AppVersion
-  #define AppVersion "1.0.9"
+  #define AppVersion "1.0.10"
 #endif
 #define AppPublisher "VeloraTech"
 
@@ -35,6 +35,9 @@ Root: HKCR; Subkey: ".glb\OpenWithProgids"; ValueType: string; ValueName: "GLBVi
 Root: HKCR; Subkey: "GLBViewer"; ValueType: string; ValueName: ""; ValueData: "GLB Viewer model"; Flags: uninsdeletekey
 Root: HKCR; Subkey: "GLBViewer\DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}\launcher.exe,0"
 Root: HKCR; Subkey: "GLBViewer\shell\open\command"; ValueType: string; ValueName: ""; ValueData: """{app}\launcher.exe"" ""%1"""
+Root: HKCR; Subkey: "Applications\launcher.exe"; ValueName: "FriendlyAppName"; ValueType: string; ValueData: "GLB Viewer"; Flags: uninsdeletekey
+Root: HKCR; Subkey: "Applications\launcher.exe\SupportedTypes"; ValueName: ".glb"; ValueType: string; ValueData: ""; Flags: uninsdeletevalue
+Root: HKCR; Subkey: "Applications\launcher.exe\shell\open\command"; ValueName: ""; ValueType: string; ValueData: """{app}\launcher.exe"" ""%1"""
 
 [Icons]
 Name: "{group}\GLB Viewer"; Filename: "{app}\launcher.exe"
