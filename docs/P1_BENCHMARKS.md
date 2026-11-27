@@ -137,3 +137,32 @@ A future benchmark report should publish:
 ## Current status
 
 This document is the benchmark protocol. It does not claim that the benchmarks have been run or that any performance target has been achieved.
+
+
+## Native runtime comparison (research addition)
+
+Issue [#42](https://github.com/VeloraTech/GLB-Viewer/issues/42) proposes comparing the existing browser-hosted desktop workflow with a possible native runtime. This is an additional benchmark track, not evidence that a native rewrite has been selected.
+
+For each implementation, record:
+- Cold process start to first interactive frame.
+- Number of spawned processes and their roles.
+- Total resident memory across the full application process tree, not only the launcher.
+- Idle CPU after the scene settles, measured over a fixed interval.
+- Peak CPU and memory during file read, parse, upload, and rendering.
+- GPU memory and utilization where the platform exposes reliable measurements.
+- Time to open the same small, medium, and large GLB fixtures.
+- Frame-time distribution while orbiting, including p50, p95, and spikes.
+- Shutdown time and whether child processes/resources are released.
+- Whether the model is still correct: geometry, materials, textures, transforms, hierarchy, and animations supported by the implementation.
+
+### Fair comparison rules
+
+- Use the exact same model files, machine, OS build, display resolution, and comparable visual quality.
+- Separate cold-start from warm-start results.
+- Measure the complete process tree. A launcher that starts a browser or WebView must include those child processes in the total.
+- Do not compare a low-quality native render with a high-quality browser render without documenting the quality difference.
+- Repeat runs and report medians and ranges.
+- Test both integrated graphics and constrained CPU/RAM configurations.
+- Treat GPU compute as an experiment. Measure transfer, synchronization, and dispatch overhead before claiming a gain.
+
+Do not set hard acceptance numbers until a repeatable baseline has been collected.

@@ -61,7 +61,7 @@ The current release is deliberately focused on viewing and inspection. The next 
 
 Potential V2 areas include lighting and environment adjustments, background and material appearance controls, transform tools, and safe image export. These are **research candidates, not a confirmed feature list**. We want to validate real workflows and keep the application lightweight before committing to scope.
 
-See [ROADMAP.md](ROADMAP.md) for the current direction and [GitHub Issues](https://github.com/VeloraTech/GLB-Viewer/issues) to share what you actually need.
+See [ROADMAP.md](ROADMAP.md) for the current direction. V2 is **not complete**; its remaining scope is still being validated. We are also investigating a genuinely lightweight native runtime in [issue #42](https://github.com/VeloraTech/GLB-Viewer/issues/42) and welcome architecture feedback and collaborators.
 
 ## Privacy
 
@@ -76,11 +76,13 @@ Read the full [Privacy Notice](docs/privacy.html).
 - **Windows launcher:** Rust launcher and Windows file association
 - **License:** MIT
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md)
+- **Performance research:** [Lightweight runtime exploration](docs/LIGHTWEIGHT_RUNTIME_RESEARCH.md)
+- **Current research issue:** [Native runtime and resource-efficiency discussion #42](https://github.com/VeloraTech/GLB-Viewer/issues/42)
 - **Repository:** [VeloraTech/GLB-Viewer](https://github.com/VeloraTech/GLB-Viewer)
 
 ## Contributing
 
-Bug reports, platform testing, documentation improvements, and focused pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), check the open [issues](https://github.com/VeloraTech/GLB-Viewer/issues), and include clear reproduction steps when reporting a problem.
+Bug reports, platform testing, documentation improvements, and focused pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md), check the open [issues](https://github.com/VeloraTech/GLB-Viewer/issues), and include clear reproduction steps when reporting a problem. We especially welcome Rust, graphics, glTF, Windows, profiling, and performance-engineering collaborators for [the lightweight runtime research](https://github.com/VeloraTech/GLB-Viewer/issues/42).
 
 ## License
 
