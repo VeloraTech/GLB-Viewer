@@ -316,6 +316,10 @@ fn handle_request(
                 Err(_) => ("503 Service Unavailable", "application/json", b"{\"error\":\"native_relay_unavailable\"}".to_vec())
             }
         }
+    } else if path == "/favicon.ico" {
+        // Browsers request a favicon automatically. The viewer has no standalone
+        // .ico asset, so answer cleanly instead of logging a misleading 404.
+        return write_response(&mut stream, "204 No Content", "image/x-icon", b"", method == "HEAD");
     } else if path == "/__heartbeat" {
         return write_response(&mut stream, "204 No Content", "text/plain", b"", method == "HEAD");
     } else if path == "/__model" {
