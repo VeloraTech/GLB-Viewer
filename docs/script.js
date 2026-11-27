@@ -228,7 +228,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         fitDemoModel(nextModel);
         const previous = demoModel;
         demoModel = nextModel;
-        demoModelName = file.name;
         demoModelName = source.split('/').pop() || 'model.glb';
         if (previous) {
           demoScene.remove(previous);
@@ -254,7 +253,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         fitDemoModel(nextModel);
         const previous = demoModel;
         demoModel = nextModel;
-        if (previous) {
+        demoModelName = file.name;
           demoScene.remove(previous);
           disposeDemoTree(previous);
         }
