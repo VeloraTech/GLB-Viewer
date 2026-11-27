@@ -41,7 +41,7 @@ fn main() -> io::Result<()> {
     let last_activity = Arc::new(Mutex::new(Instant::now()));
 
     println!("Server listening on {base_url}");
-    let route = if model.is_some() { "/viewer.html?open=1" } else { "/viewer.html?standalone=1" };
+    let route = if model.is_some() { "/viewer.html?open=1" } else { "/viewer.html" };
 
     if env::var_os("GLB_VIEWER_TEST").is_none() {
         let url = format!("{base_url}{route}");
