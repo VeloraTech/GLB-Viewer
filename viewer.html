@@ -51,7 +51,7 @@
   #workspace-rail button { position:relative; width:36px; height:36px; display:grid; place-items:center; border:0; border-radius:7px; color:#aeb5c1; background:transparent; cursor:pointer; }
   #workspace-rail button:hover,#workspace-rail button.active { color:#fff; background:rgba(255,255,255,.13); }
   #workspace-rail button.active { box-shadow:inset 2px 0 #e59b52; }
-  #workspace-rail ion-icon { width:20px; height:20px; pointer-events:none; }
+  #workspace-rail .workspace-icon { width:20px; height:20px; display:grid; place-items:center; pointer-events:none; font:600 19px/1 system-ui,sans-serif; color:currentColor; }
   [data-tooltip]::after { content:attr(data-tooltip); position:absolute; right:calc(100% + 10px); top:50%; transform:translate(4px,-50%); padding:6px 9px; border:1px solid rgba(255,255,255,.14); border-radius:5px; background:#202329; color:#f5f5f5; font:500 11px/1.2 system-ui,sans-serif; white-space:nowrap; opacity:0; visibility:hidden; pointer-events:none; z-index:100; box-shadow:0 5px 18px rgba(0,0,0,.28); transition:opacity .12s ease,transform .12s ease,visibility .12s; }
   [data-tooltip]:hover::after,[data-tooltip]:focus-visible::after { opacity:1; visibility:visible; transform:translate(0,-50%); }
   .editor-panel { position:fixed; top:96px; right:70px; width:340px; height:min(560px,calc(100vh - 116px)); min-width:280px; min-height:220px; max-width:calc(100vw - 90px); max-height:calc(100vh - 24px); display:flex; flex-direction:column; overflow:hidden; resize:both; border:1px solid rgba(255,255,255,.16); border-radius:9px; background:rgba(29,31,35,.97); color:#eee; pointer-events:auto; z-index:35; backdrop-filter:blur(16px); box-shadow:0 18px 48px rgba(0,0,0,.38); font-size:12px; }
@@ -181,12 +181,12 @@
   </div>
   <aside id="scene-panel" aria-label="Editor tools">
     <nav id="workspace-rail" aria-label="Workspace tools">
-      <button type="button" class="active" data-workspace="scene" data-tooltip="Scene" aria-label="Scene" aria-controls="workspace-main" aria-pressed="true"><ion-icon name="layers-outline" aria-hidden="true"></ion-icon></button>
-      <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="cube-outline" aria-hidden="true"></ion-icon></button>
-      <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="move-outline" aria-hidden="true"></ion-icon></button>
-      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="sunny-outline" aria-hidden="true"></ion-icon></button><button type="button" data-workspace="materials" data-tooltip="Materials" aria-label="Materials" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="color-palette-outline"></ion-icon></button><button type="button" data-workspace="inspect" data-tooltip="Inspect" aria-label="Inspect" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="analytics-outline"></ion-icon></button>
-      <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="puzzle-outline" aria-hidden="true"></ion-icon></button>
-      <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><ion-icon name="grid-outline" aria-hidden="true"></ion-icon></button>
+      <button type="button" class="active" data-workspace="scene" data-tooltip="Scene" aria-label="Scene" aria-controls="workspace-main" aria-pressed="true"><span class="workspace-icon" aria-hidden="true">▤</span></button>
+      <button type="button" data-workspace="objects" data-tooltip="Objects / Outliner" aria-label="Objects / Outliner" aria-controls="workspace-main" aria-pressed="false"><span class="workspace-icon" aria-hidden="true">◇</span></button>
+      <button type="button" data-workspace="transform" data-tooltip="Transform" aria-label="Transform" aria-controls="workspace-main" aria-pressed="false"><span class="workspace-icon" aria-hidden="true">↔</span></button>
+      <button type="button" data-workspace="lighting" data-tooltip="Lighting" aria-label="Lighting" aria-controls="workspace-main" aria-pressed="false"><span class="workspace-icon" aria-hidden="true">☼</span></button><button type="button" data-workspace="materials" data-tooltip="Materials" aria-label="Materials" aria-controls="workspace-main" aria-pressed="false"><span class="workspace-icon" aria-hidden="true">◉</span></button><button type="button" data-workspace="inspect" data-tooltip="Inspect" aria-label="Inspect" aria-controls="workspace-main" aria-pressed="false"><span class="workspace-icon" aria-hidden="true">▥</span></button>
+      <button type="button" data-workspace="plugins" data-tooltip="Plugins" aria-label="Plugins" aria-controls="workspace-main" aria-pressed="false"><span class="workspace-icon" aria-hidden="true">⌘</span></button>
+      <button type="button" data-workspace="extensions" data-tooltip="Extensions" aria-label="Extensions" aria-controls="workspace-main" aria-pressed="false"><span class="workspace-icon" aria-hidden="true">▦</span></button>
     </nav>
   </aside>
   <section id="workspace-main" role="region" aria-label="Scene tool panel">
@@ -265,21 +265,6 @@
 
 
 
-<script>
-  // Icons are a visual enhancement, never a startup dependency. A failed CDN
-  // request must not reject the editor's own module startup.
-  (async () => {
-    try {
-      await import('https://unpkg.com/ionicons@7.4.0/dist/ionicons/ionicons.esm.js');
-    } catch (primaryError) {
-      try {
-        await import('https://cdn.jsdelivr.net/npm/ionicons@7.4.0/dist/ionicons/ionicons.esm.js');
-      } catch (fallbackError) {
-        console.warn('[GLB Viewer] Optional icon library unavailable; continuing without remote icons.', fallbackError);
-      }
-    }
-  })();
-</script>
 <script type="importmap">
 {
   "imports": {
@@ -630,8 +615,6 @@ toolRegistry.subscribe(({ tools }) => {
   tools.forEach((tool) => {
     const button = byId.get(tool.id);
     if (!button) return;
-    const icon = button.querySelector('ion-icon');
-    if (icon) icon.name = tool.icon;
     button.setAttribute('aria-label', tool.label);
     button.dataset.tooltip = tool.label;
   });
